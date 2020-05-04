@@ -25,8 +25,8 @@ contract ERC20Base is ERC20
 		address _from = msg.sender;
 		require(_value > 0);
 		require(balances[_from] >= _value);
-		assert(balances[_to] + _value > balances[_to]);
 		balances[_from] -= _value;
+		assert(balances[_to] + _value > balances[_to]);
 		balances[_to] += _value;
 		emit Transfer(_from, _to, _value);
 		return true;
@@ -37,10 +37,10 @@ contract ERC20Base is ERC20
 		address _spender = msg.sender;
 		require(_value > 0);
 		require(balances[_from] >= _value);
-		require(allowed[_from][_spender] >= _value);
-		assert(balances[_to] + _value > balances[_to]);
 		balances[_from] -= _value;
+		require(allowed[_from][_spender] >= _value);
 		allowed[_from][_spender] -= _value;
+		assert(balances[_to] + _value > balances[_to]);
 		balances[_to] += _value;
 		emit Transfer(_from, _to, _value);
 		return true;
