@@ -21,3 +21,8 @@ interface ERC721
 	event Approval(address indexed _owner, address indexed _approved, uint256 indexed _tokenId);
 	event ApprovalForAll(address indexed _owner, address indexed _operator, bool _approved);
 }
+
+interface ERC721Receiver
+{
+	function onERC721Received(address _operator, address _from, uint256 _tokenId, bytes calldata _data) external returns (bytes4 _magic);
+}
