@@ -45,6 +45,8 @@ contract ERC721Base is ERC721
 		address _owner = owners[_tokenId];
 		require(_operator == _owner || _operator == approvals[_tokenId] || operators[_owner][_operator]);
 		require(_from == _owner);
+		require(_from != address(0));
+		require(_to != address(0));
 		assert(balances[_from] > 0);
 		balances[_from]--;
 		assert(balances[_to] + 1 > balances[_to]);
