@@ -24,10 +24,14 @@ contract ERC721Base is ERC721
 	{
 		address _operator = msg.sender;
 		transferFrom(_from, _to, _tokenId);
-		ERC721Receiver _receiver = ERC721Receiver(_to);
-		bytes4 _magic1 = _receiver.onERC721Received(_operator, _from, _tokenId, _data);
-		bytes4 _magic2 = _receiver.onERC721Received.selector;
-		require(_magic1 == _magic2);
+		uint256 _size;
+		assembly { _size := extcodesize(_to) }
+		if (_size > 0) {
+			ERC721Receiver _receiver = ERC721Receiver(_to);
+			bytes4 _magic1 = _receiver.onERC721Received(_operator, _from, _tokenId, _data);
+			bytes4 _magic2 = _receiver.onERC721Received.selector;
+			require(_magic1 == _magic2);
+		}
 	}
 
 	function safeTransferFrom(address _from, address _to, uint256 _tokenId) public payable
