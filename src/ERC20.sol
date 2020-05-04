@@ -1,4 +1,4 @@
-// Interface for the ERC 20 Token Standard
+// Interface for the ERC-20 Token Standard
 // https://eips.ethereum.org/EIPS/eip-20
 pragma solidity >= 0.4.20;
 
