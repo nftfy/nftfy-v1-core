@@ -65,6 +65,17 @@ contract Wrapper is ERC721Metadata, ERC721Base
 		owners[_tokenId] = _owner;
 	}
 
+	function _remove(address _owner, uint256 _tokenId) public
+	{
+		address _admin = msg.sender;
+		require(_admin == admin);
+		require(owners[_tokenId] == _owner);
+		assert(balances[_owner] > 0);
+		balances[_owner]--;
+		owners[_tokenId] = address(0);
+		approvals[_tokenId] = address(0);
+	}
+
 	function name() external view returns (string memory _name)
 	{
 		return ERC721Metadata(target).name();
