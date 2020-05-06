@@ -146,7 +146,7 @@ contract Shares is ERC20Metadata, ERC20Base
 		redeemable = true;
 		wrapper._remove(tokenId);
 		wrapper.getTarget().safeTransferFrom(address(this), _from, tokenId);
-		_from.transfer(_change);
+		if (_change > 0) _from.transfer(_change);
 		return true;
 	}
 
