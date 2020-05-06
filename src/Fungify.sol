@@ -7,20 +7,14 @@ import "./ERC721Base.sol";
 contract Fungify is ERC721Receiver
 {
 	mapping (address => Wrapper) wrappers;
-	mapping (address => mapping (uint256 => Shares)) shares;
 
 	constructor () public
 	{
 	}
 
-	function getWrapper(ERC721 _target) external view returns (ERC721 _wrapper)
+	function getWrapper(ERC721 _target) public view returns (ERC721 _wrapper)
 	{
 		return wrappers[address(_target)];
-	}
-
-	function getShares(ERC721 _target, uint256 _tokenId) external view returns (ERC20 _shares)
-	{
-		return shares[address(_target)][_tokenId];
 	}
 
 	function onERC721Received(address /*_operator*/, address _from, uint256 _tokenId, bytes memory _data) public returns (bytes4 _magic)
@@ -35,10 +29,8 @@ contract Fungify is ERC721Receiver
 			_wrapper = new Wrapper(address(this), _target);
 			wrappers[_target] = _wrapper;
 		}
-		_wrapper._insert(_from, _tokenId);
-		Shares _shares = new Shares(_target, _tokenId, _from, _supply);
-		assert(shares[_target][_tokenId] == Shares(0));
-		shares[_target][_tokenId] = _shares;
+		Shares _shares = new Shares(_wrapper, _tokenId, _from, _supply);
+		_wrapper._insert(_from, _tokenId, _shares);
 		ERC721(_target).transferFrom(address(this), address(_shares), _tokenId);
 		return ERC721Receiver(this).onERC721Received.selector;
 	}
@@ -48,6 +40,7 @@ contract Wrapper is ERC721Metadata, ERC721Base
 {
 	address admin;
 	address target;
+	mapping (uint256 => Shares) shares;
 
 	constructor (address _admin, address _target) public
 	{
@@ -55,28 +48,41 @@ contract Wrapper is ERC721Metadata, ERC721Base
 		target = _target;
 	}
 
-	function _insert(address _owner, uint256 _tokenId) public
+	function getTarget() public view returns (ERC721 _target)
+	{
+		return ERC721(target);
+	}
+
+	function getShares(uint256 _tokenId) public view returns (ERC20 _shares)
+	{
+		return shares[_tokenId];
+	}
+
+	function _insert(address _owner, uint256 _tokenId, Shares _shares) public
 	{
 		address _admin = msg.sender;
 		require(_admin == admin);
+		assert(shares[_tokenId] == Shares(0));
+		shares[_tokenId] = _shares;
 		assert(balances[_owner] + 1 > balances[_owner]);
 		balances[_owner]++;
 		assert(owners[_tokenId] == address(0));
 		owners[_tokenId] = _owner;
 	}
 
-	function _remove(address _owner, uint256 _tokenId) public
+	function _remove(uint256 _tokenId) public
 	{
 		address _admin = msg.sender;
-		require(_admin == admin);
-		require(owners[_tokenId] == _owner);
+		require(_admin == address(shares[_tokenId]));
+		address _owner = owners[_tokenId];
 		assert(balances[_owner] > 0);
+		shares[_tokenId] = Shares(0);
 		balances[_owner]--;
 		owners[_tokenId] = address(0);
 		approvals[_tokenId] = address(0);
 	}
 
-	function name() external view returns (string memory _name)
+	function name() public view returns (string memory _name)
 	{
 		return ERC721Metadata(target).name();
 	}
@@ -96,30 +102,30 @@ contract Shares is ERC20Metadata, ERC20Base
 {
 	uint256 constant SHARES = 1 * 10**9;
 
-	address target;
+	Wrapper wrapper;
 	uint256 tokenId;
 	uint256 sharePrice;
 	bool redeemable;
 
 	function name() public view returns (string memory _name)
 	{
-		return string(abi.encodePacked(ERC721Metadata(target).name(), "@", bytes32(tokenId)));
+		return string(abi.encodePacked(wrapper.name(), "@", bytes32(tokenId)));
 	}
 
 	function symbol() public view returns (string memory _symbol)
 	{
-		return string(abi.encodePacked(ERC721Metadata(target).symbol(), "@", bytes32(tokenId)));
+		return string(abi.encodePacked(wrapper.symbol(), "@", bytes32(tokenId)));
 	}
 
 	function decimals() public view returns (uint8 _decimals)
 	{
-		return 18;
+		return 0;
 	}
 
-	constructor (address _target, uint256 _tokenId, address _owner, uint256 _price) public
+	constructor (Wrapper _wrapper, uint256 _tokenId, address _owner, uint256 _price) public
 	{
 		require(_price % SHARES == 0);
-		target = _target;
+		wrapper = _wrapper;
 		tokenId = _tokenId;
 		sharePrice = _price / SHARES;
 		redeemable = false;
@@ -135,7 +141,8 @@ contract Shares is ERC20Metadata, ERC20Base
 		require(_value == supply);
 		balances[_from] = 0;
 		supply = 0;
-		ERC721(target).safeTransferFrom(address(this), _from, tokenId);
+		wrapper._remove(tokenId);
+		wrapper.getTarget().safeTransferFrom(address(this), _from, tokenId);
 		return true;
 	}
 
@@ -147,7 +154,8 @@ contract Shares is ERC20Metadata, ERC20Base
 		uint256 _price = sharePrice * SHARES;
 		require(_value == _price);
 		redeemable = true;
-		ERC721(target).safeTransferFrom(address(this), _from, tokenId);
+		wrapper._remove(tokenId);
+		wrapper.getTarget().safeTransferFrom(address(this), _from, tokenId);
 		return true;
 	}
 
