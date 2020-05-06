@@ -94,8 +94,11 @@ contract Wrapper is ERC721Metadata, ERC721Base
 
 contract Shares is ERC20Metadata, ERC20Base
 {
+	uint256 constant SHARES = 1 * 10**9;
+
 	address target;
 	uint256 tokenId;
+	uint256 sharePrice;
 	bool redeemable;
 
 	function name() public view returns (string memory _name)
@@ -113,13 +116,15 @@ contract Shares is ERC20Metadata, ERC20Base
 		return 18;
 	}
 
-	constructor (address _target, uint256 _tokenId, address _owner, uint256 _supply) public
+	constructor (address _target, uint256 _tokenId, address _owner, uint256 _price) public
 	{
+		require(_price % SHARES == 0);
 		target = _target;
 		tokenId = _tokenId;
+		sharePrice = _price / SHARES;
 		redeemable = false;
-		supply = _supply;
-		balances[_owner] = _supply;
+		supply = SHARES;
+		balances[_owner] = SHARES;
 	}
 
 	function release1() public returns (bool _success)
@@ -139,7 +144,8 @@ contract Shares is ERC20Metadata, ERC20Base
 		require(!redeemable);
 		address _from = msg.sender;
 		uint256 _value = msg.value;
-		require(_value == supply);
+		uint256 _price = sharePrice * SHARES;
+		require(_value == _price);
 		redeemable = true;
 		ERC721(target).safeTransferFrom(address(this), _from, tokenId);
 		return true;
@@ -154,7 +160,8 @@ contract Shares is ERC20Metadata, ERC20Base
 		balances[_from] = 0;
 		assert(supply >= _value);
 		supply -= _value;
-		_from.transfer(_value);
+		uint256 _amount = _value * sharePrice;
+		_from.transfer(_amount);
 		return true;
 	}
 }
