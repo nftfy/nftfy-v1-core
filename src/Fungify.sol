@@ -133,29 +133,20 @@ contract Shares is ERC20Metadata, ERC20Base
 		balances[_owner] = SHARES;
 	}
 
-	function release1() public returns (bool _success)
+	function release() public payable returns (bool _success)
 	{
 		require(!redeemable);
-		address _from = msg.sender;
-		uint256 _value = balances[_from];
-		require(_value == supply);
-		balances[_from] = 0;
-		supply = 0;
-		wrapper._remove(tokenId);
-		wrapper.getTarget().safeTransferFrom(address(this), _from, tokenId);
-		return true;
-	}
-
-	function release2() public payable returns (bool _success)
-	{
-		require(!redeemable);
-		address _from = msg.sender;
-		uint256 _value = msg.value;
+		address payable _from = msg.sender;
+		uint256 _value1 = msg.value;
+		uint256 _value2 = sharePrice * balances[_from];
 		uint256 _price = sharePrice * SHARES;
-		require(_value == _price);
+		uint256 _total = _value1 + _value2;
+		require(_total >= _price);
+		uint256 _change = _total - _price;
 		redeemable = true;
 		wrapper._remove(tokenId);
 		wrapper.getTarget().safeTransferFrom(address(this), _from, tokenId);
+		_from.transfer(_change);
 		return true;
 	}
 
