@@ -99,7 +99,7 @@ contract Wrapper is ERC721Metadata, ERC721Base
 
 contract Shares is ERC20Metadata, ERC20Base
 {
-	uint256 constant SHARES = 1 * 10**9;
+	uint256 constant SHARES = 1 * 10**6;
 
 	Wrapper wrapper;
 	uint256 tokenId;
