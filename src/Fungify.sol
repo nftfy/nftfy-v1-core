@@ -84,12 +84,12 @@ contract Wrapper is ERC721Metadata, ERC721Base
 		owners[_tokenId] = _owner;
 	}
 
-	function _remove(uint256 _tokenId) public
+	function _remove(address _owner, uint256 _tokenId) public
 	{
 		address _shares = msg.sender;
 		require(_shares == address(shares[_tokenId]));
+		require(_owner == owners[_tokenId]);
 		shares[_tokenId] = Shares(0);
-		address _owner = owners[_tokenId];
 		assert(balances[_owner] > 0);
 		balances[_owner]--;
 		owners[_tokenId] = address(0);
@@ -143,7 +143,7 @@ contract Shares is ERC20Metadata, ERC20Base
 		require(_total >= _price);
 		uint256 _change = _total - _price;
 		redeemable = true;
-		wrapper._remove(tokenId);
+		wrapper._remove(_from, tokenId);
 		wrapper.getTarget().safeTransferFrom(address(this), _from, tokenId);
 		if (_change > 0) _from.transfer(_change);
 		return true;
