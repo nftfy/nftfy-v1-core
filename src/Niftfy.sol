@@ -1,10 +1,10 @@
-// Fungify
+// Niftfy
 pragma solidity >= 0.4.20;
 
 import "./ERC20Base.sol";
 import "./ERC721Base.sol";
 
-contract Fungify is ERC721Receiver
+contract Niftfy is ERC721Receiver
 {
 	mapping (address => Wrapper) wrappers;
 

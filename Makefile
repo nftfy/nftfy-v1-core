@@ -14,4 +14,4 @@ all: build;
 build:; dapp build
 test:; dapp test
 clean:; dapp clean
-deploy: build; dapp create Fungify
+deploy: build; dapp create Niftfy
