@@ -20,9 +20,11 @@ contract Niftfy is ERC721Receiver
 	function onERC721Received(address /*_operator*/, address _from, uint256 _tokenId, bytes memory _data) public returns (bytes4 _magic)
 	{
 		address _target = msg.sender;
-		uint256 _price;
-		require(_data.length == 32);
-		assembly { _price := mload(add(_data, 32)) }
+		uint256 _price = 1 ether;
+		if (_data.length > 0) {
+			require(_data.length == 32);
+			assembly { _price := mload(add(_data, 32)) }
+		}
 		Wrapper _wrapper = wrappers[_target];
 		if (_wrapper == Wrapper(0)) {
 			_wrapper = new Wrapper(address(this), _target);
