@@ -14,7 +14,7 @@ contract Blockies is ERC721Metadata, ERC721Base, ERC165
 
 	function name() public view returns (string memory _name)
 	{
-		return "Blockies V1";
+		return "Blockies";
 	}
 
 	function symbol() public view returns (string memory _symbol)
