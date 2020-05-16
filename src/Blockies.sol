@@ -22,7 +22,11 @@ contract Blockies is ERC721Metadata, ERC721Base
 		return string(abi.encodePacked(BASE_URL, "/address/0x", bytes32(_tokenId)));
 	}
 
-	constructor (address _owner) public
+	constructor () public
+	{
+	}
+
+	function issue(address _owner) public
 	{
 		uint256 _tokenId = uint256(_owner);
 		assert(balances[_owner] + 1 > balances[_owner]);
