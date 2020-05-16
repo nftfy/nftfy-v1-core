@@ -5,7 +5,7 @@ import "./ERC721Base.sol";
 
 contract Blockies is ERC721Metadata, ERC721Base
 {
-	string constant BASE_URL = "https://blockie.cc";
+	string constant BASE_URI = "https://blockie.cc";
 
 	function name() public view returns (string memory _name)
 	{
@@ -19,7 +19,7 @@ contract Blockies is ERC721Metadata, ERC721Base
 
 	function tokenURI(uint256 _tokenId) public view returns (string memory _tokenURI)
 	{
-		return string(abi.encodePacked(BASE_URL, "/address/0x", bytes32(_tokenId)));
+		return string(abi.encodePacked(BASE_URI, "/address/0x", bytes32(_tokenId)));
 	}
 
 	constructor () public
