@@ -3,21 +3,45 @@ pragma solidity >= 0.4.20;
 
 import "./ERC721.sol";
 
-contract ERC721Base is ERC721
+contract ERC721Base is ERC721Enumerable, ERC721
 {
+	uint256 supply;
+	mapping (address => mapping (uint256 => uint256)) tokens;
+	mapping (address => mapping (uint256 => uint256)) indexes;
 	mapping (address => uint256) balances;
 	mapping (uint256 => address) owners;
 	mapping (uint256 => address) approvals;
 	mapping (address => mapping (address => bool)) operators;
 
+	function totalSupply() public view returns (uint256 _totalSupply)
+	{
+		return supply;
+	}
+
+	function tokenByIndex(uint256 _index) public view returns (uint256 _tokenId)
+	{
+		require(_index < supply);
+		return tokens[address(0)][_index];
+	}
+
+	function tokenOfOwnerByIndex(address _owner, uint256 _index) external view returns (uint256 _tokenId)
+	{
+		require(_owner != address(0));
+		require(_index < balances[_owner]);
+		return tokens[_owner][_index];
+	}
+
 	function balanceOf(address _owner) public view returns (uint256 _balance)
 	{
+		require(_owner != address(0));
 		return balances[_owner];
 	}
 
 	function ownerOf(uint256 _tokenId) public view returns (address _owner)
 	{
-		return owners[_tokenId];
+		_owner = owners[_tokenId];
+		require(_owner != address(0));
+		return _owner;
 	}
 
 	function safeTransferFrom(address _from, address _to, uint256 _tokenId, bytes memory _data) public payable

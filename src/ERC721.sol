@@ -18,6 +18,12 @@ interface ERC721
 	event ApprovalForAll(address indexed _owner, address indexed _operator, bool _approved);
 }
 
+interface ERC721Enumerable {
+	function totalSupply() external view returns (uint256 _totalSupply);
+	function tokenByIndex(uint256 _index) external view returns (uint256 _tokenId);
+	function tokenOfOwnerByIndex(address _owner, uint256 _index) external view returns (uint256 _tokenId);
+}
+
 interface ERC721Metadata
 {
 	function name() external view returns (string memory _name);

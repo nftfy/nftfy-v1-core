@@ -47,8 +47,9 @@ contract Niftfy is ERC721Receiver, ERC165
 
 contract Wrapper is ERC721Metadata, ERC721Base, ERC165
 {
-	bytes4 constant INTERFACE_ID_ERC721 = 0x80ac58cd;
 	bytes4 constant INTERFACE_ID_ERC721_METADATA = 0x5b5e139f;
+	bytes4 constant INTERFACE_ID_ERC721 = 0x80ac58cd;
+	bytes4 constant INTERFACE_ID_ERC721_ENUMERABLE = 0x780e9d63;
 
 	address admin;
 	address target;
@@ -91,8 +92,18 @@ contract Wrapper is ERC721Metadata, ERC721Base, ERC165
 		require(_admin == admin);
 		assert(shares[_tokenId] == Shares(0));
 		shares[_tokenId] = _shares;
+		assert(supply + 1 > supply);
+		assert(tokens[address(0)][supply] == 0);
+		assert(indexes[address(0)][_tokenId] == 0);
+		tokens[address(0)][supply] = _tokenId;
+		indexes[address(0)][_tokenId] = supply;
+		supply++;
 		assert(balances[_owner] + 1 > balances[_owner]);
-		balances[_owner]++;
+		assert(tokens[_owner][balances[_owner]] == 0);
+		assert(indexes[_owner][_tokenId] == 0);
+		tokens[_owner][balances[_owner]] = _tokenId;
+		indexes[_owner][_tokenId] = balances[_owner];
+		balances[_owner];
 		assert(owners[_tokenId] == address(0));
 		owners[_tokenId] = _owner;
 	}
@@ -103,8 +114,20 @@ contract Wrapper is ERC721Metadata, ERC721Base, ERC165
 		require(_shares == address(shares[_tokenId]));
 		require(_owner == owners[_tokenId]);
 		shares[_tokenId] = Shares(0);
+		assert(supply > 0);
+		assert(tokens[address(0)][indexes[address(0)][_tokenId]] == _tokenId);
+		supply--;
+		tokens[address(0)][indexes[address(0)][_tokenId]] = tokens[address(0)][supply];
+		indexes[address(0)][tokens[address(0)][supply]] = indexes[address(0)][_tokenId];
+		tokens[address(0)][supply] = 0;
+		indexes[address(0)][_tokenId] = 0;
 		assert(balances[_owner] > 0);
+		assert(tokens[_owner][indexes[_owner][_tokenId]] == _tokenId);
 		balances[_owner]--;
+		tokens[_owner][indexes[_owner][_tokenId]] = tokens[_owner][balances[_owner]];
+		indexes[_owner][tokens[_owner][balances[_owner]]] = indexes[_owner][_tokenId];
+		tokens[_owner][balances[_owner]] = 0;
+		indexes[_owner][_tokenId] = 0;
 		owners[_tokenId] = address(0);
 		approvals[_tokenId] = address(0);
 	}
@@ -113,7 +136,8 @@ contract Wrapper is ERC721Metadata, ERC721Base, ERC165
 	{
 		return
 			_interfaceId == INTERFACE_ID_ERC721_METADATA ||
-			_interfaceId == INTERFACE_ID_ERC721;
+			_interfaceId == INTERFACE_ID_ERC721 ||
+			_interfaceId == INTERFACE_ID_ERC721_ENUMERABLE;
 	}
 }
 
