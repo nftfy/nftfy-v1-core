@@ -1,5 +1,5 @@
 // Base implementation for the ERC-721 Token Standard
-pragma solidity >= 0.4.20;
+pragma solidity 0.5.15;
 
 import "./ERC721.sol";
 

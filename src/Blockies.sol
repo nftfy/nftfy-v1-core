@@ -1,5 +1,5 @@
 // Blockies
-pragma solidity >= 0.4.20;
+pragma solidity 0.5.15;
 
 import "./ERC721Base.sol";
 import "./ERC165.sol";

@@ -1,6 +1,6 @@
 // Interface for the ERC-721 Token Standard
 // https://eips.ethereum.org/EIPS/eip-721
-pragma solidity >= 0.4.20;
+pragma solidity 0.5.15;
 
 interface ERC721
 {
