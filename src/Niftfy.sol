@@ -3,9 +3,12 @@ pragma solidity >= 0.4.20;
 
 import "./ERC20Base.sol";
 import "./ERC721Base.sol";
+import "./ERC165.sol";
 
-contract Niftfy is ERC721Receiver
+contract Niftfy is ERC721Receiver, ERC165
 {
+	bytes4 constant INTERFACE_ID_ERC721_RECEIVER = 0x150b7a02;
+
 	mapping (address => Wrapper) wrappers;
 
 	constructor () public
@@ -35,10 +38,18 @@ contract Niftfy is ERC721Receiver
 		ERC721(_target).transferFrom(address(this), address(_shares), _tokenId);
 		return ERC721Receiver(this).onERC721Received.selector;
 	}
+
+	function supportsInterface(bytes4 _interfaceId) public view returns (bool _supported)
+	{
+		return _interfaceId == INTERFACE_ID_ERC721_RECEIVER;
+	}
 }
 
-contract Wrapper is ERC721Metadata, ERC721Base
+contract Wrapper is ERC721Metadata, ERC721Base, ERC165
 {
+	bytes4 constant INTERFACE_ID_ERC721 = 0x80ac58cd;
+	bytes4 constant INTERFACE_ID_ERC721_METADATA = 0x5b5e139f;
+
 	address admin;
 	address target;
 	mapping (uint256 => Shares) shares;
@@ -96,6 +107,13 @@ contract Wrapper is ERC721Metadata, ERC721Base
 		balances[_owner]--;
 		owners[_tokenId] = address(0);
 		approvals[_tokenId] = address(0);
+	}
+
+	function supportsInterface(bytes4 _interfaceId) public view returns (bool _supported)
+	{
+		return
+			_interfaceId == INTERFACE_ID_ERC721_METADATA ||
+			_interfaceId == INTERFACE_ID_ERC721;
 	}
 }
 

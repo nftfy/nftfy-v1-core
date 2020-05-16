@@ -2,9 +2,13 @@
 pragma solidity >= 0.4.20;
 
 import "./ERC721Base.sol";
+import "./ERC165.sol";
 
-contract Blockies is ERC721Metadata, ERC721Base
+contract Blockies is ERC721Metadata, ERC721Base, ERC165
 {
+	bytes4 constant INTERFACE_ID_ERC721 = 0x80ac58cd;
+	bytes4 constant INTERFACE_ID_ERC721_METADATA = 0x5b5e139f;
+
 	string constant BASE_URI = "https://blockie.cc";
 
 	function name() public view returns (string memory _name)
@@ -34,5 +38,11 @@ contract Blockies is ERC721Metadata, ERC721Base
 		require(owners[_tokenId] == address(0));
 		owners[_tokenId] = _owner;
 	}
-}
 
+	function supportsInterface(bytes4 _interfaceId) public view returns (bool _supported)
+	{
+		return
+			_interfaceId == INTERFACE_ID_ERC721_METADATA ||
+			_interfaceId == INTERFACE_ID_ERC721;
+	}
+}
