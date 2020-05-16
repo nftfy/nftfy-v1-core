@@ -72,8 +72,17 @@ contract ERC721Base is ERC721Enumerable, ERC721
 		require(_from != address(0));
 		require(_to != address(0));
 		assert(balances[_from] > 0);
+		assert(tokens[_from][indexes[_from][_tokenId]] == _tokenId);
 		balances[_from]--;
+		tokens[_from][indexes[_from][_tokenId]] = tokens[_from][balances[_from]];
+		indexes[_from][tokens[_from][balances[_from]]] = indexes[_from][_tokenId];
+		tokens[_from][balances[_from]] = 0;
+		indexes[_from][_tokenId] = 0;
 		assert(balances[_to] + 1 > balances[_to]);
+		assert(tokens[_owner][balances[_owner]] == 0);
+		assert(indexes[_owner][_tokenId] == 0);
+		tokens[_to][balances[_to]] = _tokenId;
+		indexes[_to][_tokenId] = balances[_to];
 		balances[_to]++;
 		owners[_tokenId] = _to;
 		approvals[_tokenId] = address(0);
