@@ -3,7 +3,6 @@ pragma solidity 0.5.15;
 
 import "./ERC721Base.sol";
 import "./ERC165.sol";
-import "./Utils.sol";
 
 contract Blockies is ERC721Metadata, ERC721Base, ERC165
 {
@@ -26,7 +25,25 @@ contract Blockies is ERC721Metadata, ERC721Base, ERC165
 	function tokenURI(uint256 _tokenId) public view returns (string memory _tokenURI)
 	{
 		require(owners[_tokenId] != address(0));
-		return string(abi.encodePacked(BASE_URI, "/address/0x", Utils.hexs(_tokenId)));
+		return string(abi.encodePacked(BASE_URI, "/address/0x", hexs(_tokenId)));
+	}
+
+	function hexc(uint8 _value) internal pure returns (byte _char)
+	{
+		assert(_value < 16);
+		return byte(_value < 10 ? uint8(byte("0")) + _value : uint8(byte("a")) + _value - 10);
+	}
+
+	function hexs(uint256 _value) internal pure returns (string memory _string)
+	{
+		bytes memory _buffer = new bytes(64);
+		for (uint256 _i = 64; _i > 0; _i--) {
+			uint256 _index = _i - 1;
+			uint8 _ord = uint8(_value) & 0x0f;
+			_buffer[_index] = hexc(_ord);
+			_value >>= 4;
+		}
+		return string(_buffer);
 	}
 
 	constructor () public
