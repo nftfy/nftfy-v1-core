@@ -16,4 +16,4 @@ all: build;
 build:; dapp build
 test:; dapp test
 clean:; dapp clean
-deploy: build; dapp create Niftfy
+deploy: build; dapp create Nftfy

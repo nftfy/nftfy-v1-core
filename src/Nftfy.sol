@@ -1,11 +1,11 @@
-// Niftfy
+// Nftfy
 pragma solidity 0.5.15;
 
 import "./ERC20Base.sol";
 import "./ERC721Base.sol";
 import "./ERC165.sol";
 
-contract Niftfy is ERC721Receiver, ERC165
+contract Nftfy is ERC721Receiver, ERC165
 {
 	bytes4 constant INTERFACE_ID_ERC721_RECEIVER = 0x150b7a02;
 
