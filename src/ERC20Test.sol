@@ -2,9 +2,8 @@
 pragma solidity 0.5.15;
 
 import "./ERC20Base.sol";
-import "./ERC165.sol";
 
-contract ERC20Test is ERC20Metadata, ERC20Base, ERC165
+contract ERC20Test is ERC20Metadata, ERC20Base
 {
 	function name() public view returns (string memory _name)
 	{
@@ -18,7 +17,7 @@ contract ERC20Test is ERC20Metadata, ERC20Base, ERC165
 
 	function decimals() public view returns (uint8 _decimals)
 	{
-		return 18;
+		return 2;
 	}
 
 	constructor (address _owner, uint256 _supply) public

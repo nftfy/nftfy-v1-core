@@ -17,3 +17,4 @@ build:; dapp build
 test:; dapp test
 clean:; dapp clean
 deploy: build; dapp create Nftfy
+#deploy: build; dapp create ERC20Test 0x58F28D1FD246dA5F6a34cAB3794A0A3C82372C69 100000000000
