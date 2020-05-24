@@ -210,13 +210,17 @@ contract Shares is ERC20Metadata, ERC20Base
 	{
 		require(!redeemable);
 		address payable _from = msg.sender;
+		uint256 _balance = balances[_from];
 		uint256 _value1 = msg.value;
-		uint256 _value2 = sharePrice * balances[_from];
+		uint256 _value2 = sharePrice * _balance;
 		uint256 _price = sharePrice * SHARES;
 		uint256 _total = _value1 + _value2;
 		require(_total >= _price);
 		uint256 _change = _total - _price;
 		redeemable = true;
+		balances[_from] = 0;
+		assert(supply >= _balance);
+		supply -= _balance;
 		wrapper._remove(_from, tokenId);
 		wrapper.getTarget().safeTransferFrom(address(this), _from, tokenId);
 		if (_change > 0) _from.transfer(_change);
