@@ -57,12 +57,12 @@ contract Wrapper is ERC721Metadata, ERC721Base, ERC165
 
 	function name() public view returns (string memory _name)
 	{
-		return ERC721Metadata(target).name();
+		return string(abi.encodePacked("Wrapped ", ERC721Metadata(target).name()));
 	}
 
 	function symbol() public view returns (string memory _symbol)
 	{
-		return ERC721Metadata(target).symbol();
+		return string(abi.encodePacked("w", ERC721Metadata(target).symbol()));
 	}
 
 	function tokenURI(uint256 _tokenId) public view returns (string memory _tokenURI)
@@ -152,17 +152,42 @@ contract Shares is ERC20Metadata, ERC20Base
 
 	function name() public view returns (string memory _name)
 	{
-		return string(abi.encodePacked(wrapper.name(), "@", bytes32(tokenId)));
+		return string(abi.encodePacked(wrapper.name(), " Shares #", decs(tokenId)));
 	}
 
 	function symbol() public view returns (string memory _symbol)
 	{
-		return string(abi.encodePacked(wrapper.symbol(), "@", bytes32(tokenId)));
+		return string(abi.encodePacked(wrapper.symbol(), "s", decs(tokenId)));
 	}
 
 	function decimals() public view returns (uint8 _decimals)
 	{
 		return 0;
+	}
+
+	function decc(uint8 _value) internal pure returns (byte _char)
+	{
+		assert(_value < 10);
+		return byte(uint8(byte("0")) + _value);
+	}
+
+	function decs(uint256 _value) internal pure returns (string memory _string)
+	{
+		uint256 _size = 0;
+		uint256 _copy = _value;
+		while (_copy > 0) {
+			_copy /= 10;
+			_size++;
+		}
+		if (_value == 0) _size = 1;
+		bytes memory _buffer = new bytes(_size);
+		for (uint256 _i = _size; _i > 0; _i--) {
+			uint256 _index = _i - 1;
+			uint8 _ord = uint8(_value % 10);
+			_buffer[_index] = decc(_ord);
+			_value /= 10;
+		}
+		return string(_buffer);
 	}
 
 	constructor (Wrapper _wrapper, address _owner, uint256 _tokenId, uint256 _price) public
@@ -174,6 +199,11 @@ contract Shares is ERC20Metadata, ERC20Base
 		redeemable = false;
 		supply = SHARES;
 		balances[_owner] = SHARES;
+	}
+
+	function isRedeemable() public view returns (bool _redeemable)
+	{
+		return redeemable;
 	}
 
 	function release() public payable returns (bool _success)
