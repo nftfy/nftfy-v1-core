@@ -10,6 +10,7 @@ contract Nftfy is ERC721Receiver, ERC165
 	bytes4 constant INTERFACE_ID_ERC721_RECEIVER = 0x150b7a02;
 
 	mapping (address => Wrapper) wrappers;
+	mapping (address => bool) wraps;
 
 	constructor () public
 	{
@@ -23,6 +24,7 @@ contract Nftfy is ERC721Receiver, ERC165
 	function onERC721Received(address /*_operator*/, address _from, uint256 _tokenId, bytes memory _data) public returns (bytes4 _magic)
 	{
 		address _target = msg.sender;
+		require(!wraps[_target]);
 		uint256 _price = 1 ether;
 		if (_data.length > 0) {
 			require(_data.length == 32);
@@ -32,6 +34,7 @@ contract Nftfy is ERC721Receiver, ERC165
 		if (_wrapper == Wrapper(0)) {
 			_wrapper = new Wrapper(address(this), _target);
 			wrappers[_target] = _wrapper;
+			wraps[address(_wrapper)] = true;
 		}
 		Shares _shares = new Shares(_wrapper, _from, _tokenId, _price);
 		_wrapper._insert(_from, _tokenId, _shares);
@@ -239,6 +242,7 @@ contract Shares is ERC20Metadata, ERC20Base
 		wrapper._remove(_from, tokenId);
 		wrapper.getTarget().safeTransferFrom(address(this), _from, tokenId);
 		if (_change > 0) _from.transfer(_change);
+		if (supply == 0) selfdestruct(_from);
 		return true;
 	}
 
@@ -253,6 +257,7 @@ contract Shares is ERC20Metadata, ERC20Base
 		supply -= _value;
 		uint256 _amount = _value * sharePrice;
 		_from.transfer(_amount);
+		if (supply == 0) selfdestruct(_from);
 		return true;
 	}
 }
