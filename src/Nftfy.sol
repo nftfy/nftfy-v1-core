@@ -201,6 +201,21 @@ contract Shares is ERC20Metadata, ERC20Base
 		balances[_owner] = SHARES;
 	}
 
+	function getWrapper() public view returns (ERC721 _wrapper)
+	{
+		return wrapper;
+	}
+
+	function getTokenId() public view returns (uint256 _tokenId)
+	{
+		return tokenId;
+	}
+
+	function getSharePrice() public view returns (uint256 _sharePrice)
+	{
+		return sharePrice;
+	}
+
 	function isRedeemable() public view returns (bool _redeemable)
 	{
 		return redeemable;
