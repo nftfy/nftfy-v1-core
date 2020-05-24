@@ -103,7 +103,7 @@ contract Wrapper is ERC721Metadata, ERC721Base, ERC165
 		assert(indexes[_owner][_tokenId] == 0);
 		tokens[_owner][balances[_owner]] = _tokenId;
 		indexes[_owner][_tokenId] = balances[_owner];
-		balances[_owner];
+		balances[_owner]++;
 		assert(owners[_tokenId] == address(0));
 		owners[_tokenId] = _owner;
 	}
