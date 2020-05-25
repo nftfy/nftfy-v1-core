@@ -155,12 +155,12 @@ contract Shares is ERC20Metadata, ERC20Base
 
 	function name() public view returns (string memory _name)
 	{
-		return string(abi.encodePacked(wrapper.name(), " Shares #", decs(tokenId)));
+		return string(abi.encodePacked(wrapper.name(), " #", decs(tokenId), " Shares"));
 	}
 
 	function symbol() public view returns (string memory _symbol)
 	{
-		return string(abi.encodePacked(wrapper.symbol(), "s", decs(tokenId)));
+		return string(abi.encodePacked("s", wrapper.symbol(), "-", decs(tokenId)));
 	}
 
 	function decimals() public view returns (uint8 _decimals)

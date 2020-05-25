@@ -52,7 +52,7 @@ contract Blockies is ERC721Metadata, ERC721Base, ERC165
 
 	function issue(address _owner) public
 	{
-		uint256 _tokenId = uint256(_owner);
+		uint256 _tokenId = supply;
 		assert(supply + 1 > supply);
 		assert(tokens[address(0)][supply] == 0);
 		assert(indexes[address(0)][_tokenId] == 0);
