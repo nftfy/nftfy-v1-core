@@ -11,8 +11,7 @@
     "truffle": "^5.1.37"
   },
   "scripts": {
-    "compile": "truffle compile",
-    "migrate": "truffle migrate",
+    "build": "truffle compile",
     "test": "truffle test"
   },
   "repository": {
