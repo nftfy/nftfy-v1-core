@@ -2,28 +2,13 @@
 // SPDX-License-Identifier: GPL-3.0-only
 pragma solidity ^0.6.0;
 
-import "./ERC20Base.sol";
+import "@openzeppelin/contracts/token/ERC20/ERC20.sol";
 
-contract ERC20Test is ERC20Metadata, ERC20Base
+contract ERC20Test is ERC20
 {
-	function name() public view override returns (string memory _name)
+	constructor (address _owner, uint256 _supply) ERC20("ERC-20 Test", "TEST") public
 	{
-		return "ERC-20 Test";
-	}
-
-	function symbol() public view override returns (string memory _symbol)
-	{
-		return "TEST";
-	}
-
-	function decimals() public view override returns (uint8 _decimals)
-	{
-		return 2;
-	}
-
-	constructor (address _owner, uint256 _supply) public
-	{
-		supply = _supply;
-		balances[_owner] = _supply;
+		_setupDecimals(2);
+		_mint(_owner, _supply);
 	}
 }

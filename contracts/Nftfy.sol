@@ -2,7 +2,7 @@
 // SPDX-License-Identifier: GPL-3.0-only
 pragma solidity ^0.6.0;
 
-import "./ERC20Base.sol";
+import "@openzeppelin/contracts/token/ERC20/ERC20.sol";
 import "./ERC721Base.sol";
 import "./ERC165.sol";
 
@@ -85,7 +85,7 @@ contract Wrapper is ERC721Metadata, ERC721Base, ERC165
 		return ERC721(target);
 	}
 
-	function getShares(uint256 _tokenId) public view returns (ERC20 _shares)
+	function getShares(uint256 _tokenId) public view returns (IERC20 _shares)
 	{
 		return shares[_tokenId];
 	}
@@ -145,7 +145,7 @@ contract Wrapper is ERC721Metadata, ERC721Base, ERC165
 	}
 }
 
-contract Shares is ERC20Metadata, ERC20Base
+contract Shares is ERC20
 {
 	uint256 constant SHARES = 1 * 10**6;
 
@@ -154,19 +154,14 @@ contract Shares is ERC20Metadata, ERC20Base
 	uint256 sharePrice;
 	bool redeemable;
 
-	function name() public view override returns (string memory _name)
+	function getName(Wrapper _wrapper, uint256 _tokenId) internal view returns (string memory _name)
 	{
-		return string(abi.encodePacked(wrapper.name(), " #", decs(tokenId), " Shares"));
+		return string(abi.encodePacked(_wrapper.name(), " #", decs(_tokenId), " Shares"));
 	}
 
-	function symbol() public view override returns (string memory _symbol)
+	function getSymbol(Wrapper _wrapper, uint256 _tokenId) internal view returns (string memory _symbol)
 	{
-		return string(abi.encodePacked("s", wrapper.symbol(), "-", decs(tokenId)));
-	}
-
-	function decimals() public view override returns (uint8 _decimals)
-	{
-		return 0;
+		return string(abi.encodePacked("s", _wrapper.symbol(), "-", decs(_tokenId)));
 	}
 
 	function decc(uint8 _value) internal pure returns (byte _char)
@@ -194,15 +189,15 @@ contract Shares is ERC20Metadata, ERC20Base
 		return string(_buffer);
 	}
 
-	constructor (Wrapper _wrapper, address _owner, uint256 _tokenId, uint256 _price) public
+	constructor (Wrapper _wrapper, address _owner, uint256 _tokenId, uint256 _price) ERC20(getName(_wrapper, _tokenId), getSymbol(_wrapper, _tokenId)) public
 	{
 		require(_price % SHARES == 0);
 		wrapper = _wrapper;
 		tokenId = _tokenId;
 		sharePrice = _price / SHARES;
 		redeemable = false;
-		supply = SHARES;
-		balances[_owner] = SHARES;
+		_mint(_owner, SHARES);
+		_setupDecimals(0);
 	}
 
 	function getWrapper() public view returns (ERC721 _wrapper)
@@ -229,7 +224,7 @@ contract Shares is ERC20Metadata, ERC20Base
 	{
 		require(!redeemable);
 		address payable _from = msg.sender;
-		uint256 _balance = balances[_from];
+		uint256 _balance = balanceOf(_from);
 		uint256 _value1 = msg.value;
 		uint256 _value2 = sharePrice * _balance;
 		uint256 _price = sharePrice * SHARES;
@@ -237,13 +232,12 @@ contract Shares is ERC20Metadata, ERC20Base
 		require(_total >= _price);
 		uint256 _change = _total - _price;
 		redeemable = true;
-		balances[_from] = 0;
-		assert(supply >= _balance);
-		supply -= _balance;
+		_burn(_from, _balance);
 		wrapper._remove(_from, tokenId);
 		wrapper.getTarget().safeTransferFrom(address(this), _from, tokenId);
 		if (_change > 0) _from.transfer(_change);
-		if (supply == 0) selfdestruct(_from);
+		uint256 _supply = totalSupply();
+		if (_supply == 0) selfdestruct(_from);
 		return true;
 	}
 
@@ -251,14 +245,13 @@ contract Shares is ERC20Metadata, ERC20Base
 	{
 		require(redeemable);
 		address payable _from = msg.sender;
-		uint256 _value = balances[_from];
-		require(_value > 0);
-		balances[_from] = 0;
-		assert(supply >= _value);
-		supply -= _value;
-		uint256 _amount = _value * sharePrice;
+		uint256 _balance = balanceOf(_from);
+		require(_balance > 0);
+		_burn(_from, _balance);
+		uint256 _amount = _balance * sharePrice;
 		_from.transfer(_amount);
-		if (supply == 0) selfdestruct(_from);
+		uint256 _supply = totalSupply();
+		if (_supply == 0) selfdestruct(_from);
 		return true;
 	}
 }
