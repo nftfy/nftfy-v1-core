@@ -4,10 +4,14 @@ pragma solidity ^0.6.0;
 
 import "@openzeppelin/contracts/token/ERC20/ERC20.sol";
 import "@openzeppelin/contracts/token/ERC721/ERC721.sol";
+import "@openzeppelin/contracts/token/ERC721/ERC721Holder.sol";
+import "@openzeppelin/contracts/utils/Strings.sol";
 
 contract Nftfy is IERC721Receiver, ERC165
 {
 	bytes4 constant INTERFACE_ID_ERC721_RECEIVER = 0x150b7a02;
+
+	uint256 constant SHARES = 1 * 10**6;
 
 	mapping (address => Wrapper) wrappers;
 	mapping (address => bool) wraps;
@@ -37,10 +41,10 @@ contract Nftfy is IERC721Receiver, ERC165
 			wrappers[_target] = _wrapper;
 			wraps[address(_wrapper)] = true;
 		}
-		Shares _shares = new Shares(_wrapper, _from, _tokenId, _price);
+		Shares _shares = new Shares(_wrapper, _from, _tokenId, SHARES, _price);
 		string memory _tokenURI = IERC721Metadata(_target).tokenURI(_tokenId);
 		_wrapper._insert(_from, _tokenId, _tokenURI, _shares);
-		IERC721(_target).transferFrom(address(this), address(_shares), _tokenId);
+		IERC721(_target).safeTransferFrom(address(this), address(_shares), _tokenId);
 		return this.onERC721Received.selector;
 	}
 }
@@ -97,58 +101,31 @@ contract Wrapper is ERC721
 	}
 }
 
-contract Shares is ERC20
+contract Shares is ERC721Holder, ERC20
 {
-	uint256 constant SHARES = 1 * 10**6;
-
 	Wrapper wrapper;
 	uint256 tokenId;
 	uint256 sharePrice;
-	bool redeemable;
+	bool claimable;
 
 	function getName(Wrapper _wrapper, uint256 _tokenId) internal view returns (string memory _name)
 	{
-		return string(abi.encodePacked(_wrapper.name(), " #", decs(_tokenId), " Shares"));
+		return string(abi.encodePacked(_wrapper.name(), " #", Strings.toString(_tokenId), " Shares"));
 	}
 
 	function getSymbol(Wrapper _wrapper, uint256 _tokenId) internal view returns (string memory _symbol)
 	{
-		return string(abi.encodePacked("s", _wrapper.symbol(), "-", decs(_tokenId)));
+		return string(abi.encodePacked("s", _wrapper.symbol(), "-", Strings.toString(_tokenId)));
 	}
 
-	function decc(uint8 _value) internal pure returns (byte _char)
+	constructor (Wrapper _wrapper, address _owner, uint256 _tokenId, uint256 _shares, uint256 _price) ERC20(getName(_wrapper, _tokenId), getSymbol(_wrapper, _tokenId)) public
 	{
-		assert(_value < 10);
-		return byte(uint8(byte("0")) + _value);
-	}
-
-	function decs(uint256 _value) internal pure returns (string memory _string)
-	{
-		uint256 _size = 0;
-		uint256 _copy = _value;
-		while (_copy > 0) {
-			_copy /= 10;
-			_size++;
-		}
-		if (_value == 0) _size = 1;
-		bytes memory _buffer = new bytes(_size);
-		for (uint256 _i = _size; _i > 0; _i--) {
-			uint256 _index = _i - 1;
-			uint8 _ord = uint8(_value % 10);
-			_buffer[_index] = decc(_ord);
-			_value /= 10;
-		}
-		return string(_buffer);
-	}
-
-	constructor (Wrapper _wrapper, address _owner, uint256 _tokenId, uint256 _price) ERC20(getName(_wrapper, _tokenId), getSymbol(_wrapper, _tokenId)) public
-	{
-		require(_price % SHARES == 0);
+		require(_price % _shares == 0);
 		wrapper = _wrapper;
 		tokenId = _tokenId;
-		sharePrice = _price / SHARES;
-		redeemable = false;
-		_mint(_owner, SHARES);
+		sharePrice = _price / _shares;
+		claimable = false;
+		_mint(_owner, _shares);
 		_setupDecimals(0);
 	}
 
@@ -167,23 +144,24 @@ contract Shares is ERC20
 		return sharePrice;
 	}
 
-	function isRedeemable() public view returns (bool _redeemable)
+	function isClaimable() public view returns (bool _redeemable)
 	{
-		return redeemable;
+		return claimable;
 	}
 
-	function release() public payable returns (bool _success)
+	function redeem() public payable returns (bool _success)
 	{
-		require(!redeemable);
+		require(!claimable);
 		address payable _from = msg.sender;
 		uint256 _balance = balanceOf(_from);
+		uint256 _shares = totalSupply();
 		uint256 _value1 = msg.value;
 		uint256 _value2 = sharePrice * _balance;
-		uint256 _price = sharePrice * SHARES;
+		uint256 _price = sharePrice * _shares;
 		uint256 _total = _value1 + _value2;
 		require(_total >= _price);
 		uint256 _change = _total - _price;
-		redeemable = true;
+		claimable = true;
 		_burn(_from, _balance);
 		wrapper._remove(_from, tokenId);
 		wrapper.getTarget().safeTransferFrom(address(this), _from, tokenId);
@@ -193,9 +171,9 @@ contract Shares is ERC20
 		return true;
 	}
 
-	function redeem() public returns (bool _success)
+	function claim() public returns (bool _success)
 	{
-		require(redeemable);
+		require(claimable);
 		address payable _from = msg.sender;
 		uint256 _balance = balanceOf(_from);
 		require(_balance > 0);
