@@ -3,10 +3,9 @@
 pragma solidity ^0.6.0;
 
 import "@openzeppelin/contracts/token/ERC20/ERC20.sol";
-import "@openzeppelin/contracts/introspection/ERC165.sol";
-import "./ERC721Base.sol";
+import "@openzeppelin/contracts/token/ERC721/ERC721.sol";
 
-contract Nftfy is ERC721Receiver, ERC165
+contract Nftfy is IERC721Receiver, ERC165
 {
 	bytes4 constant INTERFACE_ID_ERC721_RECEIVER = 0x150b7a02;
 
@@ -39,49 +38,38 @@ contract Nftfy is ERC721Receiver, ERC165
 			wraps[address(_wrapper)] = true;
 		}
 		Shares _shares = new Shares(_wrapper, _from, _tokenId, _price);
-		_wrapper._insert(_from, _tokenId, _shares);
-		ERC721(_target).transferFrom(address(this), address(_shares), _tokenId);
-		return ERC721Receiver(this).onERC721Received.selector;
+		string memory _tokenURI = IERC721Metadata(_target).tokenURI(_tokenId);
+		_wrapper._insert(_from, _tokenId, _tokenURI, _shares);
+		IERC721(_target).transferFrom(address(this), address(_shares), _tokenId);
+		return this.onERC721Received.selector;
 	}
 }
 
-contract Wrapper is ERC721Metadata, ERC721Base, ERC165
+contract Wrapper is ERC721
 {
-	bytes4 constant INTERFACE_ID_ERC721_METADATA = 0x5b5e139f;
-	bytes4 constant INTERFACE_ID_ERC721 = 0x80ac58cd;
-	bytes4 constant INTERFACE_ID_ERC721_ENUMERABLE = 0x780e9d63;
-
 	address admin;
 	address target;
 	mapping (uint256 => Shares) shares;
 
-	function name() public view override returns (string memory _name)
+	function getName(address _target) internal view returns (string memory _name)
 	{
-		return string(abi.encodePacked("Wrapped ", ERC721Metadata(target).name()));
+		return string(abi.encodePacked("Wrapped ", IERC721Metadata(_target).name()));
 	}
 
-	function symbol() public view override returns (string memory _symbol)
+	function getSymbol(address _target) internal view returns (string memory _symbol)
 	{
-		return string(abi.encodePacked("w", ERC721Metadata(target).symbol()));
+		return string(abi.encodePacked("w", IERC721Metadata(_target).symbol()));
 	}
 
-	function tokenURI(uint256 _tokenId) public view override returns (string memory _tokenURI)
-	{
-		return ERC721Metadata(target).tokenURI(_tokenId);
-	}
-
-	constructor (address _admin, address _target) public
+	constructor (address _admin, address _target) ERC721(getName(_target), getSymbol(_target)) public
 	{
 		admin = _admin;
 		target = _target;
-		_registerInterface(INTERFACE_ID_ERC721_METADATA);
-		_registerInterface(INTERFACE_ID_ERC721);
-		_registerInterface(INTERFACE_ID_ERC721_ENUMERABLE);
 	}
 
-	function getTarget() public view returns (ERC721 _target)
+	function getTarget() public view returns (IERC721 _target)
 	{
-		return ERC721(target);
+		return IERC721(target);
 	}
 
 	function getShares(uint256 _tokenId) public view returns (IERC20 _shares)
@@ -89,50 +77,23 @@ contract Wrapper is ERC721Metadata, ERC721Base, ERC165
 		return shares[_tokenId];
 	}
 
-	function _insert(address _owner, uint256 _tokenId, Shares _shares) public
+	function _insert(address _owner, uint256 _tokenId, string memory _tokenURI, Shares _shares) public
 	{
 		address _admin = msg.sender;
 		require(_admin == admin);
 		assert(shares[_tokenId] == Shares(0));
 		shares[_tokenId] = _shares;
-		assert(supply + 1 > supply);
-		assert(tokens[address(0)][supply] == 0);
-		assert(indexes[address(0)][_tokenId] == 0);
-		tokens[address(0)][supply] = _tokenId;
-		indexes[address(0)][_tokenId] = supply;
-		supply++;
-		assert(balances[_owner] + 1 > balances[_owner]);
-		assert(tokens[_owner][balances[_owner]] == 0);
-		assert(indexes[_owner][_tokenId] == 0);
-		tokens[_owner][balances[_owner]] = _tokenId;
-		indexes[_owner][_tokenId] = balances[_owner];
-		balances[_owner]++;
-		assert(owners[_tokenId] == address(0));
-		owners[_tokenId] = _owner;
+		_safeMint(_owner, _tokenId);
+		_setTokenURI(_tokenId, _tokenURI);
 	}
 
 	function _remove(address _owner, uint256 _tokenId) public
 	{
 		address _shares = msg.sender;
 		require(_shares == address(shares[_tokenId]));
-		require(_owner == owners[_tokenId]);
 		shares[_tokenId] = Shares(0);
-		assert(supply > 0);
-		assert(tokens[address(0)][indexes[address(0)][_tokenId]] == _tokenId);
-		supply--;
-		tokens[address(0)][indexes[address(0)][_tokenId]] = tokens[address(0)][supply];
-		indexes[address(0)][tokens[address(0)][supply]] = indexes[address(0)][_tokenId];
-		tokens[address(0)][supply] = 0;
-		indexes[address(0)][_tokenId] = 0;
-		assert(balances[_owner] > 0);
-		assert(tokens[_owner][indexes[_owner][_tokenId]] == _tokenId);
-		balances[_owner]--;
-		tokens[_owner][indexes[_owner][_tokenId]] = tokens[_owner][balances[_owner]];
-		indexes[_owner][tokens[_owner][balances[_owner]]] = indexes[_owner][_tokenId];
-		tokens[_owner][balances[_owner]] = 0;
-		indexes[_owner][_tokenId] = 0;
-		owners[_tokenId] = address(0);
-		approvals[_tokenId] = address(0);
+		require(_owner == ownerOf(_tokenId));
+		_burn(_tokenId);
 	}
 }
 
