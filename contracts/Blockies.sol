@@ -2,10 +2,10 @@
 // SPDX-License-Identifier: GPL-3.0-only
 pragma solidity ^0.6.0;
 
-import "@openzeppelin/contracts/introspection/IERC165.sol";
+import "@openzeppelin/contracts/introspection/ERC165.sol";
 import "./ERC721Base.sol";
 
-contract Blockies is ERC721Metadata, ERC721Base, IERC165
+contract Blockies is ERC721Metadata, ERC721Base, ERC165
 {
 	bytes4 constant INTERFACE_ID_ERC721_METADATA = 0x5b5e139f;
 	bytes4 constant INTERFACE_ID_ERC721 = 0x80ac58cd;
@@ -49,6 +49,9 @@ contract Blockies is ERC721Metadata, ERC721Base, IERC165
 
 	constructor () public
 	{
+		_registerInterface(INTERFACE_ID_ERC721_METADATA);
+		_registerInterface(INTERFACE_ID_ERC721);
+		_registerInterface(INTERFACE_ID_ERC721_ENUMERABLE);
 	}
 
 	function issue(address _owner) public
@@ -68,13 +71,5 @@ contract Blockies is ERC721Metadata, ERC721Base, IERC165
 		balances[_owner]++;
 		require(owners[_tokenId] == address(0));
 		owners[_tokenId] = _owner;
-	}
-
-	function supportsInterface(bytes4 _interfaceId) public view override returns (bool _supported)
-	{
-		return
-			_interfaceId == INTERFACE_ID_ERC721_METADATA ||
-			_interfaceId == INTERFACE_ID_ERC721 ||
-			_interfaceId == INTERFACE_ID_ERC721_ENUMERABLE;
 	}
 }

@@ -3,10 +3,10 @@
 pragma solidity ^0.6.0;
 
 import "@openzeppelin/contracts/token/ERC20/ERC20.sol";
-import "@openzeppelin/contracts/introspection/IERC165.sol";
+import "@openzeppelin/contracts/introspection/ERC165.sol";
 import "./ERC721Base.sol";
 
-contract Nftfy is ERC721Receiver, IERC165
+contract Nftfy is ERC721Receiver, ERC165
 {
 	bytes4 constant INTERFACE_ID_ERC721_RECEIVER = 0x150b7a02;
 
@@ -15,6 +15,7 @@ contract Nftfy is ERC721Receiver, IERC165
 
 	constructor () public
 	{
+		_registerInterface(INTERFACE_ID_ERC721_RECEIVER);
 	}
 
 	function getWrapper(address _target) public view returns (ERC721 _wrapper)
@@ -42,14 +43,9 @@ contract Nftfy is ERC721Receiver, IERC165
 		ERC721(_target).transferFrom(address(this), address(_shares), _tokenId);
 		return ERC721Receiver(this).onERC721Received.selector;
 	}
-
-	function supportsInterface(bytes4 _interfaceId) public view override returns (bool _supported)
-	{
-		return _interfaceId == INTERFACE_ID_ERC721_RECEIVER;
-	}
 }
 
-contract Wrapper is ERC721Metadata, ERC721Base, IERC165
+contract Wrapper is ERC721Metadata, ERC721Base, ERC165
 {
 	bytes4 constant INTERFACE_ID_ERC721_METADATA = 0x5b5e139f;
 	bytes4 constant INTERFACE_ID_ERC721 = 0x80ac58cd;
@@ -78,6 +74,9 @@ contract Wrapper is ERC721Metadata, ERC721Base, IERC165
 	{
 		admin = _admin;
 		target = _target;
+		_registerInterface(INTERFACE_ID_ERC721_METADATA);
+		_registerInterface(INTERFACE_ID_ERC721);
+		_registerInterface(INTERFACE_ID_ERC721_ENUMERABLE);
 	}
 
 	function getTarget() public view returns (ERC721 _target)
@@ -134,14 +133,6 @@ contract Wrapper is ERC721Metadata, ERC721Base, IERC165
 		indexes[_owner][_tokenId] = 0;
 		owners[_tokenId] = address(0);
 		approvals[_tokenId] = address(0);
-	}
-
-	function supportsInterface(bytes4 _interfaceId) public view override returns (bool _supported)
-	{
-		return
-			_interfaceId == INTERFACE_ID_ERC721_METADATA ||
-			_interfaceId == INTERFACE_ID_ERC721 ||
-			_interfaceId == INTERFACE_ID_ERC721_ENUMERABLE;
 	}
 }
 
