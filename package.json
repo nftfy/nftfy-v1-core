@@ -20,7 +20,7 @@
     "url": "git+https://github.com/nftfy/nftfy-core.git"
   },
   "author": "raugfer",
-  "license": "GPL3",
+  "license": "GPL-3.0-only",
   "bugs": {
     "url": "https://github.com/nftfy/nftfy-core/issues"
   },
