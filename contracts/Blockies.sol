@@ -2,10 +2,10 @@
 // SPDX-License-Identifier: GPL-3.0-only
 pragma solidity ^0.6.0;
 
+import "@openzeppelin/contracts/introspection/IERC165.sol";
 import "./ERC721Base.sol";
-import "./ERC165.sol";
 
-contract Blockies is ERC721Metadata, ERC721Base, ERC165
+contract Blockies is ERC721Metadata, ERC721Base, IERC165
 {
 	bytes4 constant INTERFACE_ID_ERC721_METADATA = 0x5b5e139f;
 	bytes4 constant INTERFACE_ID_ERC721 = 0x80ac58cd;

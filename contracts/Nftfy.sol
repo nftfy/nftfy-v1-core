@@ -3,10 +3,10 @@
 pragma solidity ^0.6.0;
 
 import "@openzeppelin/contracts/token/ERC20/ERC20.sol";
+import "@openzeppelin/contracts/introspection/IERC165.sol";
 import "./ERC721Base.sol";
-import "./ERC165.sol";
 
-contract Nftfy is ERC721Receiver, ERC165
+contract Nftfy is ERC721Receiver, IERC165
 {
 	bytes4 constant INTERFACE_ID_ERC721_RECEIVER = 0x150b7a02;
 
@@ -49,7 +49,7 @@ contract Nftfy is ERC721Receiver, ERC165
 	}
 }
 
-contract Wrapper is ERC721Metadata, ERC721Base, ERC165
+contract Wrapper is ERC721Metadata, ERC721Base, IERC165
 {
 	bytes4 constant INTERFACE_ID_ERC721_METADATA = 0x5b5e139f;
 	bytes4 constant INTERFACE_ID_ERC721 = 0x80ac58cd;
