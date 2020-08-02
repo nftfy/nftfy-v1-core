@@ -1,5 +1,5 @@
 // Base implementation for the ERC-20 Token Standard
-pragma solidity 0.5.15;
+pragma solidity >=0.4.25 <0.7.0;
 
 import "./ERC20.sol";
 

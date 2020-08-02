@@ -1,3 +1,2 @@
-/out
-/.keystore
-/.password
+/build/
+/node_modules/

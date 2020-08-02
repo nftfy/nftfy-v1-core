@@ -1,0 +1,28 @@
+{
+  "name": "nftfy-core",
+  "version": "1.0.0",
+  "description": "Nftfy Core Smart Contracts",
+  "main": "truffle-config.js",
+  "directories": {
+    "test": "test"
+  },
+  "dependencies": {},
+  "devDependencies": {
+    "truffle": "^5.1.37"
+  },
+  "scripts": {
+    "compile": "truffle compile",
+    "migrate": "truffle migrate",
+    "test": "truffle test"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/nftfy/nftfy-core.git"
+  },
+  "author": "raugfer",
+  "license": "GPL3",
+  "bugs": {
+    "url": "https://github.com/nftfy/nftfy-core/issues"
+  },
+  "homepage": "https://github.com/nftfy/nftfy-core#readme"
+}
