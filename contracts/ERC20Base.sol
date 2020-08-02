@@ -1,5 +1,6 @@
 // Base implementation for the ERC-20 Token Standard
-pragma solidity >=0.4.25 <0.7.0;
+// SPDX-License-Identifier: GPL-3.0-only
+pragma solidity ^0.6.0;
 
 import "./ERC20.sol";
 
@@ -9,17 +10,17 @@ contract ERC20Base is ERC20
 	mapping (address => uint256) balances;
 	mapping (address => mapping (address => uint256)) allowed;
 
-	function totalSupply() public view returns (uint256 _totalSupply)
+	function totalSupply() public view override returns (uint256 _totalSupply)
 	{
 		return supply;
 	}
 
-	function balanceOf(address _owner) public view returns (uint256 _balance)
+	function balanceOf(address _owner) public view override returns (uint256 _balance)
 	{
 		return balances[_owner];
 	}
 
-	function transfer(address _to, uint256 _value) public returns (bool _success)
+	function transfer(address _to, uint256 _value) public override returns (bool _success)
 	{
 		require(msg.data.length >= 68); // fix for short address attack
 		address _from = msg.sender;
@@ -32,7 +33,7 @@ contract ERC20Base is ERC20
 		return true;
 	}
 
-	function transferFrom(address _from, address _to, uint256 _value) public returns (bool _success)
+	function transferFrom(address _from, address _to, uint256 _value) public override returns (bool _success)
 	{
 		address _spender = msg.sender;
 		require(_value > 0);
@@ -46,7 +47,7 @@ contract ERC20Base is ERC20
 		return true;
 	}
 
-	function approve(address _spender, uint256 _value) public returns (bool _success)
+	function approve(address _spender, uint256 _value) public override returns (bool _success)
 	{
 		address _owner = msg.sender;
 		require(_value >= 0);
@@ -55,7 +56,7 @@ contract ERC20Base is ERC20
 		return true;
 	}
 
-	function allowance(address _owner, address _spender) public view returns (uint256 _remaining)
+	function allowance(address _owner, address _spender) public view override returns (uint256 _remaining)
 	{
 		return allowed[_owner][_spender];
 	}

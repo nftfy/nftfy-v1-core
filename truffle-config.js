@@ -1,4 +1,9 @@
 module.exports = {
+  compilers: {
+    solc: {
+      version: "^0.6.0",
+    },
+  },
   // Uncommenting the defaults below 
   // provides for an easier quick-start with Ganache.
   // You can also follow this format for other networks;

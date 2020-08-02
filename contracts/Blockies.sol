@@ -1,5 +1,6 @@
 // Blockies
-pragma solidity >=0.4.25 <0.7.0;
+// SPDX-License-Identifier: GPL-3.0-only
+pragma solidity ^0.6.0;
 
 import "./ERC721Base.sol";
 import "./ERC165.sol";
@@ -12,17 +13,17 @@ contract Blockies is ERC721Metadata, ERC721Base, ERC165
 
 	string constant BASE_URI = "https://blockie.cc";
 
-	function name() public view returns (string memory _name)
+	function name() public view override returns (string memory _name)
 	{
 		return "Blockies";
 	}
 
-	function symbol() public view returns (string memory _symbol)
+	function symbol() public view override returns (string memory _symbol)
 	{
 		return "KIE";
 	}
 
-	function tokenURI(uint256 _tokenId) public view returns (string memory _tokenURI)
+	function tokenURI(uint256 _tokenId) public view override returns (string memory _tokenURI)
 	{
 		require(owners[_tokenId] != address(0));
 		return string(abi.encodePacked(BASE_URI, "/address/0x", hexs(_tokenId)));
@@ -69,7 +70,7 @@ contract Blockies is ERC721Metadata, ERC721Base, ERC165
 		owners[_tokenId] = _owner;
 	}
 
-	function supportsInterface(bytes4 _interfaceId) public view returns (bool _supported)
+	function supportsInterface(bytes4 _interfaceId) public view override returns (bool _supported)
 	{
 		return
 			_interfaceId == INTERFACE_ID_ERC721_METADATA ||

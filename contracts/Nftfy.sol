@@ -1,5 +1,6 @@
 // Nftfy
-pragma solidity >=0.4.25 <0.7.0;
+// SPDX-License-Identifier: GPL-3.0-only
+pragma solidity ^0.6.0;
 
 import "./ERC20Base.sol";
 import "./ERC721Base.sol";
@@ -21,7 +22,7 @@ contract Nftfy is ERC721Receiver, ERC165
 		return wrappers[_target];
 	}
 
-	function onERC721Received(address /*_operator*/, address _from, uint256 _tokenId, bytes memory _data) public returns (bytes4 _magic)
+	function onERC721Received(address /*_operator*/, address _from, uint256 _tokenId, bytes memory _data) public override returns (bytes4 _magic)
 	{
 		address _target = msg.sender;
 		require(!wraps[_target]);
@@ -42,7 +43,7 @@ contract Nftfy is ERC721Receiver, ERC165
 		return ERC721Receiver(this).onERC721Received.selector;
 	}
 
-	function supportsInterface(bytes4 _interfaceId) public view returns (bool _supported)
+	function supportsInterface(bytes4 _interfaceId) public view override returns (bool _supported)
 	{
 		return _interfaceId == INTERFACE_ID_ERC721_RECEIVER;
 	}
@@ -58,17 +59,17 @@ contract Wrapper is ERC721Metadata, ERC721Base, ERC165
 	address target;
 	mapping (uint256 => Shares) shares;
 
-	function name() public view returns (string memory _name)
+	function name() public view override returns (string memory _name)
 	{
 		return string(abi.encodePacked("Wrapped ", ERC721Metadata(target).name()));
 	}
 
-	function symbol() public view returns (string memory _symbol)
+	function symbol() public view override returns (string memory _symbol)
 	{
 		return string(abi.encodePacked("w", ERC721Metadata(target).symbol()));
 	}
 
-	function tokenURI(uint256 _tokenId) public view returns (string memory _tokenURI)
+	function tokenURI(uint256 _tokenId) public view override returns (string memory _tokenURI)
 	{
 		return ERC721Metadata(target).tokenURI(_tokenId);
 	}
@@ -135,7 +136,7 @@ contract Wrapper is ERC721Metadata, ERC721Base, ERC165
 		approvals[_tokenId] = address(0);
 	}
 
-	function supportsInterface(bytes4 _interfaceId) public view returns (bool _supported)
+	function supportsInterface(bytes4 _interfaceId) public view override returns (bool _supported)
 	{
 		return
 			_interfaceId == INTERFACE_ID_ERC721_METADATA ||
@@ -153,17 +154,17 @@ contract Shares is ERC20Metadata, ERC20Base
 	uint256 sharePrice;
 	bool redeemable;
 
-	function name() public view returns (string memory _name)
+	function name() public view override returns (string memory _name)
 	{
 		return string(abi.encodePacked(wrapper.name(), " #", decs(tokenId), " Shares"));
 	}
 
-	function symbol() public view returns (string memory _symbol)
+	function symbol() public view override returns (string memory _symbol)
 	{
 		return string(abi.encodePacked("s", wrapper.symbol(), "-", decs(tokenId)));
 	}
 
-	function decimals() public view returns (uint8 _decimals)
+	function decimals() public view override returns (uint8 _decimals)
 	{
 		return 0;
 	}

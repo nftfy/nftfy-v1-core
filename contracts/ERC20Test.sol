@@ -1,21 +1,22 @@
 // Blockies
-pragma solidity >=0.4.25 <0.7.0;
+// SPDX-License-Identifier: GPL-3.0-only
+pragma solidity ^0.6.0;
 
 import "./ERC20Base.sol";
 
 contract ERC20Test is ERC20Metadata, ERC20Base
 {
-	function name() public view returns (string memory _name)
+	function name() public view override returns (string memory _name)
 	{
 		return "ERC-20 Test";
 	}
 
-	function symbol() public view returns (string memory _symbol)
+	function symbol() public view override returns (string memory _symbol)
 	{
 		return "TEST";
 	}
 
-	function decimals() public view returns (uint8 _decimals)
+	function decimals() public view override returns (uint8 _decimals)
 	{
 		return 2;
 	}
