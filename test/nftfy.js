@@ -1,6 +1,7 @@
-const MetaCoin = artifacts.require("MetaCoin");
+const Nftfy = artifacts.require('Nftfy');
 
-contract('MetaCoin', (accounts) => {
+contract('Nftfy', (accounts) => {
+/*
   it('should put 10000 MetaCoin in the first account', async () => {
     const metaCoinInstance = await MetaCoin.deployed();
     const balance = await metaCoinInstance.getBalance.call(accounts[0]);
@@ -37,4 +38,5 @@ contract('MetaCoin', (accounts) => {
     assert.equal(accountOneEndingBalance, accountOneStartingBalance - amount, "Amount wasn't correctly taken from the sender");
     assert.equal(accountTwoEndingBalance, accountTwoStartingBalance + amount, "Amount wasn't correctly sent to the receiver");
   });
+*/
 });
