@@ -14,21 +14,28 @@ contract Nftfy
 	mapping (IERC721 => bool) wraps;
 	mapping (IERC721 => ERC721Wrapper) public wrappers;
 
-	function securitize(IERC721 _target, uint256 _tokenId, uint256 _shareCount, uint8 _decimals, uint256 _exitPrice, IERC20 _paymentToken, bool _remnant) public
+	function ensureWrapper(IERC721 _target) public returns (ERC721Wrapper _wrapper)
 	{
-		address _from = msg.sender;
 		require(!wraps[_target]);
-		IERC721Metadata _metadata = IERC721Metadata(address(_target));
-		ERC721Wrapper _wrapper = wrappers[_target];
+		_wrapper = wrappers[_target];
 		if (_wrapper == ERC721Wrapper(0)) {
+			IERC721Metadata _metadata = IERC721Metadata(address(_target));
 			_wrapper = Wrapper.create(_metadata, _target);
 			wrappers[_target] = _wrapper;
 			wraps[_wrapper] = true;
 		}
-		require(_exitPrice % _shareCount == 0);
-		uint256 _sharePrice = _exitPrice / _shareCount;
-		ERC721Shares _shares = Shares.create(_metadata, _wrapper, _tokenId, _from, _shareCount, _decimals, _sharePrice, _paymentToken, _remnant);
-		_wrapper._insert(_from, _tokenId, _remnant, _shares);
+		return _wrapper;
+	}
+
+	function securitize(IERC721 _target, uint256 _tokenId, uint256 _sharesCount, uint8 _decimals, uint256 _exitPrice, IERC20 _paymentToken, bool _remnant) public
+	{
+		address _from = msg.sender;
+		ERC721Wrapper _wrapper = ensureWrapper(_target);
+		require(_exitPrice % _sharesCount == 0);
+		uint256 _sharePrice = _exitPrice / _sharesCount;
+		IERC721Metadata _metadata = IERC721Metadata(address(_target));
+		ERC721Shares _shares = Shares.create(_metadata, _wrapper, _tokenId, _from, _sharesCount, _decimals, _sharePrice, _paymentToken, _remnant);
 		_target.safeTransferFrom(_from, address(_shares), _tokenId);
+		_wrapper._insert(_from, _tokenId, _remnant, _shares);
 	}
 }
