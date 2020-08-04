@@ -18,18 +18,16 @@ contract Nftfy
 	{
 		address _from = msg.sender;
 		require(!wraps[_target]);
+		IERC721Metadata _metadata = IERC721Metadata(address(_target));
 		ERC721Wrapper _wrapper = wrappers[_target];
 		if (_wrapper == ERC721Wrapper(0)) {
-			IERC721Metadata _metadata = IERC721Metadata(address(_target));
-			string memory _name = string(abi.encodePacked("Wrapped ", _metadata.name()));
-			string memory _symbol = string(abi.encodePacked("w", _metadata.symbol()));
-			_wrapper = Wrapper.create(_name, _symbol, _target);
+			_wrapper = Wrapper.create(_metadata, _target);
 			wrappers[_target] = _wrapper;
 			wraps[_wrapper] = true;
 		}
 		require(_exitPrice % _shareCount == 0);
 		uint256 _sharePrice = _exitPrice / _shareCount;
-		ERC721Shares _shares = Shares.create(_wrapper, _tokenId, _from, _shareCount, _decimals, _sharePrice, _paymentToken, _remnant);
+		ERC721Shares _shares = Shares.create(_metadata, _wrapper, _tokenId, _from, _shareCount, _decimals, _sharePrice, _paymentToken, _remnant);
 		_wrapper._insert(_from, _tokenId, _remnant, _shares);
 		_target.safeTransferFrom(_from, address(_shares), _tokenId);
 	}

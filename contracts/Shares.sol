@@ -1,4 +1,4 @@
-// Nftfy
+// Shares
 // SPDX-License-Identifier: GPL-3.0-only
 pragma solidity ^0.6.0;
 
@@ -13,15 +13,18 @@ import { ERC721Wrapper } from "./Wrapper.sol";
 
 library Shares
 {
-	function create(ERC721Wrapper _wrapper, uint256 _tokenId, address _owner, uint256 _shareCount, uint8 _decimals, uint256 _sharePrice, IERC20 _paymentToken, bool _remnant) public returns (ERC721Shares _shares)
+	using Strings for uint256;
+
+	function create(IERC721Metadata _metadata, ERC721Wrapper _wrapper, uint256 _tokenId, address _owner, uint256 _shareCount, uint8 _decimals, uint256 _sharePrice, IERC20 _paymentToken, bool _remnant) public returns (ERC721Shares _shares)
 	{
-		return new ERC721Shares(_wrapper, _tokenId, _owner, _shareCount, _decimals, _sharePrice, _paymentToken, _remnant);
+		string memory _name = string(abi.encodePacked(_metadata.name(), " #", _tokenId.toString(), " Shares"));
+		string memory _symbol = string(abi.encodePacked(_metadata.symbol(), _tokenId.toString()));
+		return new ERC721Shares(_name, _symbol, _wrapper, _tokenId, _owner, _shareCount, _decimals, _sharePrice, _paymentToken, _remnant);
 	}
 }
 
 contract ERC721Shares is ERC721Holder, ERC20
 {
-	using Strings for uint256;
 	using SafeERC20 for IERC20;
 
 	ERC721Wrapper public wrapper;
@@ -29,22 +32,11 @@ contract ERC721Shares is ERC721Holder, ERC20
 	uint256 public shareCount;
 	uint256 public sharePrice;
 	IERC20 public paymentToken;
-	bool remnant;
-	bool claimable;
+	bool public remnant;
 
-	function n(ERC721Wrapper _wrapper, uint256 _tokenId) internal view returns (string memory _name)
-	{
-		address _target = address(_wrapper.target());
-		return string(abi.encodePacked(IERC721Metadata(_target).name(), " #", _tokenId.toString(), " Shares"));
-	}
+	bool public claimable;
 
-	function s(ERC721Wrapper _wrapper, uint256 _tokenId) internal view returns (string memory _symbol)
-	{
-		address _target = address(_wrapper.target());
-		return string(abi.encodePacked(IERC721Metadata(_target).symbol(), _tokenId.toString()));
-	}
-
-	constructor (ERC721Wrapper _wrapper, uint256 _tokenId, address _owner, uint256 _shareCount, uint8 _decimals, uint256 _sharePrice, IERC20 _paymentToken, bool _remnant) ERC20(n(_wrapper, _tokenId), s(_wrapper, _tokenId)) public
+	constructor (string memory _name, string memory _symbol, ERC721Wrapper _wrapper, uint256 _tokenId, address _owner, uint256 _shareCount, uint8 _decimals, uint256 _sharePrice, IERC20 _paymentToken, bool _remnant) ERC20(_name, _symbol) public
 	{
 		wrapper = _wrapper;
 		tokenId = _tokenId;
@@ -60,11 +52,6 @@ contract ERC721Shares is ERC721Holder, ERC20
 	function exitPrice() public view returns (uint256 _exitPrice)
 	{
 		return shareCount * sharePrice;
-	}
-
-	function isClaimable() public view returns (bool _redeemable)
-	{
-		return claimable;
 	}
 
 	function redeem() public payable

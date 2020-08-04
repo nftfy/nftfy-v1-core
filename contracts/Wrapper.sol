@@ -1,4 +1,4 @@
-// Nftfy
+// Wrapper
 // SPDX-License-Identifier: GPL-3.0-only
 pragma solidity ^0.6.0;
 
@@ -11,8 +11,10 @@ import { ERC721Shares } from "./Shares.sol";
 
 library Wrapper
 {
-	function create(string memory _name, string memory _symbol, IERC721 _target) public returns (ERC721Wrapper _wrapper)
+	function create(IERC721Metadata _metadata, IERC721 _target) public returns (ERC721Wrapper _wrapper)
 	{
+		string memory _name = string(abi.encodePacked("Wrapped ", _metadata.name()));
+		string memory _symbol = string(abi.encodePacked("w", _metadata.symbol()));
 		return new ERC721Wrapper(_name, _symbol, _target);
 	}
 }
@@ -27,24 +29,26 @@ contract ERC721Wrapper is Ownable, ERC721
 		target = _target;
 	}
 
-	function _insert(address _owner, uint256 _tokenId, bool _remnant, ERC721Shares _shares) public onlyOwner
+	function _insert(address _holder, uint256 _tokenId, bool _remnant, ERC721Shares _shares) public onlyOwner
 	{
-		assert(shares[_tokenId] == ERC721Shares(0));
+		require(shares[_tokenId] == ERC721Shares(0));
 		shares[_tokenId] = _shares;
 		if (_remnant) {
-			_safeMint(_owner, _tokenId);
-			string memory _tokenURI = IERC721Metadata(address(target)).tokenURI(_tokenId);
+			IERC721Metadata _metadata = IERC721Metadata(address(target));
+			string memory _tokenURI = _metadata.tokenURI(_tokenId);
+			_safeMint(_holder, _tokenId);
 			_setTokenURI(_tokenId, _tokenURI);
 		}
 	}
 
-	function _remove(address _owner, uint256 _tokenId, bool _remnant) public
+	function _remove(address _holder, uint256 _tokenId, bool _remnant) public
 	{
-		address _shares = msg.sender;
-		assert(_shares == address(shares[_tokenId]));
+		ERC721Shares _shares = ERC721Shares(msg.sender);
+		assert(shares[_tokenId] == _shares);
 		shares[_tokenId] = ERC721Shares(0);
 		if (_remnant) {
-			require(_owner == ownerOf(_tokenId));
+			address _owner = ownerOf(_tokenId);
+			require(_holder == _owner);
 			_burn(_tokenId);
 		}
 	}
