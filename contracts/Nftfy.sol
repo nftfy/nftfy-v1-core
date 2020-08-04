@@ -2,72 +2,62 @@
 // SPDX-License-Identifier: GPL-3.0-only
 pragma solidity ^0.6.0;
 
+import "@openzeppelin/contracts/access/Ownable.sol";
 import "@openzeppelin/contracts/token/ERC20/ERC20.sol";
+import "@openzeppelin/contracts/token/ERC20/SafeERC20.sol";
 import "@openzeppelin/contracts/token/ERC721/ERC721.sol";
 import "@openzeppelin/contracts/token/ERC721/ERC721Holder.sol";
 import "@openzeppelin/contracts/utils/Strings.sol";
 
-contract Nftfy is IERC721Receiver
+contract Nftfy
 {
-	uint256 constant DEFAULT_SHARE_COUNT = 1 * 10**6;
-	uint8 constant DEFAULT_SHARE_DECIMALS = 0;
+	mapping (IERC721 => ERC721Wrapper) wrappers;
+	mapping (IERC721 => bool) wraps;
 
-	mapping (address => ERC721Wrapper) wrappers;
-	mapping (address => bool) wraps;
-
-	function getWrapper(address _target) public view returns (ERC721Wrapper _wrapper)
+	function getWrapper(IERC721 _target) public view returns (ERC721Wrapper _wrapper)
 	{
 		return wrappers[_target];
 	}
 
-	function onERC721Received(address /*_operator*/, address _from, uint256 _tokenId, bytes memory _data) public override returns (bytes4 _magic)
+	function securitize(IERC721 _target, uint256 _tokenId, uint256 _shareCount, uint8 _decimals, uint256 _price, IERC20 _paymentToken, bool _remnant) public
 	{
-		address _target = msg.sender;
+		address _from = msg.sender;
 		require(!wraps[_target]);
-		uint256 _price = 1 ether;
-		if (_data.length > 0) {
-			require(_data.length == 32);
-			assembly { _price := mload(add(_data, 32)) }
-		}
 		ERC721Wrapper _wrapper = wrappers[_target];
 		if (_wrapper == ERC721Wrapper(0)) {
-			_wrapper = new ERC721Wrapper(address(this), _target);
+			_wrapper = new ERC721Wrapper(_target);
 			wrappers[_target] = _wrapper;
-			wraps[address(_wrapper)] = true;
+			wraps[_wrapper] = true;
 		}
-		ERC721Shares _shares = new ERC721Shares(_wrapper, _tokenId, _from, DEFAULT_SHARE_COUNT, DEFAULT_SHARE_DECIMALS, _price);
-		string memory _tokenURI = IERC721Metadata(_target).tokenURI(_tokenId);
-		_wrapper._insert(_from, _tokenId, _tokenURI, _shares);
-		IERC721(_target).safeTransferFrom(address(this), address(_shares), _tokenId);
-		return this.onERC721Received.selector;
+		ERC721Shares _shares = new ERC721Shares(_wrapper, _tokenId, _from, _shareCount, _decimals, _price, _paymentToken, _remnant);
+		if (_remnant) _wrapper._insert(_from, _tokenId, _shares);
+		_target.safeTransferFrom(_from, address(_shares), _tokenId);
 	}
 }
 
-contract ERC721Wrapper is ERC721
+contract ERC721Wrapper is Ownable, ERC721
 {
-	address admin;
-	address target;
+	IERC721 target;
 	mapping (uint256 => ERC721Shares) shares;
 
-	function getName(address _target) internal view returns (string memory _name)
+	function n(IERC721 _target) internal view returns (string memory _name)
 	{
-		return string(abi.encodePacked("Wrapped ", IERC721Metadata(_target).name()));
+		return string(abi.encodePacked("Wrapped ", IERC721Metadata(address(_target)).name()));
 	}
 
-	function getSymbol(address _target) internal view returns (string memory _symbol)
+	function s(IERC721 _target) internal view returns (string memory _symbol)
 	{
-		return string(abi.encodePacked("w", IERC721Metadata(_target).symbol()));
+		return string(abi.encodePacked("w", IERC721Metadata(address(_target)).symbol()));
 	}
 
-	constructor (address _admin, address _target) ERC721(getName(_target), getSymbol(_target)) public
+	constructor (IERC721 _target) ERC721(n(_target), s(_target)) public
 	{
-		admin = _admin;
 		target = _target;
 	}
 
 	function getTarget() public view returns (IERC721 _target)
 	{
-		return IERC721(target);
+		return target;
 	}
 
 	function getShares(uint256 _tokenId) public view returns (ERC721Shares _shares)
@@ -75,13 +65,12 @@ contract ERC721Wrapper is ERC721
 		return shares[_tokenId];
 	}
 
-	function _insert(address _owner, uint256 _tokenId, string memory _tokenURI, ERC721Shares _shares) public
+	function _insert(address _owner, uint256 _tokenId, ERC721Shares _shares) public onlyOwner
 	{
-		address _admin = msg.sender;
-		require(_admin == admin);
 		assert(shares[_tokenId] == ERC721Shares(0));
 		shares[_tokenId] = _shares;
 		_safeMint(_owner, _tokenId);
+		string memory _tokenURI = IERC721Metadata(address(target)).tokenURI(_tokenId);
 		_setTokenURI(_tokenId, _tokenURI);
 	}
 
@@ -97,34 +86,41 @@ contract ERC721Wrapper is ERC721
 
 contract ERC721Shares is ERC721Holder, ERC20
 {
+	using Strings for uint256;
+	using SafeERC20 for IERC20;
+
 	ERC721Wrapper wrapper;
 	uint256 tokenId;
 	uint256 shareCount;
 	uint256 sharePrice;
+	IERC20 paymentToken;
+	bool remnant;
 	bool claimable;
 
 	function getName(ERC721Wrapper _wrapper, uint256 _tokenId) internal view returns (string memory _name)
 	{
 		address _target = address(_wrapper.getTarget());
-		return string(abi.encodePacked(IERC721Metadata(_target).name(), " #", Strings.toString(_tokenId), " Shares"));
+		return string(abi.encodePacked(IERC721Metadata(_target).name(), " #", _tokenId.toString(), " Shares"));
 	}
 
 	function getSymbol(ERC721Wrapper _wrapper, uint256 _tokenId) internal view returns (string memory _symbol)
 	{
 		address _target = address(_wrapper.getTarget());
-		return string(abi.encodePacked(IERC721Metadata(_target).symbol(), Strings.toString(_tokenId)));
+		return string(abi.encodePacked(IERC721Metadata(_target).symbol(), _tokenId.toString()));
 	}
 
-	constructor (ERC721Wrapper _wrapper, uint256 _tokenId, address _owner, uint256 _shares, uint8 _decimals, uint256 _price) ERC20(getName(_wrapper, _tokenId), getSymbol(_wrapper, _tokenId)) public
+	constructor (ERC721Wrapper _wrapper, uint256 _tokenId, address _owner, uint256 _shareCount, uint8 _decimals, uint256 _exitPrice, IERC20 _paymentToken, bool _remnant) ERC20(getName(_wrapper, _tokenId), getSymbol(_wrapper, _tokenId)) public
 	{
-		require(_price % _shares == 0);
+		require(_exitPrice % _shareCount == 0, "exitPrice must be divisible by shareCount");
 		wrapper = _wrapper;
 		tokenId = _tokenId;
-		shareCount = _shares;
-		sharePrice = _price / _shares;
+		shareCount = _shareCount;
+		sharePrice = _exitPrice / _shareCount;
+		paymentToken = _paymentToken;
+		remnant = _remnant;
 		claimable = false;
-		_mint(_owner, _shares);
 		_setupDecimals(_decimals);
+		_mint(_owner, _shareCount);
 	}
 
 	function getWrapper() public view returns (ERC721Wrapper _wrapper)
@@ -137,6 +133,11 @@ contract ERC721Shares is ERC721Holder, ERC20
 		return tokenId;
 	}
 
+	function getShareCount() public view returns (uint256 _shareCount)
+	{
+		return shareCount;
+	}
+
 	function getExitPrice() public view returns (uint256 _exitPrice)
 	{
 		return shareCount * sharePrice;
@@ -147,34 +148,43 @@ contract ERC721Shares is ERC721Holder, ERC20
 		return sharePrice;
 	}
 
+	function getPaymentToken() public view returns (IERC20 _paymentToken)
+	{
+		return paymentToken;
+	}
+
 	function isClaimable() public view returns (bool _redeemable)
 	{
 		return claimable;
 	}
 
-	function redeem() public payable returns (bool _success)
+	function redeem() public payable
 	{
 		require(!claimable);
 		address payable _from = msg.sender;
-		uint256 _balance = balanceOf(_from);
 		uint256 _shares = shareCount;
-		uint256 _value1 = msg.value;
-		uint256 _value2 = sharePrice * _balance;
 		uint256 _price = sharePrice * _shares;
-		uint256 _total = _value1 + _value2;
-		require(_total >= _price);
-		uint256 _change = _total - _price;
+		uint256 _balance = balanceOf(_from);
+		uint256 _value2 = sharePrice * _balance;
+		if (paymentToken == IERC20(0)) {
+			uint256 _value1 = msg.value;
+			uint256 _total = _value1 + _value2;
+			require(_total >= _price);
+			uint256 _change = _total - _price;
+			if (_change > 0) _from.transfer(_change);
+		} else {
+			uint256 _value1 = _price - _value2;
+			if (_value1 > 0) paymentToken.safeTransferFrom(_from, address(this), _value1);
+		}
 		claimable = true;
 		_burn(_from, _balance);
-		wrapper._remove(_from, tokenId);
+		if (remnant) wrapper._remove(_from, tokenId);
 		wrapper.getTarget().safeTransferFrom(address(this), _from, tokenId);
-		if (_change > 0) _from.transfer(_change);
 		uint256 _supply = totalSupply();
 		if (_supply == 0) selfdestruct(_from);
-		return true;
 	}
 
-	function claim() public returns (bool _success)
+	function claim() public
 	{
 		require(claimable);
 		address payable _from = msg.sender;
@@ -182,9 +192,9 @@ contract ERC721Shares is ERC721Holder, ERC20
 		require(_balance > 0);
 		_burn(_from, _balance);
 		uint256 _amount = _balance * sharePrice;
-		_from.transfer(_amount);
+		if (paymentToken == IERC20(0)) _from.transfer(_amount);
+		else paymentToken.safeTransfer(_from, _amount);
 		uint256 _supply = totalSupply();
 		if (_supply == 0) selfdestruct(_from);
-		return true;
 	}
 }
