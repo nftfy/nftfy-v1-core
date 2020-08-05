@@ -29,6 +29,11 @@ contract ERC721Wrapper is Ownable, ERC721
 		target = _target;
 	}
 
+	function securitized(uint256 _tokenId) public view (bool _securitized)
+	{
+		return shares[_tokenId] != ERC721Shares(0);
+	}
+
 	function _insert(address _from, uint256 _tokenId, bool _remnant, ERC721Shares _shares) public onlyOwner
 	{
 		require(shares[_tokenId] == ERC721Shares(0));
