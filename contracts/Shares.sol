@@ -54,25 +54,44 @@ contract ERC721Shares is ERC721Holder, ERC20
 		return sharesCount * sharePrice;
 	}
 
+	function redeemAmountOf(address _from) public view returns (uint256 _redeemAmount)
+	{
+		require(!released);
+		uint256 _sharesCount = balanceOf(_from);
+		uint256 _exitPrice = exitPrice();
+		return _exitPrice - _sharesCount * sharePrice;
+	}
+
+	function vaultBalance() public view returns (uint256 _vaultBalance)
+	{
+		if (!released) return 0;
+		return sharesCount * sharePrice;
+	}
+
+	function vaultBalanceOf(address _from) public view returns (uint256 _vaultBalanceOf)
+	{
+		if (!released) return 0;
+		uint256 _sharesCount = balanceOf(_from);
+		return _sharesCount * sharePrice;
+	}
+
 	function redeem() public payable
 	{
 		require(!released);
 		address payable _from = msg.sender;
-		uint256 _exitPrice = exitPrice();
-		uint256 _sharesCount = balanceOf(_from);
-		uint256 _claimAmount = _sharesCount * sharePrice;
+		uint256 _paymentAmount = msg.value;
+		uint256 _redeemAmount = redeemAmountOf(_from);
 		if (paymentToken == IERC20(0)) {
-			uint256 _paymentAmount = msg.value;
-			uint256 _totalAmount = _paymentAmount + _claimAmount;
-			require(_totalAmount >= _exitPrice);
-			uint256 _changeAmount = _totalAmount - _exitPrice;
+			require(_paymentAmount >= _redeemAmount);
+			uint256 _changeAmount = _paymentAmount - _redeemAmount;
 			if (_changeAmount > 0) _from.transfer(_changeAmount);
 		} else {
-			uint256 _remainingAmount = _exitPrice - _claimAmount;
-			if (_remainingAmount > 0) paymentToken.safeTransferFrom(_from, address(this), _remainingAmount);
+			if (_paymentAmount > 0) _from.transfer(_paymentAmount);
+			if (_redeemAmount > 0) paymentToken.safeTransferFrom(_from, address(this), _redeemAmount);
 		}
 		released = true;
-		_burn(_from, _sharesCount);
+		uint256 _sharesCount = balanceOf(_from);
+		if (_sharesCount > 0) _burn(_from, _sharesCount);
 		wrapper._remove(_from, tokenId, remnant);
 		wrapper.target().safeTransferFrom(address(this), _from, tokenId);
 		uint256 _sharesLeft = totalSupply();
@@ -86,7 +105,8 @@ contract ERC721Shares is ERC721Holder, ERC20
 		uint256 _sharesCount = balanceOf(_from);
 		require(_sharesCount > 0);
 		_burn(_from, _sharesCount);
-		uint256 _claimAmount = _sharesCount * sharePrice;
+		uint256 _claimAmount = vaultBalanceOf(_from);
+		assert(_claimAmount > 0);
 		if (paymentToken == IERC20(0)) _from.transfer(_claimAmount);
 		else paymentToken.safeTransfer(_from, _claimAmount);
 		uint256 _sharesLeft = totalSupply();

@@ -31,6 +31,8 @@ contract Nftfy
 	{
 		address _from = msg.sender;
 		ERC721Wrapper _wrapper = ensureWrapper(_target);
+		require(_exitPrice > 0);
+		require(_sharesCount > 0);
 		require(_exitPrice % _sharesCount == 0);
 		uint256 _sharePrice = _exitPrice / _sharesCount;
 		IERC721Metadata _metadata = IERC721Metadata(address(_target));
