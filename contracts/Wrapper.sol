@@ -29,7 +29,7 @@ contract ERC721Wrapper is Ownable, ERC721
 		target = _target;
 	}
 
-	function securitized(uint256 _tokenId) public view (bool _securitized)
+	function securitized(uint256 _tokenId) public view returns (bool _securitized)
 	{
 		return shares[_tokenId] != ERC721Shares(0);
 	}
@@ -38,12 +38,11 @@ contract ERC721Wrapper is Ownable, ERC721
 	{
 		require(shares[_tokenId] == ERC721Shares(0));
 		shares[_tokenId] = _shares;
-		if (_remnant) {
-			_safeMint(_from, _tokenId);
-			IERC721Metadata _metadata = IERC721Metadata(address(target));
-			string memory _tokenURI = _metadata.tokenURI(_tokenId);
-			_setTokenURI(_tokenId, _tokenURI);
-		}
+		address _holder = _remnant ? _from : address(_shares);
+		_safeMint(_holder, _tokenId);
+		IERC721Metadata _metadata = IERC721Metadata(address(target));
+		string memory _tokenURI = _metadata.tokenURI(_tokenId);
+		_setTokenURI(_tokenId, _tokenURI);
 		emit Securitize(_from, _tokenId, address(_shares));
 	}
 
@@ -52,11 +51,9 @@ contract ERC721Wrapper is Ownable, ERC721
 		ERC721Shares _shares = ERC721Shares(msg.sender);
 		assert(shares[_tokenId] == _shares);
 		shares[_tokenId] = ERC721Shares(0);
-		if (_remnant) {
-			address _owner = ownerOf(_tokenId);
-			require(_from == _owner);
-			_burn(_tokenId);
-		}
+		address _holder = _remnant ? _from : address(_shares);
+		require(_holder == ownerOf(_tokenId));
+		_burn(_tokenId);
 		emit Redeem(_from, _tokenId, address(_shares));
 	}
 
