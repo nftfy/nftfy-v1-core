@@ -100,7 +100,10 @@ contract ERC721Shares is ERC721Holder, ERC20
 		wrapper._remove(_from, tokenId, remnant);
 		wrapper.target().safeTransferFrom(address(this), _from, tokenId);
 		uint256 _sharesLeft = totalSupply();
-		if (_sharesLeft == 0) selfdestruct(_from);
+		if (_sharesLeft == 0) {
+			wrapper._forget(tokenId);
+			selfdestruct(_from);
+		}
 	}
 
 	function claim() public
@@ -115,6 +118,9 @@ contract ERC721Shares is ERC721Holder, ERC20
 		if (paymentToken == IERC20(0)) _from.transfer(_claimAmount);
 		else paymentToken.safeTransfer(_from, _claimAmount);
 		uint256 _sharesLeft = totalSupply();
-		if (_sharesLeft == 0) selfdestruct(_from);
+		if (_sharesLeft == 0) {
+			wrapper._forget(tokenId);
+			selfdestruct(_from);
+		}
 	}
 }
