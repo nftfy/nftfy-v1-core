@@ -9,16 +9,18 @@ import { ERC721Holder } from "@openzeppelin/contracts/token/ERC721/ERC721Holder.
 import { IERC721Metadata } from "@openzeppelin/contracts/token/ERC721/IERC721Metadata.sol";
 import { Strings } from "@openzeppelin/contracts/utils/Strings.sol";
 
+import { SafeERC721Metadata } from "./SafeERC721Metadata.sol";
 import { ERC721Wrapper } from "./Wrapper.sol";
 
 library Shares
 {
 	using Strings for uint256;
+	using SafeERC721Metadata for IERC721Metadata;
 
 	function create(IERC721Metadata _metadata, ERC721Wrapper _wrapper, uint256 _tokenId, address _from, uint256 _sharesCount, uint8 _decimals, uint256 _sharePrice, IERC20 _paymentToken, bool _remnant) public returns (ERC721Shares _shares)
 	{
-		string memory _name = string(abi.encodePacked(_metadata.name(), " #", _tokenId.toString(), " Shares"));
-		string memory _symbol = string(abi.encodePacked(_metadata.symbol(), _tokenId.toString()));
+		string memory _name = string(abi.encodePacked(_metadata.safeName(), " #", _tokenId.toString(), " Shares"));
+		string memory _symbol = string(abi.encodePacked(_metadata.safeSymbol(), _tokenId.toString()));
 		return new ERC721Shares(_name, _symbol, _wrapper, _tokenId, _from, _sharesCount, _decimals, _sharePrice, _paymentToken, _remnant);
 	}
 }

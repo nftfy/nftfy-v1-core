@@ -7,20 +7,25 @@ import { ERC721 } from "@openzeppelin/contracts/token/ERC721/ERC721.sol";
 import { IERC721 } from "@openzeppelin/contracts/token/ERC721/IERC721.sol";
 import { IERC721Metadata } from "@openzeppelin/contracts/token/ERC721/IERC721Metadata.sol";
 
+import { SafeERC721Metadata } from "./SafeERC721Metadata.sol";
 import { ERC721Shares } from "./Shares.sol";
 
 library Wrapper
 {
+	using SafeERC721Metadata for IERC721Metadata;
+
 	function create(IERC721Metadata _metadata, IERC721 _target) public returns (ERC721Wrapper _wrapper)
 	{
-		string memory _name = string(abi.encodePacked("Wrapped ", _metadata.name()));
-		string memory _symbol = string(abi.encodePacked("w", _metadata.symbol()));
+		string memory _name = string(abi.encodePacked("Wrapped ", _metadata.safeName()));
+		string memory _symbol = string(abi.encodePacked("w", _metadata.safeSymbol()));
 		return new ERC721Wrapper(_name, _symbol, _target);
 	}
 }
 
 contract ERC721Wrapper is Ownable, ERC721
 {
+	using SafeERC721Metadata for IERC721Metadata;
+
 	IERC721 public target;
 	mapping (uint256 => ERC721Shares) public shares;
 
@@ -41,7 +46,7 @@ contract ERC721Wrapper is Ownable, ERC721
 		address _holder = _remnant ? _from : address(_shares);
 		_safeMint(_holder, _tokenId);
 		IERC721Metadata _metadata = IERC721Metadata(address(target));
-		string memory _tokenURI = _metadata.tokenURI(_tokenId);
+		string memory _tokenURI = _metadata.safeTokenURI(_tokenId);
 		_setTokenURI(_tokenId, _tokenURI);
 		emit Securitize(_from, _tokenId, address(_shares));
 	}
