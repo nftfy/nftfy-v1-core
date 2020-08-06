@@ -6,6 +6,7 @@ import { ERC20 } from "@openzeppelin/contracts/token/ERC20/ERC20.sol";
 import { IERC20 } from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import { SafeERC20 } from "@openzeppelin/contracts/token/ERC20/SafeERC20.sol";
 import { ERC721Holder } from "@openzeppelin/contracts/token/ERC721/ERC721Holder.sol";
+import { IERC721 } from "@openzeppelin/contracts/token/ERC721/IERC721.sol";
 import { IERC721Metadata } from "@openzeppelin/contracts/token/ERC721/IERC721Metadata.sol";
 import { Strings } from "@openzeppelin/contracts/utils/Strings.sol";
 
@@ -17,8 +18,10 @@ library Shares
 	using Strings for uint256;
 	using SafeERC721Metadata for IERC721Metadata;
 
-	function create(IERC721Metadata _metadata, ERC721Wrapper _wrapper, uint256 _tokenId, address _from, uint256 _sharesCount, uint8 _decimals, uint256 _sharePrice, IERC20 _paymentToken, bool _remnant) public returns (ERC721Shares _shares)
+	function create(ERC721Wrapper _wrapper, uint256 _tokenId, address _from, uint256 _sharesCount, uint8 _decimals, uint256 _sharePrice, IERC20 _paymentToken, bool _remnant) public returns (ERC721Shares _shares)
 	{
+		IERC721 _target = _wrapper.target();
+		IERC721Metadata _metadata = IERC721Metadata(address(_target));
 		string memory _name = string(abi.encodePacked(_metadata.safeName(), " #", _tokenId.toString(), " Shares"));
 		string memory _symbol = string(abi.encodePacked(_metadata.safeSymbol(), _tokenId.toString()));
 		return new ERC721Shares(_name, _symbol, _wrapper, _tokenId, _from, _sharesCount, _decimals, _sharePrice, _paymentToken, _remnant);

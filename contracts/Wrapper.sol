@@ -14,8 +14,9 @@ library Wrapper
 {
 	using SafeERC721Metadata for IERC721Metadata;
 
-	function create(IERC721Metadata _metadata, IERC721 _target) public returns (ERC721Wrapper _wrapper)
+	function create(IERC721 _target) public returns (ERC721Wrapper _wrapper)
 	{
+		IERC721Metadata _metadata = IERC721Metadata(address(_target));
 		string memory _name = string(abi.encodePacked("Wrapped ", _metadata.safeName()));
 		string memory _symbol = string(abi.encodePacked("w", _metadata.safeSymbol()));
 		return new ERC721Wrapper(_name, _symbol, _target);
