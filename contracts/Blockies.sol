@@ -8,13 +8,13 @@ contract Blockies is ERC721
 {
 	constructor () ERC721("Blockies", "KIE") public
 	{
-		_setBaseURI("https://blockie.cc/");
+		_setBaseURI("https://blockies.tk/");
 	}
 
 	function faucet() public
 	{
 		address _target = msg.sender;
-		uint256 _tokenId = totalSupply();
+		uint256 _tokenId = totalSupply() + 1;
 		_safeMint(_target, _tokenId);
 	}
 }
