@@ -70,7 +70,8 @@ contract ERC721Shares is ERC721Holder, ERC20
 	function vaultBalance() public view returns (uint256 _vaultBalance)
 	{
 		if (!released) return 0;
-		return sharesCount * sharePrice;
+		uint256 _sharesCount = totalSupply();
+		return _sharesCount * sharePrice;
 	}
 
 	function vaultBalanceOf(address _from) public view returns (uint256 _vaultBalanceOf)
@@ -85,6 +86,7 @@ contract ERC721Shares is ERC721Holder, ERC20
 		require(!released);
 		address payable _from = msg.sender;
 		uint256 _paymentAmount = msg.value;
+		uint256 _sharesCount = balanceOf(_from);
 		uint256 _redeemAmount = redeemAmountOf(_from);
 		if (paymentToken == IERC20(0)) {
 			require(_paymentAmount >= _redeemAmount);
@@ -95,15 +97,10 @@ contract ERC721Shares is ERC721Holder, ERC20
 			if (_redeemAmount > 0) paymentToken.safeTransferFrom(_from, address(this), _redeemAmount);
 		}
 		released = true;
-		uint256 _sharesCount = balanceOf(_from);
 		if (_sharesCount > 0) _burn(_from, _sharesCount);
 		wrapper._remove(_from, tokenId, remnant);
 		wrapper.target().safeTransferFrom(address(this), _from, tokenId);
-		uint256 _sharesLeft = totalSupply();
-		if (_sharesLeft == 0) {
-			wrapper._forget(tokenId);
-			selfdestruct(_from);
-		}
+		_cleanup();
 	}
 
 	function claim() public
@@ -112,15 +109,20 @@ contract ERC721Shares is ERC721Holder, ERC20
 		address payable _from = msg.sender;
 		uint256 _sharesCount = balanceOf(_from);
 		require(_sharesCount > 0);
-		_burn(_from, _sharesCount);
 		uint256 _claimAmount = vaultBalanceOf(_from);
 		assert(_claimAmount > 0);
+		_burn(_from, _sharesCount);
 		if (paymentToken == IERC20(0)) _from.transfer(_claimAmount);
 		else paymentToken.safeTransfer(_from, _claimAmount);
+		_cleanup();
+	}
+
+	function _cleanup() internal
+	{
 		uint256 _sharesLeft = totalSupply();
 		if (_sharesLeft == 0) {
 			wrapper._forget(tokenId);
-			selfdestruct(_from);
+			selfdestruct(address(0));
 		}
 	}
 }
