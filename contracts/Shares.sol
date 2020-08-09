@@ -121,7 +121,7 @@ contract ERC721Shares is ERC721Holder, ERC20
 	{
 		uint256 _sharesLeft = totalSupply();
 		if (_sharesLeft == 0) {
-			wrapper._forget(tokenId);
+			wrapper._forget();
 			selfdestruct(address(0));
 		}
 	}

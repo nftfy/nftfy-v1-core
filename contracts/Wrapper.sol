@@ -31,7 +31,7 @@ contract ERC721Wrapper is Ownable, ERC721
 
 	IERC721 public target;
 	mapping (uint256 => ERC721Shares) public shares;
-	mapping (uint256 => EnumerableSet.AddressSet) private history;
+	EnumerableSet.AddressSet private history;
 
 	constructor (string memory _name, string memory _symbol, IERC721 _target) ERC721(_name, _symbol) public
 	{
@@ -43,21 +43,21 @@ contract ERC721Wrapper is Ownable, ERC721
 		return shares[_tokenId] != ERC721Shares(0);
 	}
 
-	function historyLength(uint256 _tokenId) public view returns (uint256 _length)
+	function historyLength() public view returns (uint256 _length)
 	{
-		return history[_tokenId].length();
+		return history.length();
 	}
 
-	function historyAt(uint256 _tokenId, uint256 _index) public view returns (ERC721Shares _shares)
+	function historyAt(uint256 _index) public view returns (ERC721Shares _shares)
 	{
-		return ERC721Shares(history[_tokenId].at(_index));
+		return ERC721Shares(history.at(_index));
 	}
 
 	function _insert(address _from, uint256 _tokenId, bool _remnant, ERC721Shares _shares) public onlyOwner
 	{
 		require(shares[_tokenId] == ERC721Shares(0));
 		shares[_tokenId] = _shares;
-		history[_tokenId].add(address(_shares));
+		history.add(address(_shares));
 		address _holder = _remnant ? _from : address(_shares);
 		_safeMint(_holder, _tokenId);
 		IERC721Metadata _metadata = IERC721Metadata(address(target));
@@ -77,10 +77,10 @@ contract ERC721Wrapper is Ownable, ERC721
 		emit Redeem(_from, _tokenId, address(_shares));
 	}
 
-	function _forget(uint256 _tokenId) public
+	function _forget() public
 	{
 		ERC721Shares _shares = ERC721Shares(msg.sender);
-		require(history[_tokenId].remove(address(_shares)));
+		require(history.remove(address(_shares)));
 	}
 
 	event Securitize(address indexed _from, uint256 indexed _tokenId, address indexed _shares);
