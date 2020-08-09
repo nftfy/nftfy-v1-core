@@ -8,7 +8,7 @@ contract Buck is ERC20
 {
 	constructor () ERC20("Buck", "BUK") public
 	{
-		_setupDecimals(2);
+		_setupDecimals(18);
 	}
 
 	function faucet() public
