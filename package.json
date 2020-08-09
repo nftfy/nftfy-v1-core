@@ -1,0 +1,35 @@
+{
+  "name": "nftfy-core",
+  "version": "1.0.0",
+  "description": "Nftfy Core Smart Contracts",
+  "main": "truffle-config.js",
+  "directories": {
+    "test": "test"
+  },
+  "dependencies": {},
+  "devDependencies": {
+    "@openzeppelin/contracts": "^3.1.0",
+    "@truffle/hdwallet-provider": "^1.0.40",
+    "dotenv": "^8.2.0",
+    "truffle": "^5.1.37"
+  },
+  "scripts": {
+    "build": "truffle compile",
+    "deploy:mainnet": "truffle migrate --network mainnet",
+    "deploy:ropsten": "truffle migrate --network ropsten",
+    "deploy:rinkeby": "truffle migrate --network rinkeby",
+    "deploy:kovan": "truffle migrate --network kovan",
+    "deploy:goerli": "truffle migrate --network goerli",
+    "test": "truffle test"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/nftfy/nftfy-core.git"
+  },
+  "author": "raugfer",
+  "license": "GPL-3.0-only",
+  "bugs": {
+    "url": "https://github.com/nftfy/nftfy-core/issues"
+  },
+  "homepage": "https://github.com/nftfy/nftfy-core#readme"
+}
