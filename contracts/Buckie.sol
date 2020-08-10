@@ -1,12 +1,12 @@
-// Buck
+// Buckie
 // SPDX-License-Identifier: GPL-3.0-only
 pragma solidity ^0.6.0;
 
 import "@openzeppelin/contracts/token/ERC20/ERC20.sol";
 
-contract Buck is ERC20
+contract Buckie is ERC20
 {
-	constructor () ERC20("Buck", "BUK") public
+	constructor () ERC20("Buckie", "BUK") public
 	{
 		_setupDecimals(18);
 	}
