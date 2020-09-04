@@ -115,6 +115,7 @@ contract ERC721Shares is ERC721Holder, ERC20
 		if (paymentToken == IERC20(0)) _from.transfer(_claimAmount);
 		else paymentToken.safeTransfer(_from, _claimAmount);
 		_cleanup();
+		emit Claim(_from, tokenId, address(this), _sharesCount);
 	}
 
 	function _cleanup() internal
@@ -125,4 +126,6 @@ contract ERC721Shares is ERC721Holder, ERC20
 			selfdestruct(address(0));
 		}
 	}
+
+	event Claim(address indexed _from, uint256 indexed _tokenId, address indexed _shares, uint256 _sharesCount);
 }
