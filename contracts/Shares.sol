@@ -52,6 +52,7 @@ contract ERC721Shares is ERC721Holder, ERC20
 		released = false;
 		_setupDecimals(_decimals);
 		_mint(_from, _sharesCount);
+		emit Securitize(_from, address(wrapper.target()), tokenId, address(this));
 	}
 
 	function exitPrice() public view returns (uint256 _exitPrice)
@@ -101,6 +102,7 @@ contract ERC721Shares is ERC721Holder, ERC20
 		wrapper._remove(_from, tokenId, remnant);
 		wrapper.target().safeTransferFrom(address(this), _from, tokenId);
 		_cleanup();
+		emit Redeem(_from, address(wrapper.target()), tokenId, address(this));
 	}
 
 	function claim() public
@@ -115,7 +117,7 @@ contract ERC721Shares is ERC721Holder, ERC20
 		if (paymentToken == IERC20(0)) _from.transfer(_claimAmount);
 		else paymentToken.safeTransfer(_from, _claimAmount);
 		_cleanup();
-		emit Claim(_from, tokenId, address(this), _sharesCount);
+		emit Claim(_from, address(wrapper.target()), tokenId, address(this), _sharesCount);
 	}
 
 	function _cleanup() internal
@@ -127,5 +129,7 @@ contract ERC721Shares is ERC721Holder, ERC20
 		}
 	}
 
-	event Claim(address indexed _from, uint256 indexed _tokenId, address indexed _shares, uint256 _sharesCount);
+	event Securitize(address indexed _from, address indexed _target, uint256 indexed _tokenId, address _shares);
+	event Redeem(address indexed _from, address indexed _target, uint256 indexed _tokenId, address _shares);
+	event Claim(address indexed _from, address indexed _target, uint256 indexed _tokenId, address _shares, uint256 _sharesCount);
 }

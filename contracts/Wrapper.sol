@@ -63,7 +63,6 @@ contract ERC721Wrapper is Ownable, ERC721
 		IERC721Metadata _metadata = IERC721Metadata(address(target));
 		string memory _tokenURI = _metadata.safeTokenURI(_tokenId);
 		_setTokenURI(_tokenId, _tokenURI);
-		emit Securitize(_from, _tokenId, address(_shares));
 	}
 
 	function _remove(address _from, uint256 _tokenId, bool _remnant) public
@@ -74,7 +73,6 @@ contract ERC721Wrapper is Ownable, ERC721
 		address _holder = _remnant ? _from : address(_shares);
 		require(_holder == ownerOf(_tokenId));
 		_burn(_tokenId);
-		emit Redeem(_from, _tokenId, address(_shares));
 	}
 
 	function _forget() public
@@ -82,7 +80,4 @@ contract ERC721Wrapper is Ownable, ERC721
 		ERC721Shares _shares = ERC721Shares(msg.sender);
 		require(history.remove(address(_shares)));
 	}
-
-	event Securitize(address indexed _from, uint256 indexed _tokenId, address indexed _shares);
-	event Redeem(address indexed _from, uint256 indexed _tokenId, address indexed _shares);
 }
