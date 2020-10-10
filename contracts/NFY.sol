@@ -59,9 +59,6 @@ contract Distribution is AccessControl
 	uint256 constant USERS_QUOTA_PER_DAY = USERS_QUOTA_PER_WEEK / 7;
 
 	uint256 constant AIRDROP_QUOTA = 39920000e18; // 39,92 mi
-	uint256 constant AIRDROP_WEEKS = 5;
-	uint256 constant AIRDROP_QUOTA_PER_WEEK = AIRDROP_QUOTA / AIRDROP_WEEKS;
-	uint256 constant AIRDROP_QUOTA_PER_DAY = AIRDROP_QUOTA_PER_WEEK / 7;
 
 	uint256 constant ECOSYSTEM_QUOTA_1ST_YEAR = 20000000e18; // 20 mi
 	uint256 constant ECOSYSTEM_QUOTA_2ND_YEAR = 12500000e18; // 12,5 mi
@@ -256,9 +253,9 @@ contract Distribution is AccessControl
 		return _days * USERS_QUOTA_PER_DAY;
 	}
 
-	function calcAirdropAmount(uint256 /* _baseDay */, uint256 _days) public pure returns (uint256 _airdropAmount)
+	function calcAirdropAmount(uint256 /* _baseDay */, uint256 /* _days */) public pure returns (uint256 _airdropAmount)
 	{
-		return _days * AIRDROP_QUOTA_PER_DAY;
+		return AIRDROP_QUOTA;
 	}
 
 	function calcEcosystemAmount(uint256 _baseDay, uint256 _days) public pure returns (uint256 _ecosystemAmount)
