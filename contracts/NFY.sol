@@ -10,11 +10,16 @@ import { SafeERC20 } from "@openzeppelin/contracts/token/ERC20/SafeERC20.sol";
 
 contract NFY is ERC20
 {
-	address immutable public distribution;
+	address public distribution;
 
-	constructor (address _distribution, uint256 _totalSupply) ERC20("Nftfy", "NFY") public
+	constructor () ERC20("Nftfy", "NFY") public
 	{
 		_setupDecimals(18);
+	}
+
+	function setDistribution(address _distribution, uint256 _totalSupply) public
+	{
+		require(distribution == address(0), "distribution already set");
 		_mint(_distribution, _totalSupply);
 		distribution = _distribution;
 	}
@@ -96,7 +101,7 @@ contract Distribution is AccessControl
 		INVESTORS_QUOTA_4TH_YEAR +
 		INVESTORS_QUOTA_5TH_YEAR;
 
-	uint256 constant VESTING_QUOTA_1ST_YEAR = 5000000e18; // 5 mi
+	uint256 constant VESTING_QUOTA_1ST_YEAR = 10000000e18; // 10 mi
 	uint256 constant VESTING_QUOTA_2ND_YEAR = 6250000e18; // 6,25 mi
 	uint256 constant VESTING_QUOTA_3RD_YEAR = 5000000e18; // 5 mi
 	uint256 constant VESTING_QUOTA_4TH_YEAR = 2500000e18; // 2,5 mi
@@ -180,10 +185,11 @@ contract Distribution is AccessControl
 		_;
 	}
 
-	constructor () public
+	constructor (address _token) public
 	{
 		_setupRole(DEFAULT_ADMIN_ROLE, _msgSender());
-		token = address(new NFY(address(this), TOTAL_SUPPLY));
+		token = _token;
+		NFY(_token).setDistribution(address(this), TOTAL_SUPPLY);
 	}
 
 	function calcDays(uint256 _startingDay, uint256 _baseDay, uint256 _days) internal pure returns (uint256 _1stYearDays, uint256 _2ndYearDays, uint256 _3rdYearDays, uint256 _4thYearDays, uint256 _5thYearDays)
