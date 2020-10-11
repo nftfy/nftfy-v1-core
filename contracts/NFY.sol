@@ -199,31 +199,31 @@ contract Distribution is AccessControl
 			_days -= _waitDays;
 			_baseDay = _startingDay;
 		}
-		uint256 _1stYearEndingDay = _startingDay + _1ST_YEAR_DAYS;
+		uint256 _1stYearEndingDay = _startingDay + _1ST_YEAR_DAYS * 1 days;
 		if (_baseDay < _1stYearEndingDay) {
 			_1stYearDays = Math.min(_days, (_1stYearEndingDay - _baseDay) / 1 days);
 			_days -= _1stYearDays;
 			_baseDay = _1stYearEndingDay;
 		}
-		uint256 _2ndYearEndingDay = _1stYearEndingDay + _2ND_YEAR_DAYS;
+		uint256 _2ndYearEndingDay = _1stYearEndingDay + _2ND_YEAR_DAYS * 1 days;
 		if (_baseDay < _2ndYearEndingDay) {
 			_2ndYearDays = Math.min(_days, (_2ndYearEndingDay - _baseDay) / 1 days);
 			_days -= _2ndYearDays;
 			_baseDay = _2ndYearEndingDay;
 		}
-		uint256 _3rdYearEndingDay = _2ndYearEndingDay + _3RD_YEAR_DAYS;
+		uint256 _3rdYearEndingDay = _2ndYearEndingDay + _3RD_YEAR_DAYS * 1 days;
 		if (_baseDay < _3rdYearEndingDay) {
 			_3rdYearDays = Math.min(_days, (_3rdYearEndingDay - _baseDay) / 1 days);
 			_days -= _3rdYearDays;
 			_baseDay = _3rdYearEndingDay;
 		}
-		uint256 _4thYearEndingDay = _3rdYearEndingDay + _4TH_YEAR_DAYS;
+		uint256 _4thYearEndingDay = _3rdYearEndingDay + _4TH_YEAR_DAYS * 1 days;
 		if (_baseDay < _4thYearEndingDay) {
 			_4thYearDays = Math.min(_days, (_4thYearEndingDay - _baseDay) / 1 days);
 			_days -= _4thYearDays;
 			_baseDay = _4thYearEndingDay;
 		}
-		uint256 _5thYearEndingDay = _4thYearEndingDay + _5TH_YEAR_DAYS;
+		uint256 _5thYearEndingDay = _4thYearEndingDay + _5TH_YEAR_DAYS * 1 days;
 		if (_baseDay < _5thYearEndingDay) {
 			_5thYearDays = Math.min(_days, (_5thYearEndingDay - _baseDay) / 1 days);
 			_days -= _5thYearDays;
