@@ -6,9 +6,9 @@ const infuraProjectId = process.env['INFURA_PROJECT_ID'];
 module.exports = {
   compilers: {
     solc: {
-      version: '^0.6.0',
+      version: '0.6.12',
       optimizer: {
-        enabled: true,
+        enabled: false,
         runs: 200,
       },
     },
@@ -16,26 +16,26 @@ module.exports = {
   networks: {
     mainnet: {
       network_id: 1,
-      provider: () => new HDWalletProvider(privateKey, 'https://mainnet.infura.io/v3/' + infuraProjectId),
+      provider: () => new HDWalletProvider(privateKey, 'wss://mainnet.infura.io/v3/' + infuraProjectId),
     },
     ropsten: {
       network_id: 3,
-      provider: () => new HDWalletProvider(privateKey, 'https://ropsten.infura.io/v3/' + infuraProjectId),
+      provider: () => new HDWalletProvider(privateKey, 'wss://ropsten.infura.io/v3/' + infuraProjectId),
       skipDryRun: true,
     },
     rinkeby: {
       network_id: 4,
-      provider: () => new HDWalletProvider(privateKey, 'https://rinkeby.infura.io/v3/' + infuraProjectId),
+      provider: () => new HDWalletProvider(privateKey, 'wss://rinkeby.infura.io/v3/' + infuraProjectId),
       skipDryRun: true,
     },
     kovan: {
       network_id: 42,
-      provider: () => new HDWalletProvider(privateKey, 'https://kovan.infura.io/v3/' + infuraProjectId),
+      provider: () => new HDWalletProvider(privateKey, 'wss://kovan.infura.io/v3/' + infuraProjectId),
       skipDryRun: true,
     },
     goerli: {
       network_id: 5,
-      provider: () => new HDWalletProvider(privateKey, 'https://goerli.infura.io/v3/' + infuraProjectId),
+      provider: () => new HDWalletProvider(privateKey, 'wss://goerli.infura.io/v3/' + infuraProjectId),
       skipDryRun: true,
     },
   }
