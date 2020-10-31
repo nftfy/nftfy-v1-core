@@ -16,26 +16,26 @@ module.exports = {
   networks: {
     mainnet: {
       network_id: 1,
-      provider: () => new HDWalletProvider(privateKey, 'wss://mainnet.infura.io/v3/' + infuraProjectId),
+      provider: () => new HDWalletProvider(privateKey, 'wss://mainnet.infura.io/ws/v3/' + infuraProjectId),
     },
     ropsten: {
       network_id: 3,
-      provider: () => new HDWalletProvider(privateKey, 'wss://ropsten.infura.io/v3/' + infuraProjectId),
+      provider: () => new HDWalletProvider(privateKey, 'wss://ropsten.infura.io/ws/v3/' + infuraProjectId),
       skipDryRun: true,
     },
     rinkeby: {
       network_id: 4,
-      provider: () => new HDWalletProvider(privateKey, 'wss://rinkeby.infura.io/v3/' + infuraProjectId),
+      provider: () => new HDWalletProvider(privateKey, 'wss://rinkeby.infura.io/ws/v3/' + infuraProjectId),
       skipDryRun: true,
     },
     kovan: {
       network_id: 42,
-      provider: () => new HDWalletProvider(privateKey, 'wss://kovan.infura.io/v3/' + infuraProjectId),
+      provider: () => new HDWalletProvider(privateKey, 'wss://kovan.infura.io/ws/v3/' + infuraProjectId),
       skipDryRun: true,
     },
     goerli: {
       network_id: 5,
-      provider: () => new HDWalletProvider(privateKey, 'wss://goerli.infura.io/v3/' + infuraProjectId),
+      provider: () => new HDWalletProvider(privateKey, 'wss://goerli.infura.io/ws/v3/' + infuraProjectId),
       skipDryRun: true,
     },
   }
