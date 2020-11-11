@@ -100,6 +100,9 @@ contract ERC721Shares is ERC721Holder, ERC20
 		released = true;
 		if (_sharesCount > 0) _burn(_from, _sharesCount);
 		wrapper._remove(_from, tokenId, remnant);
+		try wrapper.target().approve(address(this), tokenId) {
+		} catch (bytes memory /* _data */) {
+		}
 		wrapper.target().transferFrom(address(this), _from, tokenId);
 		_cleanup();
 		emit Redeem(_from, address(wrapper.target()), tokenId, address(this));
