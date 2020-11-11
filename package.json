@@ -11,7 +11,8 @@
     "@openzeppelin/contracts": "3.2.0",
     "@truffle/hdwallet-provider": "^1.0.40",
     "dotenv": "^8.2.0",
-    "truffle": "^5.1.40"
+    "truffle": "^5.1.40",
+    "truffle-flattener": "^1.5.0"
   },
   "scripts": {
     "build": "truffle compile",
@@ -20,7 +21,8 @@
     "deploy:rinkeby": "truffle migrate --network rinkeby",
     "deploy:kovan": "truffle migrate --network kovan",
     "deploy:goerli": "truffle migrate --network goerli",
-    "test": "truffle test"
+    "test": "truffle test",
+    "source": "truffle-flattener contracts/*.sol | sed '/^.*SPDX-License-Identifier:.*$/d' | sed '1s/^/\\/\\/ SPDX-License-Identifier: GPL-3.0-only\\n/' > Nftfy.sol"
   },
   "repository": {
     "type": "git",
