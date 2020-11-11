@@ -6,7 +6,7 @@ Core smart contracts of Nftfy: an ERC-721/ERC-20 NFT Securitizer.
 
 | Network | Address                                                                                                                       |
 | ------- | ----------------------------------------------------------------------------------------------------------------------------- |
-| ropsten | [0xA697fdCD130D470389cE6d02A20AF4c690222c66](https://ropsten.etherscan.io/address/0xA697fdCD130D470389cE6d02A20AF4c690222c66) |
-| rinkeby | [0xA697fdCD130D470389cE6d02A20AF4c690222c66](https://rinkeby.etherscan.io/address/0xA697fdCD130D470389cE6d02A20AF4c690222c66) |
-| kovan   | [0xA697fdCD130D470389cE6d02A20AF4c690222c66](https://kovan.etherscan.io/address/0xA697fdCD130D470389cE6d02A20AF4c690222c66)   |
-| goerli  | [0xA697fdCD130D470389cE6d02A20AF4c690222c66](https://goerli.etherscan.io/address/0xA697fdCD130D470389cE6d02A20AF4c690222c66)  |
+| ropsten | [0xDB620878C3D4FC7d9B389e3752B1dd45e760eeAb](https://ropsten.etherscan.io/address/0xDB620878C3D4FC7d9B389e3752B1dd45e760eeAb) |
+| rinkeby | [0xDB620878C3D4FC7d9B389e3752B1dd45e760eeAb](https://rinkeby.etherscan.io/address/0xDB620878C3D4FC7d9B389e3752B1dd45e760eeAb) |
+| kovan   | [0xDB620878C3D4FC7d9B389e3752B1dd45e760eeAb](https://kovan.etherscan.io/address/0xDB620878C3D4FC7d9B389e3752B1dd45e760eeAb)   |
+| goerli  | [0xDB620878C3D4FC7d9B389e3752B1dd45e760eeAb](https://goerli.etherscan.io/address/0xDB620878C3D4FC7d9B389e3752B1dd45e760eeAb)  |

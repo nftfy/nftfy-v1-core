@@ -34,7 +34,7 @@ contract Nftfy
 		require(_exitPrice % _sharesCount == 0);
 		uint256 _sharePrice = _exitPrice / _sharesCount;
 		ERC721Shares _shares = Shares.create(_wrapper, _tokenId, _from, _sharesCount, _decimals, _sharePrice, _paymentToken, _remnant);
-		_target.safeTransferFrom(_from, address(_shares), _tokenId);
+		_target.transferFrom(_from, address(_shares), _tokenId);
 		_wrapper._insert(_from, _tokenId, _remnant, _shares);
 	}
 }
