@@ -84,7 +84,7 @@ contract TimeLockedAccounts
 		require(_amount > 0, "zero amount");
 		balance[_receiver] = _amount;
 		baseTime[_receiver] = now;
-		lockedPeriods[_receiver] = 20;
+		lockedPeriods[_receiver] = 16;
 		lockedPerPeriod[_receiver] = _amount.mul(5e16).div(100e16); // 5%
 	}
 
