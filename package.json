@@ -1,7 +1,7 @@
 {
-  "name": "nftfy-core",
+  "name": "nftfy-v1-core",
   "version": "1.0.0",
-  "description": "Nftfy Core Smart Contracts",
+  "description": "Nftfy V1 Core Smart Contracts",
   "files": [
     "/contracts/**/*.sol",
     "/build/contracts/*.json"
@@ -28,12 +28,12 @@
   },
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/nftfy/nftfy-core.git"
+    "url": "git+https://github.com/nftfy/nftfy-v1-core.git"
   },
   "author": "raugfer",
   "license": "GPL-3.0-only",
   "bugs": {
-    "url": "https://github.com/nftfy/nftfy-core/issues"
+    "url": "https://github.com/nftfy/nftfy-v1-core/issues"
   },
-  "homepage": "https://github.com/nftfy/nftfy-core#readme"
+  "homepage": "https://github.com/nftfy/nftfy-v1-core#readme"
 }

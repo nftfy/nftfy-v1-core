@@ -1,6 +1,6 @@
-# nftfy-core
+# nftfy-v1-core
 
-Core smart contracts of Nftfy: an ERC-721/ERC-20 NFT Securitizer.
+Core smart contracts of Nftfy: an ERC-721/ERC-20 NFT Securitizer
 
 ## Deployed Contracts
 
