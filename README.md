@@ -14,7 +14,7 @@ Core smart contracts of Nftfy: an ERC-721/ERC-20 NFT Securitizer.
 
 | Network | Address                                                                                                                       |
 | ------- | ----------------------------------------------------------------------------------------------------------------------------- |
-| bscmain | [0x727638740980aA0aA0B346d02dd91120Eaac75ed](https://bscscan.io/address/0x727638740980aA0aA0B346d02dd91120Eaac75ed)           |
-| bsctest | [0x727638740980aA0aA0B346d02dd91120Eaac75ed](https://testnet.bscscan.io/address/0x727638740980aA0aA0B346d02dd91120Eaac75ed)   |
+| bscmain | [0x727638740980aA0aA0B346d02dd91120Eaac75ed](https://bscscan.com/address/0x727638740980aA0aA0B346d02dd91120Eaac75ed)          |
+| bsctest | [0x727638740980aA0aA0B346d02dd91120Eaac75ed](https://testnet.bscscan.com/address/0x727638740980aA0aA0B346d02dd91120Eaac75ed)  |
 
 To obtain test ERC-721 tokens please use the [Blockies](https://blockies.tk) faucet.
