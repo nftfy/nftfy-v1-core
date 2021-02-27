@@ -13,6 +13,7 @@ Core smart contracts of Nftfy: an ERC-721/ERC-20 NFT Securitizer.
 | goerli  | [0x727638740980aA0aA0B346d02dd91120Eaac75ed](https://goerli.etherscan.io/address/0x727638740980aA0aA0B346d02dd91120Eaac75ed)  |
 
 | Network | Address                                                                                                                       |
+| ------- | ----------------------------------------------------------------------------------------------------------------------------- |
 | bscmain | [0x727638740980aA0aA0B346d02dd91120Eaac75ed](https://bscscan.io/address/0x727638740980aA0aA0B346d02dd91120Eaac75ed)           |
 | bsctest | [0x727638740980aA0aA0B346d02dd91120Eaac75ed](https://testnet.bscscan.io/address/0x727638740980aA0aA0B346d02dd91120Eaac75ed)   |
 
