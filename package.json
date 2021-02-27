@@ -2,16 +2,16 @@
   "name": "nftfy-core",
   "version": "1.0.0",
   "description": "Nftfy Core Smart Contracts",
-  "main": "truffle-config.js",
-  "directories": {
-    "test": "test"
-  },
+  "files": [
+    "/contracts/**/*.sol",
+    "/build/contracts/*.json"
+  ],
   "dependencies": {},
   "devDependencies": {
     "@openzeppelin/contracts": "3.2.0",
-    "@truffle/hdwallet-provider": "^1.0.40",
+    "@truffle/hdwallet-provider": "^1.2.2",
     "dotenv": "^8.2.0",
-    "truffle": "^5.1.40",
+    "truffle": "^5.1.66",
     "truffle-flattener": "^1.5.0"
   },
   "scripts": {
@@ -21,8 +21,10 @@
     "deploy:rinkeby": "truffle migrate --network rinkeby",
     "deploy:kovan": "truffle migrate --network kovan",
     "deploy:goerli": "truffle migrate --network goerli",
-    "test": "truffle test",
-    "source": "truffle-flattener contracts/*.sol | sed '/^.*SPDX-License-Identifier:.*$/d' | sed '1s/^/\\/\\/ SPDX-License-Identifier: GPL-3.0-only\\n/' > Nftfy.sol"
+    "deploy:bscmain": "truffle migrate --network bscmain",
+    "deploy:bsctest": "truffle migrate --network bsctest",
+    "source": "truffle-flattener contracts/*.sol | sed '/^.*SPDX-License-Identifier:.*$/d' | sed '1s/^/\\/\\/ SPDX-License-Identifier: GPL-3.0-only\\n/' > Nftfy.sol",
+    "test": "truffle test"
   },
   "repository": {
     "type": "git",
