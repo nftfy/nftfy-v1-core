@@ -1,0 +1,36 @@
+# This workflow will do a clean install of dependencies, build the source code and run tests
+name: Truffle CI
+on:
+  push:
+    branches: [ master ]
+  pull_request:
+    branches: [ master ]
+jobs:
+  build:
+    runs-on: ${{ matrix.os }}
+    strategy:
+      matrix:
+        node-version: [14.x]
+        os: [ubuntu-20.04]
+    steps:
+    - uses: actions/checkout@v2
+    - uses: actions/setup-node@v1
+      with:
+        node-version: ${{ matrix.node-version }}
+    - run: npm ci
+    - run: npm run build --if-present
+      env:
+        NODE_OPTIONS: --max-old-space-size=4096
+    - run: env > .env
+      env:
+        PRIVATE_KEY: ${{ secrets.PRIVATE_KEY }}
+        INFURA_PROJECT_ID: ${{ secrets.INFURA_PROJECT_ID }}
+    - run: ./scripts/start-mainnet-fork.sh & rm -rf ./build/ && npm run test:mainnet && pkill node
+    - run: ./scripts/start-ropsten-fork.sh & rm -rf ./build/ && npm run test:ropsten && pkill node
+    - run: ./scripts/start-rinkeby-fork.sh & rm -rf ./build/ && npm run test:rinkeby && pkill node
+    - run: ./scripts/start-kovan-fork.sh & rm -rf ./build/ && npm run test:kovan && pkill node
+    - run: ./scripts/start-goerli-fork.sh & rm -rf ./build/ && npm run test:goerli && pkill node
+    - run: ./scripts/start-bscmain-fork.sh & rm -rf ./build/ && npm run test:bscmain && pkill node
+    - run: ./scripts/start-bsctest-fork.sh & rm -rf ./build/ && npm run test:bsctest && pkill node
+    - run: ./scripts/start-ftmmain-fork.sh & rm -rf ./build/ && npm run test:ftmmain && pkill node
+    - run: ./scripts/start-ftmtest-fork.sh & rm -rf ./build/ && npm run test:ftmtest && pkill node
