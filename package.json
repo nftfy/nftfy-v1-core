@@ -11,11 +11,13 @@
     "@openzeppelin/contracts": "3.3.0",
     "@truffle/hdwallet-provider": "^1.2.2",
     "dotenv": "^8.2.0",
+    "ganache-cli": "^6.12.2",
     "truffle": "^5.1.66",
     "truffle-flattener": "^1.5.0"
   },
   "scripts": {
     "build": "truffle compile",
+    "deploy": "truffle migrate",
     "deploy:mainnet": "truffle migrate --network mainnet",
     "deploy:ropsten": "truffle migrate --network ropsten",
     "deploy:rinkeby": "truffle migrate --network rinkeby",
@@ -23,8 +25,19 @@
     "deploy:goerli": "truffle migrate --network goerli",
     "deploy:bscmain": "truffle migrate --network bscmain",
     "deploy:bsctest": "truffle migrate --network bsctest",
+    "deploy:ftmmain": "truffle migrate --network ftmmain",
+    "deploy:ftmtest": "truffle migrate --network ftmtest",
     "source": "truffle-flattener contracts/*.sol | sed '/^.*SPDX-License-Identifier:.*$/d' | sed '1s/^/\\/\\/ SPDX-License-Identifier: GPL-3.0-only\\n/' > Nftfy.sol",
-    "test": "truffle test"
+    "test": "truffle test",
+    "test:mainnet": "truffle test",
+    "test:ropsten": "truffle test",
+    "test:rinkeby": "truffle test",
+    "test:kovan": "truffle test",
+    "test:goerli": "truffle test",
+    "test:bscmain": "GAS_LIMIT=30000000 truffle test",
+    "test:bsctest": "GAS_LIMIT=30000000 truffle test",
+    "test:ftmmain": "truffle test",
+    "test:ftmtest": "truffle test"
   },
   "repository": {
     "type": "git",

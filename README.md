@@ -1,5 +1,7 @@
 # nftfy-v1-core
 
+[![Truffle CI Actions Status](https://github.com/nftfy/nftfy-v1-core/workflows/Truffle%20CI/badge.svg)](https://github.com/nftfy/nftfy-v1-core/actions)
+
 Core smart contracts of Nftfy: an ERC-721/ERC-20 NFT Securitizer
 
 ## Deployed Contracts
