@@ -42,7 +42,7 @@ contract ERC721Shares is ERC721Holder, ERC20, ReentrancyGuard
 
 	bool public released;
 
-	constructor (string memory _name, string memory _symbol, ERC721Wrapper _wrapper, uint256 _tokenId, address _from, uint256 _sharesCount, uint8 _decimals, uint256 _sharePrice, IERC20 _paymentToken, bool _remnant) ERC20(_name, _symbol) public
+	constructor (string memory __name, string memory __symbol, ERC721Wrapper _wrapper, uint256 _tokenId, address _from, uint256 _sharesCount, uint8 _decimals, uint256 _sharePrice, IERC20 _paymentToken, bool _remnant) ERC20(__name, __symbol) public
 	{
 		wrapper = _wrapper;
 		tokenId = _tokenId;
