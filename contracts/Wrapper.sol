@@ -29,7 +29,7 @@ contract ERC721Wrapper is Ownable, ERC721
 	using SafeERC721Metadata for IERC721Metadata;
 	using EnumerableSet for EnumerableSet.AddressSet;
 
-	IERC721 public target;
+	IERC721 public immutable target;
 	mapping (uint256 => ERC721Shares) public shares;
 	EnumerableSet.AddressSet private history;
 
@@ -38,26 +38,26 @@ contract ERC721Wrapper is Ownable, ERC721
 		target = _target;
 	}
 
-	function securitized(uint256 _tokenId) public view returns (bool _securitized)
+	function securitized(uint256 _tokenId) external view returns (bool _securitized)
 	{
 		return shares[_tokenId] != ERC721Shares(0);
 	}
 
-	function historyLength() public view returns (uint256 _length)
+	function historyLength() external view returns (uint256 _length)
 	{
 		return history.length();
 	}
 
-	function historyAt(uint256 _index) public view returns (ERC721Shares _shares)
+	function historyAt(uint256 _index) external view returns (ERC721Shares _shares)
 	{
 		return ERC721Shares(history.at(_index));
 	}
 
-	function _insert(address _from, uint256 _tokenId, bool _remnant, ERC721Shares _shares) public onlyOwner
+	function _insert(address _from, uint256 _tokenId, bool _remnant, ERC721Shares _shares) external onlyOwner
 	{
-		require(shares[_tokenId] == ERC721Shares(0));
+		assert(shares[_tokenId] == ERC721Shares(0));
 		shares[_tokenId] = _shares;
-		history.add(address(_shares));
+		assert(history.add(address(_shares)));
 		address _holder = _remnant ? _from : address(_shares);
 		_safeMint(_holder, _tokenId);
 		IERC721Metadata _metadata = IERC721Metadata(address(target));
@@ -65,19 +65,19 @@ contract ERC721Wrapper is Ownable, ERC721
 		_setTokenURI(_tokenId, _tokenURI);
 	}
 
-	function _remove(address _from, uint256 _tokenId, bool _remnant) public
+	function _remove(address _from, uint256 _tokenId, bool _remnant) external
 	{
 		ERC721Shares _shares = ERC721Shares(msg.sender);
-		require(shares[_tokenId] == _shares);
+		assert(shares[_tokenId] == _shares);
 		shares[_tokenId] = ERC721Shares(0);
 		address _holder = _remnant ? _from : address(_shares);
-		require(_holder == ownerOf(_tokenId));
+		assert(_holder == ownerOf(_tokenId));
 		_burn(_tokenId);
 	}
 
-	function _forget() public
+	function _forget() external
 	{
 		ERC721Shares _shares = ERC721Shares(msg.sender);
-		require(history.remove(address(_shares)));
+		assert(history.remove(address(_shares)));
 	}
 }

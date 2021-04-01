@@ -8,6 +8,7 @@ import { SafeERC20 } from "@openzeppelin/contracts/token/ERC20/SafeERC20.sol";
 import { ERC721Holder } from "@openzeppelin/contracts/token/ERC721/ERC721Holder.sol";
 import { IERC721 } from "@openzeppelin/contracts/token/ERC721/IERC721.sol";
 import { IERC721Metadata } from "@openzeppelin/contracts/token/ERC721/IERC721Metadata.sol";
+import { ReentrancyGuard } from "@openzeppelin/contracts/utils/ReentrancyGuard.sol";
 import { Strings } from "@openzeppelin/contracts/utils/Strings.sol";
 
 import { SafeERC721Metadata } from "./SafeERC721Metadata.sol";
@@ -28,20 +29,20 @@ library Shares
 	}
 }
 
-contract ERC721Shares is ERC721Holder, ERC20
+contract ERC721Shares is ERC721Holder, ERC20, ReentrancyGuard
 {
 	using SafeERC20 for IERC20;
 
-	ERC721Wrapper public wrapper;
-	uint256 public tokenId;
-	uint256 public sharesCount;
-	uint256 public sharePrice;
-	IERC20 public paymentToken;
-	bool public remnant;
+	ERC721Wrapper public immutable wrapper;
+	uint256 public immutable tokenId;
+	uint256 public immutable sharesCount;
+	uint256 public immutable sharePrice;
+	IERC20 public immutable paymentToken;
+	bool public immutable remnant;
 
 	bool public released;
 
-	constructor (string memory _name, string memory _symbol, ERC721Wrapper _wrapper, uint256 _tokenId, address _from, uint256 _sharesCount, uint8 _decimals, uint256 _sharePrice, IERC20 _paymentToken, bool _remnant) ERC20(_name, _symbol) public
+	constructor (string memory __name, string memory __symbol, ERC721Wrapper _wrapper, uint256 _tokenId, address _from, uint256 _sharesCount, uint8 _decimals, uint256 _sharePrice, IERC20 _paymentToken, bool _remnant) ERC20(__name, __symbol) public
 	{
 		wrapper = _wrapper;
 		tokenId = _tokenId;
@@ -52,7 +53,7 @@ contract ERC721Shares is ERC721Holder, ERC20
 		released = false;
 		_setupDecimals(_decimals);
 		_mint(_from, _sharesCount);
-		emit Securitize(_from, address(wrapper.target()), tokenId, address(this));
+		emit Securitize(_from, address(_wrapper.target()), _tokenId, address(this));
 	}
 
 	function exitPrice() public view returns (uint256 _exitPrice)
@@ -62,13 +63,13 @@ contract ERC721Shares is ERC721Holder, ERC20
 
 	function redeemAmountOf(address _from) public view returns (uint256 _redeemAmount)
 	{
-		require(!released);
+		require(!released, "token already redeemed");
 		uint256 _sharesCount = balanceOf(_from);
 		uint256 _exitPrice = exitPrice();
 		return _exitPrice - _sharesCount * sharePrice;
 	}
 
-	function vaultBalance() public view returns (uint256 _vaultBalance)
+	function vaultBalance() external view returns (uint256 _vaultBalance)
 	{
 		if (!released) return 0;
 		uint256 _sharesCount = totalSupply();
@@ -82,15 +83,15 @@ contract ERC721Shares is ERC721Holder, ERC20
 		return _sharesCount * sharePrice;
 	}
 
-	function redeem() public payable
+	function redeem() external payable nonReentrant
 	{
-		require(!released);
+		require(!released, "token already redeemed");
 		address payable _from = msg.sender;
 		uint256 _paymentAmount = msg.value;
 		uint256 _sharesCount = balanceOf(_from);
 		uint256 _redeemAmount = redeemAmountOf(_from);
 		if (paymentToken == IERC20(0)) {
-			require(_paymentAmount >= _redeemAmount);
+			require(_paymentAmount >= _redeemAmount, "insufficient payment amount");
 			uint256 _changeAmount = _paymentAmount - _redeemAmount;
 			if (_changeAmount > 0) _from.transfer(_changeAmount);
 		} else {
@@ -108,19 +109,19 @@ contract ERC721Shares is ERC721Holder, ERC20
 		emit Redeem(_from, address(wrapper.target()), tokenId, address(this));
 	}
 
-	function claim() public
+	function claim() external nonReentrant
 	{
-		require(released);
+		require(released, "token not redeemed");
 		address payable _from = msg.sender;
 		uint256 _sharesCount = balanceOf(_from);
-		require(_sharesCount > 0);
+		require(_sharesCount > 0, "nothing to claim");
 		uint256 _claimAmount = vaultBalanceOf(_from);
 		assert(_claimAmount > 0);
 		_burn(_from, _sharesCount);
 		if (paymentToken == IERC20(0)) _from.transfer(_claimAmount);
 		else paymentToken.safeTransfer(_from, _claimAmount);
-		_cleanup();
 		emit Claim(_from, address(wrapper.target()), tokenId, address(this), _sharesCount);
+		_cleanup();
 	}
 
 	function _cleanup() internal
