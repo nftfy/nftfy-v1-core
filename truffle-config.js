@@ -66,6 +66,16 @@ module.exports = {
       provider: () => new HDWalletProvider(privateKey, 'https://rpc.testnet.fantom.network/'),
       skipDryRun: true,
     },
+    maticmain: {
+      network_id: 137,
+      gasPrice,
+      provider: () => new HDWalletProvider(privateKey, 'https://rpc-mainnet.maticvigil.com/'),
+    },
+    matictest: {
+      network_id: 80001,
+      provider: () => new HDWalletProvider(privateKey, 'https://rpc-mumbai.maticvigil.com/'),
+      skipDryRun: true,
+    },
     development: {
       network_id: '*',
       gas: gasLimit,

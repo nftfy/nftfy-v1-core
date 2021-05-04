@@ -34,3 +34,5 @@ jobs:
     - run: ./scripts/start-bsctest-fork.sh & rm -rf ./build/ && npm run test:bsctest && pkill node
     - run: ./scripts/start-ftmmain-fork.sh & rm -rf ./build/ && npm run test:ftmmain && pkill node
     - run: ./scripts/start-ftmtest-fork.sh & rm -rf ./build/ && npm run test:ftmtest && pkill node
+    - run: ./scripts/start-maticmain-fork.sh & rm -rf ./build/ && npm run test:maticmain && pkill node
+    - run: ./scripts/start-matictest-fork.sh & rm -rf ./build/ && npm run test:matictest && pkill node
