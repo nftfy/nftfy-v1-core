@@ -19,10 +19,10 @@ Core smart contracts of Nftfy: an ERC-721/ERC-20 NFT Fractionalizer
 | bscmain   | [0x727638740980aA0aA0B346d02dd91120Eaac75ed](https://bscscan.com/address/0x727638740980aA0aA0B346d02dd91120Eaac75ed)         |
 | bsctest   | [0x727638740980aA0aA0B346d02dd91120Eaac75ed](https://testnet.bscscan.com/address/0x727638740980aA0aA0B346d02dd91120Eaac75ed) |
 
-| Network   | Address                                    |
-| --------- | ------------------------------------------ |
-| ftmmain   | TBD                                        |
-| ftmtest   | 0x727638740980aA0aA0B346d02dd91120Eaac75ed |
+| Network   | Address                                                                                                                      |
+| --------- | ---------------------------------------------------------------------------------------------------------------------------- |
+| ftmmain   | TBD                                                                                                                          |
+| ftmtest   | [0x727638740980aA0aA0B346d02dd91120Eaac75ed](https://testnet.ftmscan.com/address/0x727638740980aA0aA0B346d02dd91120Eaac75ed) |
 
 | Network   | Address                                                                                                                                 |
 | --------- | --------------------------------------------------------------------------------------------------------------------------------------- |
