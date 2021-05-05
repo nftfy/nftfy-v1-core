@@ -105,8 +105,8 @@ contract ERC721Shares is ERC721Holder, ERC20, ReentrancyGuard
 		} catch (bytes memory /* _data */) {
 		}
 		wrapper.target().transferFrom(address(this), _from, tokenId);
-		_cleanup();
 		emit Redeem(_from, address(wrapper.target()), tokenId, address(this));
+		_cleanup();
 	}
 
 	function claim() external nonReentrant
