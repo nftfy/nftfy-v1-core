@@ -28,7 +28,7 @@ Polygon Matic:
 | Network (ID)      | Address                                                                                                                                  |
 | ----------------- | ---------------------------------------------------------------------------------------------------------------------------------------- |
 | maticmain (137)   | [0x727638740980aA0aA0B346d02dd91120Eaac75ed](https://polygonscan.com/address/0x727638740980aA0aA0B346d02dd91120Eaac75ed)                 |
-| matictest (80001) | [0x727638740980aA0aA0B346d02dd91120Eaac75ed](https://explorer-mumbai.maticvigil.com/address/0x727638740980aA0aA0B346d02dd91120Eaac75ed)  |
+| matictest (80001) | [0x727638740980aA0aA0B346d02dd91120Eaac75ed](https://mumbai.polygonscan.com/address/0x727638740980aA0aA0B346d02dd91120Eaac75ed)          |
 
 Fantom Network:
 
