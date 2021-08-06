@@ -7,19 +7,29 @@ import { SafeERC20 } from "@openzeppelin/contracts/token/ERC20/SafeERC20.sol";
 import { ERC721Holder } from "@openzeppelin/contracts/token/ERC721/ERC721Holder.sol";
 import { IERC721 } from "@openzeppelin/contracts/token/ERC721/IERC721.sol";
 import { IERC721Metadata } from "@openzeppelin/contracts/token/ERC721/IERC721Metadata.sol";
-import { Create2 } from "@openzeppelin/contracts/utils/Create2.sol";
 import { ReentrancyGuard } from "@openzeppelin/contracts/utils/ReentrancyGuard.sol";
 import { Strings } from "@openzeppelin/contracts/utils/Strings.sol";
 
-import { SafeERC721Metadata } from "./SafeERC721Metadata.sol";
-
 library SafeERC721
 {
+	function safeName(IERC721Metadata _metadata) internal view returns (string memory _name)
+	{
+		try _metadata.name() returns (string memory _n) { return _n; } catch {}
+	}
+
+	function safeSymbol(IERC721Metadata _metadata) internal view returns (string memory _symbol)
+	{
+		try _metadata.symbol() returns (string memory _s) { return _s; } catch {}
+	}
+
+	function safeTokenURI(IERC721Metadata _metadata, uint256 _tokenId) internal view returns (string memory _tokenURI)
+	{
+		try _metadata.tokenURI(_tokenId) returns (string memory _t) { return _t; } catch {}
+	}
+
 	function safeApprove(IERC721 _token, address _to, uint256 _tokenId) internal
 	{
-		try IERC721(_token).approve(_to, _tokenId) {
-		} catch (bytes memory /* _data */) {
-		}
+		try _token.approve(_to, _tokenId) {} catch {}
 	}
 }
 
@@ -28,19 +38,19 @@ contract Fractionalizer
 	function securitize(address _target, uint256 _tokenId, uint256 _sharesCount, uint8 _decimals, uint256 _sharePrice, address _paymentToken) external
 	{
 		address _from = msg.sender;
-		address _fractions = address(new Fraction());
-		FractionImpl(_fractions).initialize(_target, _tokenId, _from, _sharesCount, _decimals, _sharePrice, _paymentToken);
+		address _fractions = address(new Fractions());
+		FractionsImpl(_fractions).initialize(_target, _tokenId, _from, _sharesCount, _decimals, _sharePrice, _paymentToken);
 		IERC721(_target).transferFrom(_from, _fractions, _tokenId);
 	}
 }
 
-contract Fraction
+contract Fractions
 {
 	fallback () external payable
 	{
 		assembly {
 			calldatacopy(0, 0, calldatasize())
-			let result := delegatecall(gas(), 0, 0, calldatasize(), 0, 0) // replace 2nd parameter by FractionImpl address
+			let result := delegatecall(gas(), 0, 0, calldatasize(), 0, 0) // replace 2nd parameter by FractionsImpl address on deploy
 			returndatacopy(0, 0, returndatasize())
 			switch result
 			case 0 { revert(0, returndatasize()) }
@@ -49,12 +59,12 @@ contract Fraction
 	}
 }
 
-contract FractionImpl is ERC721Holder, ERC20, ReentrancyGuard
+contract FractionsImpl is ERC721Holder, ERC20, ReentrancyGuard
 {
 	using SafeERC20 for IERC20;
 	using SafeERC721 for IERC721;
+	using SafeERC721 for IERC721Metadata;
 	using Strings for uint256;
-	using SafeERC721Metadata for IERC721Metadata;
 
 	address public target;
 	uint256 public tokenId;
@@ -64,7 +74,10 @@ contract FractionImpl is ERC721Holder, ERC20, ReentrancyGuard
 
 	bool public released;
 
-	constructor () ERC20("", "") public {}
+	constructor () ERC20("Fractions", "FRAC") public
+	{
+		target = address(-1); // prevents proxy code from misuse
+	}
 
 	function __name() public view /*override*/ returns (string memory _name) // change ERC20 name() to virtual on deploy
 	{
@@ -84,7 +97,7 @@ contract FractionImpl is ERC721Holder, ERC20, ReentrancyGuard
 		sharesCount = _sharesCount;
 		sharePrice = _sharePrice;
 		paymentToken = _paymentToken;
-		// released = false;
+		released = false;
 		_setupDecimals(_decimals);
 		_mint(_from, _sharesCount);
 		emit Securitize(_from, _target, _tokenId, address(this));
