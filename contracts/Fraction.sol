@@ -1,8 +1,6 @@
 // SPDX-License-Identifier: GPL-3.0-only
 pragma solidity ^0.6.0;
 
-import { Initializable } from "@openzeppelin/contracts/proxy/Initializable.sol";
-import { Proxy } from "@openzeppelin/contracts/proxy/Proxy.sol";
 import { ERC20 } from "@openzeppelin/contracts/token/ERC20/ERC20.sol";
 import { IERC20 } from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import { SafeERC20 } from "@openzeppelin/contracts/token/ERC20/SafeERC20.sol";
@@ -25,42 +23,33 @@ library SafeERC721
 	}
 }
 
-contract Fractionalizer is ReentrancyGuard
+contract Fractionalizer
 {
-	mapping (address => mapping (uint256 => uint256)) private nonce;
-
-	function securitize(address _target, uint256 _tokenId, uint256 _sharesCount, uint8 _decimals, uint256 _exitPrice, address _paymentToken, bool _remnant) external nonReentrant
+	function securitize(address _target, uint256 _tokenId, uint256 _sharesCount, uint8 _decimals, uint256 _sharePrice, address _paymentToken) external
 	{
 		address _from = msg.sender;
-		require(_exitPrice > 0, "invalid exit price");
-		require(_sharesCount > 0, "invalid shares count");
-		require(_exitPrice % _sharesCount == 0, "fractional price per share");
-		require(!_remnant, "unsupported");
-		uint256 _nonce = nonce[_target][_tokenId]++;
-		uint256 _sharePrice = _exitPrice / _sharesCount;
-		bytes memory _params = abi.encode(_target, _tokenId, _nonce, _chainId());
-		bytes memory _bytecode = abi.encodePacked(type(Fraction).creationCode);
-		address _fractions = Create2.deploy(0, keccak256(_params), _bytecode);
+		address _fractions = address(new Fraction());
 		FractionImpl(_fractions).initialize(_target, _tokenId, _from, _sharesCount, _decimals, _sharePrice, _paymentToken);
 		IERC721(_target).transferFrom(_from, _fractions, _tokenId);
 	}
-
-	function _chainId() internal pure returns (uint256 _chainid)
-	{
-		assembly { _chainid := chainid() }
-		return _chainid;
-	}
 }
 
-contract Fraction is Proxy
+contract Fraction
 {
-	function _implementation() internal view override returns (address _impl)
+	fallback () external payable
 	{
-		return address(0); // replace by FractionImpl address
+		assembly {
+			calldatacopy(0, 0, calldatasize())
+			let result := delegatecall(gas(), 0, 0, calldatasize(), 0, 0) // replace 2nd parameter by FractionImpl address
+			returndatacopy(0, 0, returndatasize())
+			switch result
+			case 0 { revert(0, returndatasize()) }
+			default { return(0, returndatasize()) }
+		}
 	}
 }
 
-contract FractionImpl is Initializable, ERC721Holder, ERC20, ReentrancyGuard
+contract FractionImpl is ERC721Holder, ERC20, ReentrancyGuard
 {
 	using SafeERC20 for IERC20;
 	using SafeERC721 for IERC721;
@@ -87,14 +76,15 @@ contract FractionImpl is Initializable, ERC721Holder, ERC20, ReentrancyGuard
 		return string(abi.encodePacked(IERC721Metadata(target).safeSymbol(), tokenId.toString()));
 	}
 
-	function initialize(address _target, uint256 _tokenId, address _from, uint256 _sharesCount, uint8 _decimals, uint256 _sharePrice, address _paymentToken) external initializer
+	function initialize(address _target, uint256 _tokenId, address _from, uint256 _sharesCount, uint8 _decimals, uint256 _sharePrice, address _paymentToken) external
 	{
+		require(target == address(0), "already initialized");
 		target = _target;
 		tokenId = _tokenId;
 		sharesCount = _sharesCount;
 		sharePrice = _sharePrice;
 		paymentToken = _paymentToken;
-		released = false;
+		// released = false;
 		_setupDecimals(_decimals);
 		_mint(_from, _sharesCount);
 		emit Securitize(_from, _target, _tokenId, address(this));
