@@ -39,9 +39,12 @@ contract Fractionalizer
 	{
 		address _from = msg.sender;
 		address _fractions = address(new Fractions());
-		FractionsImpl(_fractions).initialize(_target, _tokenId, _from, _sharesCount, _decimals, _sharePrice, _paymentToken);
+		FractionsImpl(_fractions).initialize(_from, _target, _tokenId, _sharesCount, _decimals, _sharePrice, _paymentToken);
 		IERC721(_target).transferFrom(_from, _fractions, _tokenId);
+		emit Fractionalize(_from, _target, _tokenId, _fractions);
 	}
+
+	event Fractionalize(address indexed _from, address indexed _target, uint256 indexed _tokenId, address _fractions);
 }
 
 contract Fractions
@@ -81,7 +84,7 @@ contract FractionsImpl is ERC721Holder, ERC20, ReentrancyGuard
 
 	function __name() public view /*override*/ returns (string memory _name) // change ERC20 name() to virtual on deploy
 	{
-		return string(abi.encodePacked(IERC721Metadata(target).safeName(), " #", tokenId.toString(), " Shares"));
+		return string(abi.encodePacked(IERC721Metadata(target).safeName(), " #", tokenId.toString(), " Fractions"));
 	}
 
 	function __symbol() public view /*override*/ returns (string memory _symbol) // change ERC20 name() to virtual on deploy
@@ -89,7 +92,7 @@ contract FractionsImpl is ERC721Holder, ERC20, ReentrancyGuard
 		return string(abi.encodePacked(IERC721Metadata(target).safeSymbol(), tokenId.toString()));
 	}
 
-	function initialize(address _target, uint256 _tokenId, address _from, uint256 _sharesCount, uint8 _decimals, uint256 _sharePrice, address _paymentToken) external
+	function initialize(address _from, address _target, uint256 _tokenId, uint256 _sharesCount, uint8 _decimals, uint256 _sharePrice, address _paymentToken) external
 	{
 		require(target == address(0), "already initialized");
 		target = _target;
@@ -100,7 +103,6 @@ contract FractionsImpl is ERC721Holder, ERC20, ReentrancyGuard
 		released = false;
 		_setupDecimals(_decimals);
 		_mint(_from, _sharesCount);
-		emit Securitize(_from, _target, _tokenId, address(this));
 	}
 
 	function exitPrice() public view returns (uint256 _exitPrice)
@@ -176,7 +178,6 @@ contract FractionsImpl is ERC721Holder, ERC20, ReentrancyGuard
 		}
 	}
 
-	event Securitize(address indexed _from, address indexed _target, uint256 indexed _tokenId, address _shares);
-	event Redeem(address indexed _from, address indexed _target, uint256 indexed _tokenId, address _shares);
-	event Claim(address indexed _from, address indexed _target, uint256 indexed _tokenId, address _shares, uint256 _sharesCount);
+	event Redeem(address indexed _from, address indexed _target, uint256 indexed _tokenId, address _fractions);
+	event Claim(address indexed _from, address indexed _target, uint256 indexed _tokenId, address _fractions, uint256 _sharesCount);
 }
