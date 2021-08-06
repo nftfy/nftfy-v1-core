@@ -33,14 +33,14 @@ library SafeERC721
 	}
 }
 
-contract Fractionalizer
+contract Fractionalizer is ReentrancyGuard
 {
-	function securitize(address _target, uint256 _tokenId, uint256 _sharesCount, uint8 _decimals, uint256 _sharePrice, address _paymentToken) external
+	function securitize(address _target, uint256 _tokenId, uint256 _sharesCount, uint8 _decimals, uint256 _sharePrice, address _paymentToken) external nonReentrant
 	{
 		address _from = msg.sender;
 		address _fractions = address(new Fractions());
-		FractionsImpl(_fractions).initialize(_from, _target, _tokenId, _sharesCount, _decimals, _sharePrice, _paymentToken);
 		IERC721(_target).transferFrom(_from, _fractions, _tokenId);
+		FractionsImpl(_fractions).initialize(_from, _target, _tokenId, _sharesCount, _decimals, _sharePrice, _paymentToken);
 		emit Fractionalize(_from, _target, _tokenId, _fractions);
 	}
 
@@ -95,6 +95,7 @@ contract FractionsImpl is ERC721Holder, ERC20, ReentrancyGuard
 	function initialize(address _from, address _target, uint256 _tokenId, uint256 _sharesCount, uint8 _decimals, uint256 _sharePrice, address _paymentToken) external
 	{
 		require(target == address(0), "already initialized");
+		require(IERC721(_target).ownerOf(_tokenId) == address(this), "token not staked");
 		target = _target;
 		tokenId = _tokenId;
 		sharesCount = _sharesCount;
