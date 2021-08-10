@@ -27,20 +27,24 @@ library SafeERC721
 		try _metadata.tokenURI(_tokenId) returns (string memory _t) { return _t; } catch {}
 	}
 
-	function safeApprove(IERC721 _token, address _to, uint256 _tokenId) internal
+	function safeTransfer(IERC721 _token, address _to, uint256 _tokenId) internal
 	{
-		try _token.approve(_to, _tokenId) {} catch {}
+		address _from = address(this);
+		try _token.transferFrom(_from, _to, _tokenId) { return; } catch {}
+		// attempts to handle non-conforming ERC721 contracts
+		_token.approve(_from, _tokenId);
+		_token.transferFrom(_from, _to, _tokenId);
 	}
 }
 
 contract Fractionalizer is ReentrancyGuard
 {
-	function securitize(address _target, uint256 _tokenId, uint256 _sharesCount, uint8 _decimals, uint256 _sharePrice, address _paymentToken) external nonReentrant
+	function fractionalize(address _target, uint256 _tokenId, string memory _name, string memory _symbol, uint8 _decimals, uint256 _fractionsCount, uint256 _fractionPrice, address _paymentToken) external nonReentrant
 	{
 		address _from = msg.sender;
 		address _fractions = address(new Fractions());
 		IERC721(_target).transferFrom(_from, _fractions, _tokenId);
-		FractionsImpl(_fractions).initialize(_from, _target, _tokenId, _sharesCount, _decimals, _sharePrice, _paymentToken);
+		FractionsImpl(_fractions).initialize(_from, _target, _tokenId, _name, _symbol, _decimals, _fractionsCount, _fractionPrice, _paymentToken);
 		emit Fractionalize(_from, _target, _tokenId, _fractions);
 	}
 
@@ -71,11 +75,14 @@ contract FractionsImpl is ERC721Holder, ERC20, ReentrancyGuard
 
 	address public target;
 	uint256 public tokenId;
-	uint256 public sharesCount;
-	uint256 public sharePrice;
+	uint256 public fractionsCount;
+	uint256 public fractionPrice;
 	address public paymentToken;
 
 	bool public released;
+
+	string private name_;
+	string private symbol_;
 
 	constructor () ERC20("Fractions", "FRAC") public
 	{
@@ -84,101 +91,117 @@ contract FractionsImpl is ERC721Holder, ERC20, ReentrancyGuard
 
 	function __name() public view /*override*/ returns (string memory _name) // change ERC20 name() to virtual on deploy
 	{
+		if (bytes(name_).length != 0) return name_;
 		return string(abi.encodePacked(IERC721Metadata(target).safeName(), " #", tokenId.toString(), " Fractions"));
 	}
 
 	function __symbol() public view /*override*/ returns (string memory _symbol) // change ERC20 name() to virtual on deploy
 	{
+		if (bytes(symbol_).length != 0) return symbol_;
 		return string(abi.encodePacked(IERC721Metadata(target).safeSymbol(), tokenId.toString()));
 	}
 
-	function initialize(address _from, address _target, uint256 _tokenId, uint256 _sharesCount, uint8 _decimals, uint256 _sharePrice, address _paymentToken) external
+	function initialize(address _from, address _target, uint256 _tokenId, string memory _name, string memory _symbol, uint8 _decimals, uint256 _fractionsCount, uint256 _fractionPrice, address _paymentToken) external
 	{
 		require(target == address(0), "already initialized");
 		require(IERC721(_target).ownerOf(_tokenId) == address(this), "token not staked");
+		require(_fractionsCount  > 0, "invalid fraction count");
+		require(_fractionsCount * _fractionPrice / _fractionsCount == _fractionPrice, "invalid fraction price");
 		target = _target;
 		tokenId = _tokenId;
-		sharesCount = _sharesCount;
-		sharePrice = _sharePrice;
+		fractionsCount = _fractionsCount;
+		fractionPrice = _fractionPrice;
 		paymentToken = _paymentToken;
 		released = false;
+		name_ = _name;
+		symbol_ = _symbol;
 		_setupDecimals(_decimals);
-		_mint(_from, _sharesCount);
+		_mint(_from, _fractionsCount);
 	}
 
-	function exitPrice() public view returns (uint256 _exitPrice)
+	function reservePrice() public view returns (uint256 _reservePrice)
 	{
-		return sharesCount * sharePrice;
+		return fractionsCount * fractionPrice;
 	}
 
 	function redeemAmountOf(address _from) public view returns (uint256 _redeemAmount)
 	{
 		require(!released, "token already redeemed");
-		uint256 _sharesCount = balanceOf(_from);
-		uint256 _exitPrice = exitPrice();
-		return _exitPrice - _sharesCount * sharePrice;
+		uint256 _fractionsCount = balanceOf(_from);
+		uint256 _reservePrice = reservePrice();
+		return _reservePrice - _fractionsCount * fractionPrice;
 	}
 
 	function vaultBalance() external view returns (uint256 _vaultBalance)
 	{
 		if (!released) return 0;
-		uint256 _sharesCount = totalSupply();
-		return _sharesCount * sharePrice;
+		uint256 _fractionsCount = totalSupply();
+		return _fractionsCount * fractionPrice;
 	}
 
 	function vaultBalanceOf(address _from) public view returns (uint256 _vaultBalanceOf)
 	{
 		if (!released) return 0;
-		uint256 _sharesCount = balanceOf(_from);
-		return _sharesCount * sharePrice;
+		uint256 _fractionsCount = balanceOf(_from);
+		return _fractionsCount * fractionPrice;
 	}
 
 	function redeem() external payable nonReentrant
 	{
-		require(!released, "token already redeemed");
 		address payable _from = msg.sender;
-		uint256 _paymentAmount = msg.value;
-		uint256 _sharesCount = balanceOf(_from);
+		uint256 _value = msg.value;
+		require(!released, "token already redeemed");
+		uint256 _fractionsCount = balanceOf(_from);
 		uint256 _redeemAmount = redeemAmountOf(_from);
-		if (paymentToken == address(0)) {
-			require(_paymentAmount >= _redeemAmount, "insufficient payment amount");
-			uint256 _changeAmount = _paymentAmount - _redeemAmount;
-			if (_changeAmount > 0) _from.transfer(_changeAmount);
-		} else {
-			if (_paymentAmount > 0) _from.transfer(_paymentAmount);
-			if (_redeemAmount > 0) IERC20(paymentToken).safeTransferFrom(_from, address(this), _redeemAmount);
-		}
 		released = true;
-		if (_sharesCount > 0) _burn(_from, _sharesCount);
-		IERC721(target).safeApprove(address(this), tokenId);
-		IERC721(target).transferFrom(address(this), _from, tokenId);
-		emit Redeem(_from, target, tokenId, address(this));
+		if (_fractionsCount > 0) _burn(_from, _fractionsCount);
+		_safeTransferFrom(paymentToken, _from, _value, payable(address(this)), _redeemAmount);
+		IERC721(target).safeTransfer(_from, tokenId);
+		emit Redeem(_from, _fractionsCount, _redeemAmount);
 		_cleanup();
 	}
 
 	function claim() external nonReentrant
 	{
-		require(released, "token not redeemed");
 		address payable _from = msg.sender;
-		uint256 _sharesCount = balanceOf(_from);
-		require(_sharesCount > 0, "nothing to claim");
+		require(released, "token not redeemed");
+		uint256 _fractionsCount = balanceOf(_from);
+		require(_fractionsCount > 0, "nothing to claim");
 		uint256 _claimAmount = vaultBalanceOf(_from);
-		assert(_claimAmount > 0);
-		_burn(_from, _sharesCount);
-		if (paymentToken == address(0)) _from.transfer(_claimAmount);
-		else IERC20(paymentToken).safeTransfer(_from, _claimAmount);
-		emit Claim(_from, target, tokenId, address(this), _sharesCount);
+		_burn(_from, _fractionsCount);
+		_safeTransfer(paymentToken, _from, _claimAmount);
+		emit Claim(_from, _fractionsCount, _claimAmount);
 		_cleanup();
 	}
 
 	function _cleanup() internal
 	{
-		uint256 _sharesLeft = totalSupply();
-		if (_sharesLeft == 0) {
+		uint256 _fractionsCount = totalSupply();
+		if (_fractionsCount == 0) {
 			selfdestruct(address(0));
 		}
 	}
 
-	event Redeem(address indexed _from, address indexed _target, uint256 indexed _tokenId, address _fractions);
-	event Claim(address indexed _from, address indexed _target, uint256 indexed _tokenId, address _fractions, uint256 _sharesCount);
+	function _safeTransfer(address _token, address payable _to, uint256 _amount) internal
+	{
+		if (_token == address(0)) {
+			_to.transfer(_amount);
+		} else {
+			IERC20(_token).safeTransfer(_to, _amount);
+		}
+	}
+
+	function _safeTransferFrom(address _token, address payable _from, uint256 _value, address payable _to, uint256 _amount) internal
+	{
+		if (_token == address(0)) {
+			require(_value == _amount, "invalid value");
+			if (_to != address(this)) _to.transfer(_amount);
+		} else {
+			require(_value == 0, "invalid value");
+			IERC20(_token).safeTransferFrom(_from, _to, _amount);
+		}
+	}
+
+	event Redeem(address indexed _from, uint256 _fractionsCount, uint256 _redeemAmount);
+	event Claim(address indexed _from, uint256 _fractionsCount, uint256 _claimAmount);
 }
