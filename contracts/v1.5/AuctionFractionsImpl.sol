@@ -24,6 +24,7 @@ contract AuctionFractionsImpl is ERC721Holder, ERC20, ReentrancyGuard
 	uint256 public fractionsCount;
 	uint256 public fractionPrice;
 	address public paymentToken;
+	uint256 public kickoff;
 	uint256 public duration;
 	uint256 public fee;
 	address public vault;
@@ -54,7 +55,7 @@ contract AuctionFractionsImpl is ERC721Holder, ERC20, ReentrancyGuard
 
 	modifier onlyOwner()
 	{
-		require(balanceOf(msg.sender) + balanceOf(address(this)) == fractionsCount, "access denied");
+		require(bidder == address(0) && balanceOf(msg.sender) + balanceOf(address(this)) == fractionsCount, "access denied");
 		_;
 	}
 
@@ -70,15 +71,9 @@ contract AuctionFractionsImpl is ERC721Holder, ERC20, ReentrancyGuard
 		_;
 	}
 
-	modifier beforeAuction()
+	modifier inAuction()
 	{
-		require(bidder == address(0), "not available");
-		_;
-	}
-
-	modifier beforeOrInAuction()
-	{
-		require(now <= cutoff, "not available");
+		require(kickoff <= now && now <= cutoff, "not available");
 		_;
 	}
 
@@ -88,12 +83,13 @@ contract AuctionFractionsImpl is ERC721Holder, ERC20, ReentrancyGuard
 		_;
 	}
 
-	function initialize(address _from, address _target, uint256 _tokenId, string memory _name, string memory _symbol, uint8 _decimals, uint256 _fractionsCount, uint256 _fractionPrice, address _paymentToken, uint256 _duration, uint256 _fee, address _vault) external
+	function initialize(address _from, address _target, uint256 _tokenId, string memory _name, string memory _symbol, uint8 _decimals, uint256 _fractionsCount, uint256 _fractionPrice, address _paymentToken, uint256 _kickoff, uint256 _duration, uint256 _fee, address _vault) external
 	{
 		require(target == address(0), "already initialized");
 		require(IERC721(_target).ownerOf(_tokenId) == address(this), "missing token");
 		require(_fractionsCount  > 0, "invalid count");
 		require(_fractionsCount * _fractionPrice / _fractionsCount == _fractionPrice, "price overflow");
+		require(_kickoff <= now + 731 days, "invalid kickoff");
 		require(30 minutes <= _duration && _duration <= 731 days, "invalid duration");
 		require(_fee <= 1e18, "invalid fee");
 		require(_vault != address(0), "invalid address");
@@ -102,6 +98,7 @@ contract AuctionFractionsImpl is ERC721Holder, ERC20, ReentrancyGuard
 		fractionsCount = _fractionsCount;
 		fractionPrice = _fractionPrice;
 		paymentToken = _paymentToken;
+		kickoff = _kickoff;
 		duration = _duration;
 		fee = _fee;
 		vault = _vault;
@@ -122,7 +119,7 @@ contract AuctionFractionsImpl is ERC721Holder, ERC20, ReentrancyGuard
 		return fractionsCount * fractionPrice;
 	}
 
-	function bidRangeOf(address _from) external view beforeOrInAuction returns (uint256 _minFractionPrice, uint256 _maxFractionPrice)
+	function bidRangeOf(address _from) external view inAuction returns (uint256 _minFractionPrice, uint256 _maxFractionPrice)
 	{
 		if (bidder == address(0)) {
 			_minFractionPrice = fractionPrice;
@@ -139,7 +136,7 @@ contract AuctionFractionsImpl is ERC721Holder, ERC20, ReentrancyGuard
 		return (_minFractionPrice, _maxFractionPrice);
 	}
 
-	function bidAmountOf(address _from, uint256 _newFractionPrice) external view beforeOrInAuction returns (uint256 _redeemAmount)
+	function bidAmountOf(address _from, uint256 _newFractionPrice) external view inAuction returns (uint256 _redeemAmount)
 	{
 		uint256 _fractionsCount = balanceOf(_from);
 		if (bidder == _from) _fractionsCount += balanceOf(address(this));
@@ -160,7 +157,7 @@ contract AuctionFractionsImpl is ERC721Holder, ERC20, ReentrancyGuard
 		return _fractionsCount * fractionPrice;
 	}
 
-	function updatePrice(uint256 _newFractionPrice) external onlyOwner beforeAuction
+	function updatePrice(uint256 _newFractionPrice) external onlyOwner
 	{
 		address _from = msg.sender;
 		require(fractionsCount * _newFractionPrice / fractionsCount == _newFractionPrice, "price overflow");
@@ -169,7 +166,7 @@ contract AuctionFractionsImpl is ERC721Holder, ERC20, ReentrancyGuard
 		emit UpdatePrice(_from, _oldFractionPrice, _newFractionPrice);
 	}
 
-	function cancel() external nonReentrant onlyOwner beforeAuction
+	function cancel() external nonReentrant onlyOwner
 	{
 		address _from = msg.sender;
 		released = true;
@@ -180,7 +177,7 @@ contract AuctionFractionsImpl is ERC721Holder, ERC20, ReentrancyGuard
 		_cleanup();
 	}
 
-	function bid(uint256 _newFractionPrice) external payable nonReentrant beforeOrInAuction
+	function bid(uint256 _newFractionPrice) external payable nonReentrant inAuction
 	{
 		address payable _from = msg.sender;
 		uint256 _value = msg.value;
