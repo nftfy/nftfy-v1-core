@@ -24,6 +24,8 @@ contract AuctionFractionsImpl is ERC721Holder, ERC20, ReentrancyGuard
 	uint256 public fractionsCount;
 	uint256 public fractionPrice;
 	address public paymentToken;
+	uint256 public fee;
+	address public vault;
 
 	bool public released;
 	uint256 public cutoff;
@@ -51,7 +53,7 @@ contract AuctionFractionsImpl is ERC721Holder, ERC20, ReentrancyGuard
 
 	modifier onlyOwner()
 	{
-		require(balanceOf(msg.sender) == fractionsCount, "access denied");
+		require(balanceOf(msg.sender) + balanceOf(address(this)) == fractionsCount, "access denied");
 		_;
 	}
 
@@ -85,25 +87,30 @@ contract AuctionFractionsImpl is ERC721Holder, ERC20, ReentrancyGuard
 		_;
 	}
 
-	function initialize(address _from, address _target, uint256 _tokenId, string memory _name, string memory _symbol, uint8 _decimals, uint256 _fractionsCount, uint256 _fractionPrice, address _paymentToken) external
+	function initialize(address _from, address _target, uint256 _tokenId, string memory _name, string memory _symbol, uint8 _decimals, uint256 _fractionsCount, uint256 _fractionPrice, address _paymentToken, uint256 _fee, address _vault) external
 	{
 		require(target == address(0), "already initialized");
-		require(IERC721(_target).ownerOf(_tokenId) == address(this), "token not staked");
-		require(_fractionsCount  > 0, "invalid fraction count");
+		require(IERC721(_target).ownerOf(_tokenId) == address(this), "missing token");
+		require(_fractionsCount  > 0, "invalid count");
 		uint256 _newReservePrice = _fractionsCount * _fractionPrice;
-		require(_newReservePrice / _fractionsCount == _fractionPrice, "invalid fraction price");
+		require(_newReservePrice / _fractionsCount == _fractionPrice, "price overflow");
 		target = _target;
 		tokenId = _tokenId;
 		fractionsCount = _fractionsCount;
 		fractionPrice = _fractionPrice;
 		paymentToken = _paymentToken;
+		fee = _fee;
+		vault = _vault;
 		released = false;
 		cutoff = uint256(-1);
 		bidder = address(0);
 		name_ = _name;
 		symbol_ = _symbol;
 		_setupDecimals(_decimals);
-		_mint(_from, _fractionsCount);
+		uint256 _feeFractionsCount = _fractionsCount.mul(_fee) / 1e18;
+		uint256 _netFractionsCount = _fractionsCount - _feeFractionsCount;
+		_mint(_from, _netFractionsCount);
+		_mint(address(this), _feeFractionsCount);
 	}
 
 	function reservePrice() external view returns (uint256 _reservePrice)
@@ -129,7 +136,7 @@ contract AuctionFractionsImpl is ERC721Holder, ERC20, ReentrancyGuard
 	{
 		address _from = msg.sender;
 		uint256 _newReservePrice = fractionsCount * _newFractionPrice;
-		require(_newReservePrice / fractionsCount == _newFractionPrice, "invalid fraction price");
+		require(_newReservePrice / fractionsCount == _newFractionPrice, "price overflow");
 		uint256 _oldFractionPrice = fractionPrice;
 		fractionPrice = _newFractionPrice;
 		emit UpdatePrice(_from, _oldFractionPrice, _newFractionPrice);
@@ -140,6 +147,7 @@ contract AuctionFractionsImpl is ERC721Holder, ERC20, ReentrancyGuard
 		address _from = msg.sender;
 		released = true;
 		_burn(_from, balanceOf(_from));
+		_burn(address(this), balanceOf(address(this)));
 		IERC721(target).safeTransfer(_from, tokenId);
 		emit Cancel(_from);
 		_cleanup();
@@ -150,16 +158,17 @@ contract AuctionFractionsImpl is ERC721Holder, ERC20, ReentrancyGuard
 		address payable _from = msg.sender;
 		uint256 _value = msg.value;
 		uint256 _newReservePrice = fractionsCount * _newFractionPrice;
-		require(_newReservePrice / fractionsCount == _newFractionPrice, "invalid fraction price");
+		require(_newReservePrice / fractionsCount == _newFractionPrice, "price overflow");
 		uint256 _oldFractionPrice = fractionPrice;
 		if (bidder == address(0)) {
-			require(_newFractionPrice >= _oldFractionPrice, "minimum not met");
+			require(_newFractionPrice >= _oldFractionPrice, "below minimum");
+			_transfer(address(this), vault, balanceOf(address(this)));
 			cutoff = now + 24 hours;
 		} else {
 			uint256 _oldReservePrice = fractionsCount * _oldFractionPrice;
-			require(_newReservePrice / 11 >= _oldReservePrice / 10, "minimum not met"); // 10% increase
+			require(_newReservePrice / 11 >= _oldReservePrice / 10, "below minimum"); // 10% increase
 			_safeTransfer(paymentToken, bidder, _oldReservePrice);
-			if (cutoff <= now + 15 minutes) cutoff = now + 15 minutes;
+			if (cutoff < now + 15 minutes) cutoff = now + 15 minutes;
 		}
 		bidder = _from;
 		fractionPrice = _newFractionPrice;
@@ -170,7 +179,7 @@ contract AuctionFractionsImpl is ERC721Holder, ERC20, ReentrancyGuard
 	function redeem() external nonReentrant onlyBidder afterAuction
 	{
 		address _from = msg.sender;
-		require(!released, "token already redeemed");
+		require(!released, "missing token");
 		released = true;
 		IERC721(target).safeTransfer(_from, tokenId);
 		emit Redeem(_from);
