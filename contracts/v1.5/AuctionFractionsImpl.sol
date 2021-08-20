@@ -221,6 +221,7 @@ contract AuctionFractionsImpl is ERC721Holder, ERC20, ReentrancyGuard
 		address _from = msg.sender;
 		require(!released, "missing token");
 		released = true;
+		_burn(address(this), balanceOf(address(this)));
 		IERC721(target).safeTransfer(_from, tokenId);
 		emit Redeem(_from);
 		_cleanup();
