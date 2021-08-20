@@ -51,8 +51,9 @@ contract FractionsImpl is ERC721Holder, ERC20, ReentrancyGuard
 	{
 		require(target == address(0), "already initialized");
 		require(IERC721(_target).ownerOf(_tokenId) == address(this), "token not staked");
-		require(_fractionsCount  > 0, "invalid fraction count");
+		require(_fractionsCount > 0, "invalid fraction count");
 		require(_fractionsCount * _fractionPrice / _fractionsCount == _fractionPrice, "invalid fraction price");
+		require(_paymentToken != address(this), "invalid token");
 		target = _target;
 		tokenId = _tokenId;
 		fractionsCount = _fractionsCount;
