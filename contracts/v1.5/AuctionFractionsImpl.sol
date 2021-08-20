@@ -125,7 +125,7 @@ contract AuctionFractionsImpl is ERC721Holder, ERC20, ReentrancyGuard
 		return bidder == address(0) ? now < kickoff ? "PAUSE" : "OFFER" : now > cutoff ? "SOLD" : "AUCTION";
 	}
 
-	function isOwner(address _from) returns (bool _soleOwner)
+	function isOwner(address _from) public view returns (bool _soleOwner)
 	{
 		return bidder == address(0) && balanceOf(_from) + lockedFractions_ == fractionsCount;
 	}
