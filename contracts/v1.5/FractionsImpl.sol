@@ -66,6 +66,11 @@ contract FractionsImpl is ERC721Holder, ERC20, ReentrancyGuard
 		_mint(_from, _fractionsCount);
 	}
 
+	function status() external view returns (string memory _status)
+	{
+		return released ? "SOLD" : "OFFER";
+	}
+
 	function reservePrice() public view returns (uint256 _reservePrice)
 	{
 		return fractionsCount * fractionPrice;

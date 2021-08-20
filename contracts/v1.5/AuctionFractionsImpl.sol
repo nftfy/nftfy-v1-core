@@ -58,7 +58,7 @@ contract AuctionFractionsImpl is ERC721Holder, ERC20, ReentrancyGuard
 
 	modifier onlyOwner()
 	{
-		require(bidder == address(0) && balanceOf(msg.sender) + balanceOf(address(this)) == fractionsCount, "access denied");
+		require(isOwner(msg.sender), "access denied");
 		_;
 	}
 
@@ -120,6 +120,16 @@ contract AuctionFractionsImpl is ERC721Holder, ERC20, ReentrancyGuard
 		lockedAmount_ = 0;
 	}
 
+	function status() external view returns (string memory _status)
+	{
+		return bidder == address(0) ? now < kickoff ? "PAUSE" : "OFFER" : now > cutoff ? "SOLD" : "AUCTION";
+	}
+
+	function isOwner(address _from) returns (bool _soleOwner)
+	{
+		return bidder == address(0) && balanceOf(_from) + lockedFractions_ == fractionsCount;
+	}
+
 	function reservePrice() external view returns (uint256 _reservePrice)
 	{
 		return fractionsCount * fractionPrice;
@@ -133,7 +143,7 @@ contract AuctionFractionsImpl is ERC721Holder, ERC20, ReentrancyGuard
 			_minFractionPrice = (fractionPrice * 11 + 9) / 10; // 10% increase, rounded up
 		}
 		uint256 _fractionsCount = balanceOf(_from);
-		if (bidder == _from) _fractionsCount += balanceOf(address(this));
+		if (bidder == _from) _fractionsCount += lockedFractions_;
 		if (_fractionsCount == 0) {
 			_maxFractionPrice = uint256(-1);
 		} else {
@@ -145,7 +155,7 @@ contract AuctionFractionsImpl is ERC721Holder, ERC20, ReentrancyGuard
 	function bidAmountOf(address _from, uint256 _newFractionPrice) external view inAuction returns (uint256 _bidAmount)
 	{
 		uint256 _fractionsCount = balanceOf(_from);
-		if (bidder == _from) _fractionsCount += balanceOf(address(this));
+		if (bidder == _from) _fractionsCount += lockedFractions_;
 		return (fractionsCount - _fractionsCount) * _newFractionPrice;
 	}
 
@@ -177,7 +187,7 @@ contract AuctionFractionsImpl is ERC721Holder, ERC20, ReentrancyGuard
 		address _from = msg.sender;
 		released = true;
 		_burn(_from, balanceOf(_from));
-		_burn(address(this), balanceOf(address(this)));
+		_burn(address(this), lockedFractions_);
 		IERC721(target).safeTransfer(_from, tokenId);
 		emit Cancel(_from);
 		_cleanup();
@@ -221,7 +231,7 @@ contract AuctionFractionsImpl is ERC721Holder, ERC20, ReentrancyGuard
 		address _from = msg.sender;
 		require(!released, "missing token");
 		released = true;
-		_burn(address(this), balanceOf(address(this)));
+		_burn(address(this), lockedFractions_);
 		IERC721(target).safeTransfer(_from, tokenId);
 		emit Redeem(_from);
 		_cleanup();
