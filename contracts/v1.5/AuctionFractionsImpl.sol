@@ -136,7 +136,7 @@ contract AuctionFractionsImpl is ERC721Holder, ERC20, ReentrancyGuard
 		return (_minFractionPrice, _maxFractionPrice);
 	}
 
-	function bidAmountOf(address _from, uint256 _newFractionPrice) external view inAuction returns (uint256 _redeemAmount)
+	function bidAmountOf(address _from, uint256 _newFractionPrice) external view inAuction returns (uint256 _bidAmount)
 	{
 		uint256 _fractionsCount = balanceOf(_from);
 		if (bidder == _from) _fractionsCount += balanceOf(address(this));
