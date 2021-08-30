@@ -39,7 +39,7 @@ Fantom Network:
 | ftmmain (250)     | TBD                                                                                                                                      |
 | ftmtest (4002)    | [0x727638740980aA0aA0B346d02dd91120Eaac75ed](https://testnet.ftmscan.com/address/0x727638740980aA0aA0B346d02dd91120Eaac75ed)             |
 
-### Version 1.5
+### Version 1.2
 
 Ethereum:
 
