@@ -10,18 +10,19 @@ import { IERC721Metadata } from "@openzeppelin/contracts/token/ERC721/IERC721Met
 import { ReentrancyGuard } from "@openzeppelin/contracts/utils/ReentrancyGuard.sol";
 import { Strings } from "@openzeppelin/contracts/utils/Strings.sol";
 
+import { IFractions } from "./IFractions.sol";
 import { SafeERC721 } from "./SafeERC721.sol";
 
-contract FractionsImpl is ERC721Holder, ERC20, ReentrancyGuard
+contract FractionsImpl is IFractions, ERC721Holder, ERC20, ReentrancyGuard
 {
 	using SafeERC20 for IERC20;
 	using SafeERC721 for IERC721;
 	using SafeERC721 for IERC721Metadata;
 	using Strings for uint256;
 
-	address public target;
-	uint256 public tokenId;
-	uint256 public fractionsCount;
+	address public override target;
+	uint256 public override tokenId;
+	uint256 public override fractionsCount;
 	uint256 public fractionPrice;
 	address public paymentToken;
 
