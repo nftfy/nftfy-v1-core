@@ -18,7 +18,7 @@ contract CollectivePurchase is ReentrancyGuard
 	using SafeERC721 for IERC721;
 	using SafeMath for uint256;
 
-	enum State { Created, Canceled, Funded, Started, Finalized }
+	enum State { Created, Funded, Started, Finalized }
 
 	struct BuyerInfo {
 		uint256 amount;
@@ -51,10 +51,17 @@ contract CollectivePurchase is ReentrancyGuard
 		_;
 	}
 
-	modifier onlyState(uint256 _listingId, State _state)
+	modifier inState(uint256 _listingId, State _state)
 	{
 		ListingInfo storage _listing = listings[_listingId];
 		require(_state == _listing.state, "not available");
+		_;
+	}
+
+	modifier notInState(uint256 _listingId, State _state)
+	{
+		ListingInfo storage _listing = listings[_listingId];
+		require(_state != _listing.state, "not available");
 		_;
 	}
 
@@ -88,16 +95,16 @@ contract CollectivePurchase is ReentrancyGuard
 		return _listingId;
 	}
 
-	function cancel(uint256 _listingId) external nonReentrant onlySeller(_listingId) onlyState(_listingId, State.Created)
+	function cancel(uint256 _listingId) external nonReentrant onlySeller(_listingId) inState(_listingId, State.Created)
 	{
 		address _from = msg.sender;
 		ListingInfo storage _listing = listings[_listingId];
-		_listing.state = State.Canceled;
+		_listing.state = State.Finalized;
 		items[_listing.collection][_listing.tokenId] = false;
 		IERC721(_listing.collection).safeTransfer(_from, _listing.tokenId);
 	}
 
-	function accept(uint256 _listingId) external onlySeller(_listingId) onlyState(_listingId, State.Funded)
+	function accept(uint256 _listingId) external onlySeller(_listingId) inState(_listingId, State.Funded)
 	{
 		ListingInfo storage _listing = listings[_listingId];
 		_listing.state == State.Started;
@@ -105,7 +112,7 @@ contract CollectivePurchase is ReentrancyGuard
 		_listing.cutoff = now + 7 days;
 	}
 
-	function deposit(uint256 _listingId, uint256 _amount) external payable nonReentrant // onlyState(_listingId, [State.Created, State.Funded, State.Started])
+	function deposit(uint256 _listingId, uint256 _amount) external payable nonReentrant notInState(_listingId, State.Finalized)
 	{
 		address payable _from = msg.sender;
 		uint256 _value = msg.value;
@@ -124,7 +131,7 @@ contract CollectivePurchase is ReentrancyGuard
 		if (_listing.state == State.Started) _listing.reservePrice = _listing.amount;
 	}
 
-	function withdraw(uint256 _listingId, uint256 _amount) external nonReentrant onlyState(_listingId, State.Funded)
+	function withdraw(uint256 _listingId, uint256 _amount) external nonReentrant inState(_listingId, State.Funded)
 	{
 		address payable _from = msg.sender;
 		ListingInfo storage _listing = listings[_listingId];
@@ -136,15 +143,16 @@ contract CollectivePurchase is ReentrancyGuard
 		_safeTransfer(_listing.paymentToken, _from, _amount);
 	}
 
-	function relist(uint256 _listingId) external nonReentrant onlyState(_listingId, State.Started)
+	function relist(uint256 _listingId) external nonReentrant inState(_listingId, State.Started)
 	{
 		ListingInfo storage _listing = listings[_listingId];
 		require(now > _listing.cutoff, "not available");
 		_listing.state = State.Finalized;
+		items[_listing.collection][_listing.tokenId] = false;
 		_listing.fractions = AuctionFractionalizer(fractionalizer).fractionalize(_listing.collection, _listing.tokenId, "", "", 6, 1000000e6, 0, _listing.paymentToken, 0, 24 hours, 1e16);
 	}
 
-	function collect(uint256 _listingId) external nonReentrant onlySeller(_listingId) onlyState(_listingId, State.Finalized)
+	function collect(uint256 _listingId) external nonReentrant onlySeller(_listingId) inState(_listingId, State.Finalized)
 	{
 		address payable _from = msg.sender;
 		ListingInfo storage _listing = listings[_listingId];
@@ -154,7 +162,7 @@ contract CollectivePurchase is ReentrancyGuard
 		_safeTransfer(_listing.paymentToken, _from, _amount);
 	}
 
-	function claim(uint256 _listingId) external nonReentrant onlyState(_listingId, State.Finalized)
+	function claim(uint256 _listingId) external nonReentrant inState(_listingId, State.Finalized)
 	{
 		address payable _from = msg.sender;
 		ListingInfo storage _listing = listings[_listingId];
