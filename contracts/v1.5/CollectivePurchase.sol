@@ -78,6 +78,7 @@ contract CollectivePurchase is ReentrancyGuard
 	function list(address _collection, uint256 _tokenId, uint256 _reservePrice, address _paymentToken) external nonReentrant returns (uint256 _listingId)
 	{
 		address _from = msg.sender;
+		require(_reservePrice > 0, "invalid price");
 		IERC721(_collection).transferFrom(_from, address(this), _tokenId);
 		items[_collection][_tokenId] = true;
 		_listingId = listings.length;
@@ -102,6 +103,17 @@ contract CollectivePurchase is ReentrancyGuard
 		_listing.state = State.Finalized;
 		items[_listing.collection][_listing.tokenId] = false;
 		IERC721(_listing.collection).safeTransfer(_from, _listing.tokenId);
+		emit Cancel(_from, _listingId);
+	}
+
+	function updatePrice(uint256 _listingId, uint256 _newReservePrice) external onlySeller(_listingId) inState(_listingId, State.Created)
+	{
+		address _from = msg.sender;
+		require(_newReservePrice > 0, "invalid price");
+		ListingInfo storage _listing = listings[_listingId];
+		uint256 _oldReservePrice = _listing.reservePrice;
+		_listing.reservePrice = _newReservePrice;
+		emit UpdatePrice(_from, _listingId, _oldReservePrice, _newReservePrice);
 	}
 
 	function accept(uint256 _listingId) external onlySeller(_listingId) inState(_listingId, State.Funded)
@@ -110,6 +122,7 @@ contract CollectivePurchase is ReentrancyGuard
 		_listing.state == State.Started;
 		_listing.reservePrice = _listing.amount;
 		_listing.cutoff = now + 7 days;
+		emit Sold(_listingId);
 	}
 
 	function deposit(uint256 _listingId, uint256 _amount) external payable nonReentrant notInState(_listingId, State.Finalized)
@@ -126,9 +139,11 @@ contract CollectivePurchase is ReentrancyGuard
 			if (_listing.amount >= _listing.reservePrice) {
 				_listing.state == State.Started;
 				_listing.cutoff = now + 7 days;
+				emit Sold(_listingId);
 			}
 		}
 		if (_listing.state == State.Started) _listing.reservePrice = _listing.amount;
+		emit Deposit(_from, _listingId, _amount);
 	}
 
 	function withdraw(uint256 _listingId, uint256 _amount) external nonReentrant inState(_listingId, State.Funded)
@@ -141,6 +156,7 @@ contract CollectivePurchase is ReentrancyGuard
 		balances[_listing.paymentToken] -= _amount;
 		if (_listing.amount == 0) _listing.state == State.Created;
 		_safeTransfer(_listing.paymentToken, _from, _amount);
+		emit Withdrawal(_from, _listingId, _amount);
 	}
 
 	function relist(uint256 _listingId) external nonReentrant inState(_listingId, State.Started)
@@ -150,6 +166,7 @@ contract CollectivePurchase is ReentrancyGuard
 		_listing.state = State.Finalized;
 		items[_listing.collection][_listing.tokenId] = false;
 		_listing.fractions = AuctionFractionalizer(fractionalizer).fractionalize(_listing.collection, _listing.tokenId, "", "", 6, 1000000e6, 0, _listing.paymentToken, 0, 24 hours, 1e16);
+		emit Ended(_listingId);
 	}
 
 	function collect(uint256 _listingId) external nonReentrant onlySeller(_listingId) inState(_listingId, State.Finalized)
@@ -160,6 +177,7 @@ contract CollectivePurchase is ReentrancyGuard
 		_listing.amount = 0;
 		balances[_listing.paymentToken] -= _amount;
 		_safeTransfer(_listing.paymentToken, _from, _amount);
+		emit Collect(_from, _listingId, _amount);
 	}
 
 	function claim(uint256 _listingId) external nonReentrant inState(_listingId, State.Finalized)
@@ -171,6 +189,7 @@ contract CollectivePurchase is ReentrancyGuard
 		uint256 _totalFractionCount = IFractions(_listing.fractions).fractionsCount();
 		uint256 _fractionsCount = _amount.mul(_totalFractionCount) / _listing.amount;
 		_safeTransfer(_listing.fractions, _from, _fractionsCount);
+		emit Claim(_from, _listingId, _amount, _fractionsCount);
 	}
 
 	function recoverLostFunds(address _token, address payable _to) external nonReentrant
@@ -217,4 +236,13 @@ contract CollectivePurchase is ReentrancyGuard
 			IERC20(_token).safeTransferFrom(_from, _to, _amount);
 		}
 	}
+
+	event UpdatePrice(address indexed _from, uint256 indexed _listingId, uint256 _oldReservePrice, uint256 _newReservePrice);
+	event Cancel(address indexed _from, uint256 indexed _listingId);
+	event Deposit(address indexed _from, uint256 indexed _listingId, uint256 _amount);
+	event Withdrawal(address indexed _from, uint256 indexed _listingId, uint256 _amount);
+	event Collect(address indexed _from, uint256 indexed _listingId, uint256 _amount);
+	event Claim(address indexed _from, uint256 indexed _listingId, uint256 _amount, uint256 _fractionsCount);
+	event Sold(uint256 indexed _listingId);
+	event Ended(uint256 indexed _listingId);
 }
