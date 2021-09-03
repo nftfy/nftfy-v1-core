@@ -7,10 +7,9 @@ import { SafeERC20 } from "@openzeppelin/contracts/token/ERC20/SafeERC20.sol";
 import { IERC721 } from "@openzeppelin/contracts/token/ERC721/IERC721.sol";
 import { ReentrancyGuard } from "@openzeppelin/contracts/utils/ReentrancyGuard.sol";
 
-import { IFractions } from "./IFractions.sol";
 import { SafeERC721 } from "./SafeERC721.sol";
 
-import { AuctionFractionalizer } from "./AuctionFractionalizer.sol";
+import { Fractionalizer } from "./Fractionalizer.sol";
 
 contract CollectivePurchase is ReentrancyGuard
 {
@@ -33,11 +32,14 @@ contract CollectivePurchase is ReentrancyGuard
 		address paymentToken;
 		uint256 amount;
 		uint256 cutoff;
+		address fractionalizer;
+		bytes params;
+		uint256 fractionsCount;
 		address fractions;
 		mapping (address => BuyerInfo) buyers;
 	}
 
-	address public immutable fractionalizer;
+	address public immutable defaultFractionalizer;
 
 	mapping (address => uint256) private balances;
 	mapping (address => mapping (uint256 => bool)) private items;
@@ -65,9 +67,9 @@ contract CollectivePurchase is ReentrancyGuard
 		_;
 	}
 
-	constructor (address _fractionalizer) public
+	constructor (address _defaultFractionalizer) public
 	{
-		fractionalizer = _fractionalizer;
+		defaultFractionalizer = _defaultFractionalizer;
 	}
 
 	function listingCount() external view returns (uint256 _count)
@@ -75,7 +77,7 @@ contract CollectivePurchase is ReentrancyGuard
 		return listings.length;
 	}
 
-	function list(address _collection, uint256 _tokenId, uint256 _reservePrice, address _paymentToken) external nonReentrant returns (uint256 _listingId)
+	function list(address _collection, uint256 _tokenId, uint256 _reservePrice, address _paymentToken, address _fractionalizer, bytes calldata _params) external nonReentrant returns (uint256 _listingId)
 	{
 		address _from = msg.sender;
 		require(_reservePrice > 0, "invalid price");
@@ -91,6 +93,9 @@ contract CollectivePurchase is ReentrancyGuard
 			paymentToken: _paymentToken,
 			amount: 0,
 			cutoff: uint256(-1),
+			fractionalizer: _fractionalizer,
+			params: _params,
+			fractionsCount: 0,
 			fractions: address(0)
 		}));
 		return _listingId;
@@ -121,7 +126,7 @@ contract CollectivePurchase is ReentrancyGuard
 		ListingInfo storage _listing = listings[_listingId];
 		_listing.state == State.Started;
 		_listing.reservePrice = _listing.amount;
-		_listing.cutoff = now + 7 days;
+		_listing.cutoff = now;
 		emit Sold(_listingId);
 	}
 
@@ -165,7 +170,10 @@ contract CollectivePurchase is ReentrancyGuard
 		require(now > _listing.cutoff, "not available");
 		_listing.state = State.Finalized;
 		items[_listing.collection][_listing.tokenId] = false;
-		_listing.fractions = AuctionFractionalizer(fractionalizer).fractionalize(_listing.collection, _listing.tokenId, "", "", 6, 1000000e6, 0, _listing.paymentToken, 0, 24 hours, 1e16);
+		_listing.fractionsCount = 100e6;
+		uint256 _fractionPrice = (_listing.amount + _listing.fractionsCount - 1) / _listing.fractionsCount;
+		IERC721(_listing.collection).approve(defaultFractionalizer, _listing.tokenId);
+		_listing.fractions = Fractionalizer(defaultFractionalizer).fractionalize(_listing.collection, _listing.tokenId, "", "", 6, _listing.fractionsCount, _fractionPrice, _listing.paymentToken);
 		emit Ended(_listingId);
 	}
 
@@ -186,8 +194,7 @@ contract CollectivePurchase is ReentrancyGuard
 		ListingInfo storage _listing = listings[_listingId];
 		uint256 _amount = _listing.buyers[_from].amount;
 		_listing.buyers[_from].amount = 0;
-		uint256 _totalFractionCount = IFractions(_listing.fractions).fractionsCount();
-		uint256 _fractionsCount = _amount.mul(_totalFractionCount) / _listing.amount;
+		uint256 _fractionsCount = _amount.mul(_listing.fractionsCount) / _listing.amount;
 		_safeTransfer(_listing.fractions, _from, _fractionsCount);
 		emit Claim(_from, _listingId, _amount, _fractionsCount);
 	}
