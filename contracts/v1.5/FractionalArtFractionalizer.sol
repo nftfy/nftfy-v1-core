@@ -17,7 +17,14 @@ contract FractionalArtFractionalizer is ReentrancyGuard
 {
 	using SafeMath for uint256;
 
-	address constant ERC721_VAULT_FACTORY = address(0x85Aa7f78BdB2DE8F3e0c0010d99AD5853fFcfC63);
+	// Mainnet: 0x85Aa7f78BdB2DE8F3e0c0010d99AD5853fFcfC63
+	// Rinkeby: 0x458556c097251f52ca89cB81316B4113aC734BD1
+	address immutable _vaultFactory;
+
+	constructor (address _vaultfactory) public
+	{
+		vaultFractory = _vaultfactory;
+	}
 
 	function fractionalize(address _target, uint256 _tokenId, string memory _name, string memory _symbol, uint8 _decimals, uint256 _fractionsCount, uint256 _fractionPrice) external nonReentrant returns (address _fractions)
 	{
@@ -25,9 +32,9 @@ contract FractionalArtFractionalizer is ReentrancyGuard
 		uint256 _listPrice = _fractionsCount.mul(_fractionPrice);
 		uint256 _supply = _fractionsCount.mul(10 ** (uint256(18).sub(_decimals)));
 		IERC721(_target).transferFrom(_from, address(this), _tokenId);
-		IERC721(_target).approve(ERC721_VAULT_FACTORY, _tokenId);
-		uint256 _vaultNumber = FractionalArtERC721VaultFactory(ERC721_VAULT_FACTORY).mint(_name, _symbol, _target, _tokenId, _supply, _listPrice, 0);
-		_fractions = FractionalArtERC721VaultFactory(ERC721_VAULT_FACTORY).vaults(_vaultNumber);
+		IERC721(_target).approve(vaultFractory, _tokenId);
+		uint256 _vaultNumber = FractionalArtERC721VaultFactory(vaultFractory).mint(_name, _symbol, _target, _tokenId, _supply, _listPrice, 0);
+		_fractions = FractionalArtERC721VaultFactory(vaultFractory).vaults(_vaultNumber);
 		emit Fractionalize(_from, _target, _tokenId, _fractions);
 		return _fractions;
 	}
