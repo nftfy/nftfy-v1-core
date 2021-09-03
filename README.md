@@ -59,7 +59,7 @@ Ethereum:
 Binance Smart Chain:
 
 | Network (ID)      | Type      | Address                                                                                                                         |
-| ----------------- | ------------------------------------------------------------------------------------------------------------------------------------------- |
+| ----------------- | --------- | ------------------------------------------------------------------------------------------------------------------------------- |
 | bscmain (56)      | AUCTION   | [0x5EF37b60C374634Ff917BaafECB515Bf1482cAc3](https://bscscan.com/address/0x5EF37b60C374634Ff917BaafECB515Bf1482cAc3)            |
 | bscmain (56)      | SET_PRICE | [0x8279BE8f740DBeDB05C0Ce165447E8bc1457a137](https://bscscan.com/address/0x8279BE8f740DBeDB05C0Ce165447E8bc1457a137)            |
 | bsctest (97)      | AUCTION   | [0x5EF37b60C374634Ff917BaafECB515Bf1482cAc3](https://testnet.bscscan.com/address/0x5EF37b60C374634Ff917BaafECB515Bf1482cAc3)    |
@@ -68,7 +68,7 @@ Binance Smart Chain:
 Polygon Matic:
 
 | Network (ID)      | Type      | Address                                                                                                                         |
-| ----------------- | ------------------------------------------------------------------------------------------------------------------------------------------- |
+| ----------------- | --------- | ------------------------------------------------------------------------------------------------------------------------------- |
 | maticmain (137)   | AUCTION   | [0x5EF37b60C374634Ff917BaafECB515Bf1482cAc3](https://polygonscan.com/address/0x5EF37b60C374634Ff917BaafECB515Bf1482cAc3)        |
 | maticmain (137)   | SET_PRICE | [0x8279BE8f740DBeDB05C0Ce165447E8bc1457a137](https://polygonscan.com/address/0x8279BE8f740DBeDB05C0Ce165447E8bc1457a137)        |
 | matictest (80001) | AUCTION   | [0x5EF37b60C374634Ff917BaafECB515Bf1482cAc3](https://mumbai.polygonscan.com/address/0x5EF37b60C374634Ff917BaafECB515Bf1482cAc3) |
