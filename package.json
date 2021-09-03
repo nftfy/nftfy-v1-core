@@ -29,7 +29,7 @@
     "deploy:ftmtest": "truffle migrate --network ftmtest",
     "deploy:maticmain": "truffle migrate --network maticmain",
     "deploy:matictest": "truffle migrate --network matictest",
-    "source": "truffle-flattener contracts/*.sol | sed '/^.*SPDX-License-Identifier:.*$/d' | sed '1s/^/\\/\\/ SPDX-License-Identifier: GPL-3.0-only\\n/' > Nftfy.sol",
+    "source": "truffle-flattener contracts/*.sol | sed '/^.*SPDX-License-Identifier:.*$/d' | sed '1s/^/\\/\\/ SPDX-License-Identifier: GPL-3.0-only\\n/' > Contracts.sol",
     "test": "truffle test",
     "test:mainnet": "truffle test",
     "test:ropsten": "truffle test",
