@@ -9,7 +9,7 @@ import { ReentrancyGuard } from "@openzeppelin/contracts/utils/ReentrancyGuard.s
 
 import { SafeERC721 } from "./SafeERC721.sol";
 
-import { Fractionalizer } from "./Fractionalizer.sol";
+import { AuctionFractionalizer } from "./AuctionFractionalizer.sol";
 
 contract CollectivePurchase is ReentrancyGuard
 {
@@ -17,7 +17,7 @@ contract CollectivePurchase is ReentrancyGuard
 	using SafeERC721 for IERC721;
 	using SafeMath for uint256;
 
-	enum State { Created, Funded, Started, Finalized }
+	enum State { Created, Funded, Started, Ended }
 
 	struct BuyerInfo {
 		uint256 amount;
@@ -25,21 +25,22 @@ contract CollectivePurchase is ReentrancyGuard
 
 	struct ListingInfo {
 		State state;
-		address seller;
+		address payable seller;
 		address collection;
 		uint256 tokenId;
-		uint256 reservePrice;
 		address paymentToken;
+		uint256 reservePrice;
+		uint256 limitPrice;
 		uint256 amount;
 		uint256 cutoff;
-		address fractionalizer;
-		bytes params;
 		uint256 fractionsCount;
 		address fractions;
 		mapping (address => BuyerInfo) buyers;
 	}
 
-	address public immutable defaultFractionalizer;
+	uint256 public immutable fee;
+	address payable public immutable vault;
+	address public immutable fractionalizer;
 
 	mapping (address => uint256) private balances;
 	mapping (address => mapping (uint256 => bool)) private items;
@@ -48,8 +49,15 @@ contract CollectivePurchase is ReentrancyGuard
 
 	modifier onlySeller(uint256 _listingId)
 	{
-		ListingInfo storage _listingInfo = listings[_listingId];
-		require(msg.sender == _listingInfo.seller, "access denied");
+		ListingInfo storage _listing = listings[_listingId];
+		require(msg.sender == _listing.seller, "access denied");
+		_;
+	}
+
+	modifier onlyBuyer(uint256 _listingId)
+	{
+		ListingInfo storage _listing = listings[_listingId];
+		require(_listing.buyers[msg.sender].amount > 0, "access denied");
 		_;
 	}
 
@@ -67,9 +75,13 @@ contract CollectivePurchase is ReentrancyGuard
 		_;
 	}
 
-	constructor (address _defaultFractionalizer) public
+	constructor (uint256 _fee, address payable _vault, address _fractionalizer) public
 	{
-		defaultFractionalizer = _defaultFractionalizer;
+		require(_fee <= 1e18, "invalid fee");
+		require(_vault != address(0), "invalid address");
+		fee = _fee;
+		vault = _vault;
+		fractionalizer = _fractionalizer;
 	}
 
 	function listingCount() external view returns (uint256 _count)
@@ -77,10 +89,10 @@ contract CollectivePurchase is ReentrancyGuard
 		return listings.length;
 	}
 
-	function list(address _collection, uint256 _tokenId, uint256 _reservePrice, address _paymentToken, address _fractionalizer, bytes calldata _params) external nonReentrant returns (uint256 _listingId)
+	function list(address _collection, uint256 _tokenId, address _paymentToken, uint256 _reservePrice, uint256 _limitPrice) external nonReentrant returns (uint256 _listingId)
 	{
-		address _from = msg.sender;
-		require(_reservePrice > 0, "invalid price");
+		address payable _from = msg.sender;
+		require(0 < _reservePrice && _reservePrice <= _limitPrice, "invalid price");
 		IERC721(_collection).transferFrom(_from, address(this), _tokenId);
 		items[_collection][_tokenId] = true;
 		_listingId = listings.length;
@@ -89,13 +101,12 @@ contract CollectivePurchase is ReentrancyGuard
 			seller: _from,
 			collection: _collection,
 			tokenId: _tokenId,
-			reservePrice: _reservePrice,
 			paymentToken: _paymentToken,
+			reservePrice: _reservePrice,
+			limitPrice: _limitPrice,
 			amount: 0,
 			cutoff: uint256(-1),
-			fractionalizer: _fractionalizer,
-			params: _params,
-			fractionsCount: 0,
+			fractionsCount: 100e6,
 			fractions: address(0)
 		}));
 		return _listingId;
@@ -103,42 +114,45 @@ contract CollectivePurchase is ReentrancyGuard
 
 	function cancel(uint256 _listingId) external nonReentrant onlySeller(_listingId) inState(_listingId, State.Created)
 	{
-		address _from = msg.sender;
 		ListingInfo storage _listing = listings[_listingId];
-		_listing.state = State.Finalized;
+		_listing.state = State.Ended;
 		items[_listing.collection][_listing.tokenId] = false;
-		IERC721(_listing.collection).safeTransfer(_from, _listing.tokenId);
-		emit Cancel(_from, _listingId);
+		IERC721(_listing.collection).safeTransfer(_listing.seller, _listing.tokenId);
+		emit Cancel(_listingId);
 	}
 
-	function updatePrice(uint256 _listingId, uint256 _newReservePrice) external onlySeller(_listingId) inState(_listingId, State.Created)
+	function updatePrice(uint256 _listingId, uint256 _newReservePrice, uint256 _newLimitPrice) external onlySeller(_listingId) inState(_listingId, State.Created)
 	{
-		address _from = msg.sender;
-		require(_newReservePrice > 0, "invalid price");
+		require(0 < _newReservePrice && _newReservePrice <= _newLimitPrice, "invalid price");
 		ListingInfo storage _listing = listings[_listingId];
 		uint256 _oldReservePrice = _listing.reservePrice;
+		uint256 _oldLimitPrice = _listing.limitPrice;
 		_listing.reservePrice = _newReservePrice;
-		emit UpdatePrice(_from, _listingId, _oldReservePrice, _newReservePrice);
+		_listing.limitPrice = _newLimitPrice;
+		emit UpdatePrice(_listingId, _oldReservePrice, _oldLimitPrice, _newReservePrice, _newLimitPrice);
 	}
 
 	function accept(uint256 _listingId) external onlySeller(_listingId) inState(_listingId, State.Funded)
 	{
 		ListingInfo storage _listing = listings[_listingId];
+		uint256 _leftAmount = _listing.reservePrice - _listing.amount;
 		_listing.state == State.Started;
-		_listing.reservePrice = _listing.amount;
-		_listing.cutoff = now;
+		_listing.cutoff = now - 1;
+		_listing.buyers[_listing.seller].amount += _leftAmount;
 		emit Sold(_listingId);
 	}
 
-	function deposit(uint256 _listingId, uint256 _amount) external payable nonReentrant notInState(_listingId, State.Finalized)
+	function join(uint256 _listingId, uint256 _amount) external payable nonReentrant notInState(_listingId, State.Ended)
 	{
 		address payable _from = msg.sender;
 		uint256 _value = msg.value;
 		ListingInfo storage _listing = listings[_listingId];
+		uint256 _leftAmount = _listing.limitPrice - _listing.amount;
+		require(_amount <= _leftAmount, "limit exceeded");
+		_safeTransferFrom(_listing.paymentToken, _from, _value, payable(address(this)), _amount);
+		balances[_listing.paymentToken] += _amount;
 		_listing.amount += _amount;
 		_listing.buyers[_from].amount += _amount;
-		balances[_listing.paymentToken] += _amount;
-		_safeTransferFrom(_listing.paymentToken, _from, _value, payable(address(this)), _amount);
 		if (_listing.state == State.Created) _listing.state == State.Funded;
 		if (_listing.state == State.Funded) {
 			if (_listing.amount >= _listing.reservePrice) {
@@ -148,53 +162,55 @@ contract CollectivePurchase is ReentrancyGuard
 			}
 		}
 		if (_listing.state == State.Started) _listing.reservePrice = _listing.amount;
-		emit Deposit(_from, _listingId, _amount);
+		emit Join(_from, _listingId, _amount);
 	}
 
-	function withdraw(uint256 _listingId, uint256 _amount) external nonReentrant inState(_listingId, State.Funded)
+	function leave(uint256 _listingId) external nonReentrant onlyBuyer(_listingId) inState(_listingId, State.Funded)
 	{
 		address payable _from = msg.sender;
 		ListingInfo storage _listing = listings[_listingId];
-		require(_amount <= _listing.buyers[_from].amount, "insufficient balance");
-		_listing.buyers[_from].amount -= _amount;
+		uint256 _amount = _listing.buyers[_from].amount;
+		_listing.buyers[_from].amount = 0;
 		_listing.amount -= _amount;
 		balances[_listing.paymentToken] -= _amount;
 		if (_listing.amount == 0) _listing.state == State.Created;
 		_safeTransfer(_listing.paymentToken, _from, _amount);
-		emit Withdrawal(_from, _listingId, _amount);
+		emit Leave(_from, _listingId, _amount);
 	}
 
 	function relist(uint256 _listingId) external nonReentrant inState(_listingId, State.Started)
 	{
 		ListingInfo storage _listing = listings[_listingId];
 		require(now > _listing.cutoff, "not available");
-		_listing.state = State.Finalized;
+		uint256 _fractionsCount = _listing.fractionsCount;
+		uint256 _fractionPrice = (_listing.reservePrice + _fractionsCount - 1) / _fractionsCount;
+		_listing.state = State.Ended;
 		items[_listing.collection][_listing.tokenId] = false;
-		_listing.fractionsCount = 100e6;
-		uint256 _fractionPrice = (_listing.amount + _listing.fractionsCount - 1) / _listing.fractionsCount;
-		IERC721(_listing.collection).approve(defaultFractionalizer, _listing.tokenId);
-		_listing.fractions = Fractionalizer(defaultFractionalizer).fractionalize(_listing.collection, _listing.tokenId, "", "", 6, _listing.fractionsCount, _fractionPrice, _listing.paymentToken);
+		IERC721(_listing.collection).approve(fractionalizer, _listing.tokenId);
+		_listing.fractions = AuctionFractionalizer(fractionalizer).fractionalize(_listing.collection, _listing.tokenId, "", "", 6, _fractionsCount, 5 * _fractionPrice, _listing.paymentToken, 0, 24 hours, 1e18);
 		emit Ended(_listingId);
 	}
 
-	function collect(uint256 _listingId) external nonReentrant onlySeller(_listingId) inState(_listingId, State.Finalized)
+	function payout(uint256 _listingId) external nonReentrant inState(_listingId, State.Ended)
 	{
-		address payable _from = msg.sender;
 		ListingInfo storage _listing = listings[_listingId];
 		uint256 _amount = _listing.amount;
+		uint256 _feeAmount = (_amount * fee) / 1e18;
+		uint256 _netAmount = _amount - _feeAmount;
 		_listing.amount = 0;
 		balances[_listing.paymentToken] -= _amount;
-		_safeTransfer(_listing.paymentToken, _from, _amount);
-		emit Collect(_from, _listingId, _amount);
+		_safeTransfer(_listing.paymentToken, vault, _feeAmount);
+		_safeTransfer(_listing.paymentToken, _listing.seller, _netAmount);
+		emit Payout(_listing.seller, _listingId, _netAmount, _feeAmount);
 	}
 
-	function claim(uint256 _listingId) external nonReentrant inState(_listingId, State.Finalized)
+	function claim(uint256 _listingId) external nonReentrant onlyBuyer(_listingId) inState(_listingId, State.Ended)
 	{
 		address payable _from = msg.sender;
 		ListingInfo storage _listing = listings[_listingId];
 		uint256 _amount = _listing.buyers[_from].amount;
+		uint256 _fractionsCount = (_amount * _listing.fractionsCount) / _listing.reservePrice;
 		_listing.buyers[_from].amount = 0;
-		uint256 _fractionsCount = _amount.mul(_listing.fractionsCount) / _listing.amount;
 		_safeTransfer(_listing.fractions, _from, _fractionsCount);
 		emit Claim(_from, _listingId, _amount, _fractionsCount);
 	}
@@ -244,12 +260,12 @@ contract CollectivePurchase is ReentrancyGuard
 		}
 	}
 
-	event UpdatePrice(address indexed _from, uint256 indexed _listingId, uint256 _oldReservePrice, uint256 _newReservePrice);
-	event Cancel(address indexed _from, uint256 indexed _listingId);
-	event Deposit(address indexed _from, uint256 indexed _listingId, uint256 _amount);
-	event Withdrawal(address indexed _from, uint256 indexed _listingId, uint256 _amount);
-	event Collect(address indexed _from, uint256 indexed _listingId, uint256 _amount);
-	event Claim(address indexed _from, uint256 indexed _listingId, uint256 _amount, uint256 _fractionsCount);
+	event UpdatePrice(uint256 indexed _listingId, uint256 _oldReservePrice, uint256 _oldLimitPrice, uint256 _newReservePrice, uint256 _newLimitPrice);
+	event Cancel(uint256 indexed _listingId);
+	event Join(address indexed _buyer, uint256 indexed _listingId, uint256 _amount);
+	event Leave(address indexed _buyer, uint256 indexed _listingId, uint256 _amount);
+	event Payout(address indexed _seller, uint256 indexed _listingId, uint256 _netAmount, uint256 _feeAmount);
+	event Claim(address indexed _buyer, uint256 indexed _listingId, uint256 _amount, uint256 _fractionsCount);
 	event Sold(uint256 indexed _listingId);
 	event Ended(uint256 indexed _listingId);
 }
