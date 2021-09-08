@@ -31,6 +31,7 @@ contract CollectivePurchase is ReentrancyGuard
 		address paymentToken;
 		uint256 reservePrice;
 		uint256 limitPrice;
+		uint256 extension;
 		uint256 amount;
 		uint256 cutoff;
 		uint256 fractionsCount;
@@ -82,22 +83,24 @@ contract CollectivePurchase is ReentrancyGuard
 		return listings.length;
 	}
 
-	function list(address _collection, uint256 _tokenId, address _paymentToken, uint256 _reservePrice, uint256 _limitPrice) external nonReentrant returns (uint256 _listingId)
+	function list(address _collection, uint256 _tokenId, address _paymentToken, uint256 _reservePrice, uint256 _limitPrice, uint256 _extension) external nonReentrant returns (uint256 _listingId)
 	{
-		address payable _from = msg.sender;
+		address payable _seller = msg.sender;
 		require(_limitPrice * 1e18 / _limitPrice == 1e18, "price overflow");
 		require(0 < _reservePrice && _reservePrice <= _limitPrice, "invalid price");
-		IERC721(_collection).transferFrom(_from, address(this), _tokenId);
+		require(30 minutes <= _extension && _extension <= 731 days, "invalid duration");
+		IERC721(_collection).transferFrom(_seller, address(this), _tokenId);
 		items[_collection][_tokenId] = true;
 		_listingId = listings.length;
 		listings.push(ListingInfo({
 			state: State.Created,
-			seller: _from,
+			seller: _seller,
 			collection: _collection,
 			tokenId: _tokenId,
 			paymentToken: _paymentToken,
 			reservePrice: _reservePrice,
 			limitPrice: _limitPrice,
+			extension: _extension,
 			amount: 0,
 			cutoff: uint256(-1),
 			fractionsCount: 0,
@@ -143,39 +146,40 @@ contract CollectivePurchase is ReentrancyGuard
 
 	function join(uint256 _listingId, uint256 _amount) external payable nonReentrant notInState(_listingId, State.Ended)
 	{
-		address payable _from = msg.sender;
+		address payable _buyer = msg.sender;
 		uint256 _value = msg.value;
 		ListingInfo storage _listing = listings[_listingId];
+		require(now <= _listing.cutoff, "not available");
 		uint256 _leftAmount = _listing.limitPrice - _listing.amount;
 		require(_amount <= _leftAmount, "limit exceeded");
-		_safeTransferFrom(_listing.paymentToken, _from, _value, payable(address(this)), _amount);
+		_safeTransferFrom(_listing.paymentToken, _buyer, _value, payable(address(this)), _amount);
 		balances[_listing.paymentToken] += _amount;
 		_listing.amount += _amount;
-		_listing.buyers[_from].amount += _amount;
+		_listing.buyers[_buyer].amount += _amount;
 		if (_listing.state == State.Created) _listing.state == State.Funded;
 		if (_listing.state == State.Funded) {
 			if (_listing.amount >= _listing.reservePrice) {
 				_listing.state == State.Started;
-				_listing.cutoff = now + 7 days;
+				_listing.cutoff = now + _listing.extension;
 				emit Sold(_listingId);
 			}
 		}
 		if (_listing.state == State.Started) _listing.reservePrice = _listing.amount;
-		emit Join(_listingId, _from, _amount);
+		emit Join(_listingId, _buyer, _amount);
 	}
 
 	function leave(uint256 _listingId) external nonReentrant inState(_listingId, State.Funded)
 	{
-		address payable _from = msg.sender;
+		address payable _buyer = msg.sender;
 		ListingInfo storage _listing = listings[_listingId];
-		uint256 _amount = _listing.buyers[_from].amount;
+		uint256 _amount = _listing.buyers[_buyer].amount;
 		require(_amount > 0, "insufficient balance");
-		_listing.buyers[_from].amount = 0;
+		_listing.buyers[_buyer].amount = 0;
 		_listing.amount -= _amount;
 		balances[_listing.paymentToken] -= _amount;
 		if (_listing.amount == 0) _listing.state == State.Created;
-		_safeTransfer(_listing.paymentToken, _from, _amount);
-		emit Leave(_listingId, _from, _amount);
+		_safeTransfer(_listing.paymentToken, _buyer, _amount);
+		emit Leave(_listingId, _buyer, _amount);
 	}
 
 	function relist(uint256 _listingId) external nonReentrant inState(_listingId, State.Started)
