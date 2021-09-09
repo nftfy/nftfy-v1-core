@@ -219,11 +219,11 @@ contract CollectivePurchase is ReentrancyGuard
 		uint256 _fractionsCount = 100e6;
 		uint256 _fractionPrice = (_listing.reservePrice + _fractionsCount - 1) / _fractionsCount;
 		_listing.state = State.Ended;
-		_listing.fractionsCount = _fractionsCount;
 		items[_listing.collection][_listing.tokenId] = false;
 		IERC721(_listing.collection).approve(fractionalizer, _listing.tokenId);
-		_listing.fractions = AuctionFractionalizer(fractionalizer).fractionalize(_listing.collection, _listing.tokenId, "", "", 6, _fractionsCount, 5 * _fractionPrice, _listing.paymentToken, 0, 24 hours, 1e18);
-		balances[_listing.fractions] += _fractionsCount;
+		_listing.fractions = AuctionFractionalizer(fractionalizer).fractionalize(_listing.collection, _listing.tokenId, "", "", 6, _fractionsCount, 5 * _fractionPrice, _listing.paymentToken, 0, 24 hours, 1e16);
+		_listing.fractionsCount = _balanceOf(_listing.fractions);
+		balances[_listing.fractions] = _listing.fractionsCount;
 		emit Relisted(_listingId);
 	}
 
