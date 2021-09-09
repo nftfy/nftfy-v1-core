@@ -167,7 +167,7 @@ contract CollectivePurchase is ReentrancyGuard
 		uint256 _amount = _listing.reservePrice - _listing.amount;
 		uint256 _feeAmount = (_amount * fee) / 1e18;
 		uint256 _netAmount = _amount - _feeAmount;
-		_listing.state == State.Started;
+		_listing.state = State.Started;
 		_listing.cutoff = now - 1;
 		_listing.buyers[vault].amount += _feeAmount;
 		_listing.buyers[_listing.seller].amount += _netAmount;
@@ -186,10 +186,10 @@ contract CollectivePurchase is ReentrancyGuard
 		balances[_listing.paymentToken] += _amount;
 		_listing.amount += _amount;
 		_listing.buyers[_buyer].amount += _amount;
-		if (_listing.state == State.Created) _listing.state == State.Funded;
+		if (_listing.state == State.Created) _listing.state = State.Funded;
 		if (_listing.state == State.Funded) {
 			if (_listing.amount >= _listing.reservePrice) {
-				_listing.state == State.Started;
+				_listing.state = State.Started;
 				_listing.cutoff = now + _listing.extension;
 				emit Sold(_listingId);
 			}
@@ -207,7 +207,7 @@ contract CollectivePurchase is ReentrancyGuard
 		_listing.buyers[_buyer].amount = 0;
 		_listing.amount -= _amount;
 		balances[_listing.paymentToken] -= _amount;
-		if (_listing.amount == 0) _listing.state == State.Created;
+		if (_listing.amount == 0) _listing.state = State.Created;
 		_safeTransfer(_listing.paymentToken, _buyer, _amount);
 		emit Leave(_listingId, _buyer, _amount);
 	}
