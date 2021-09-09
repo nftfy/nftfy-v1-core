@@ -83,6 +83,28 @@ contract CollectivePurchase is ReentrancyGuard
 		return listings.length;
 	}
 
+	function buyers(uint256 _listingId, address _buyer) external view returns (uint256 _amount)
+	{
+		ListingInfo storage _listing = listings[_listingId];
+		BuyerInfo storage _info = _listing.buyers[_buyer];
+		return _info.amount;
+	}
+
+	function status(uint256 _listingId) external view returns (string memory _status)
+	{
+		ListingInfo storage _listing = listings[_listingId];
+		if (_listing.state == State.Created) return "CREATED";
+		if (_listing.state == State.Funded) return "FUNDED";
+		if (_listing.state == State.Started) return now <= _listing.cutoff ? "STARTED" : "ENDING";
+		return "ENDED";
+	}
+
+	function maxJoinAmount(uint256 _listingId) external view returns (uint256 _amount)
+	{
+		ListingInfo storage _listing = listings[_listingId];
+		return _listing.limitPrice - _listing.amount;
+	}
+
 	function list(address _collection, uint256 _tokenId, address _paymentToken, uint256 _reservePrice, uint256 _limitPrice, uint256 _extension) external nonReentrant returns (uint256 _listingId)
 	{
 		address payable _seller = msg.sender;
