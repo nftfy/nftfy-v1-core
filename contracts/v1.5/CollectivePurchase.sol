@@ -105,6 +105,14 @@ contract CollectivePurchase is ReentrancyGuard
 		return _listing.limitPrice - _listing.amount;
 	}
 
+	function buyerFractionsCount(uint256 _listingId, address _buyer) external view inState(_listingId, State.Ended) returns (uint256 _fractionsCount)
+	{
+		ListingInfo storage _listing = listings[_listingId];
+		uint256 _amount = _listing.buyers[_buyer].amount;
+		_fractionsCount = (_amount * _listing.fractionsCount) / _listing.reservePrice;
+		return _fractionsCount;
+	}
+
 	function list(address _collection, uint256 _tokenId, address _paymentToken, uint256 _reservePrice, uint256 _limitPrice, uint256 _extension) external nonReentrant returns (uint256 _listingId)
 	{
 		address payable _seller = msg.sender;
