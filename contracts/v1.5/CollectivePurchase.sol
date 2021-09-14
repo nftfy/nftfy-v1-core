@@ -10,6 +10,7 @@ import { ReentrancyGuard } from "@openzeppelin/contracts/utils/ReentrancyGuard.s
 import { SafeERC721 } from "./SafeERC721.sol";
 
 import { AuctionFractionalizer } from "./AuctionFractionalizer.sol";
+import { Fractionalizer } from "./Fractionalizer.sol";
 
 contract CollectivePurchase is ReentrancyGuard
 {
@@ -32,6 +33,7 @@ contract CollectivePurchase is ReentrancyGuard
 		uint256 reservePrice;
 		uint256 limitPrice;
 		uint256 extension;
+		bytes extra;
 		uint256 amount;
 		uint256 cutoff;
 		uint256 fractionsCount;
@@ -42,6 +44,7 @@ contract CollectivePurchase is ReentrancyGuard
 	uint256 public immutable fee;
 	address payable public immutable vault;
 	address public immutable fractionalizer;
+	address public immutable auctionFractionalizer;
 
 	mapping (address => uint256) private balances;
 	mapping (address => mapping (uint256 => bool)) private items;
@@ -69,13 +72,14 @@ contract CollectivePurchase is ReentrancyGuard
 		_;
 	}
 
-	constructor (uint256 _fee, address payable _vault, address _fractionalizer) public
+	constructor (uint256 _fee, address payable _vault, address _fractionalizer, address _auctionFractionalizer) public
 	{
 		require(_fee <= 1e18, "invalid fee");
 		require(_vault != address(0), "invalid address");
 		fee = _fee;
 		vault = _vault;
 		fractionalizer = _fractionalizer;
+		auctionFractionalizer = _auctionFractionalizer;
 	}
 
 	function listingCount() external view returns (uint256 _count)
@@ -113,12 +117,13 @@ contract CollectivePurchase is ReentrancyGuard
 		return _fractionsCount;
 	}
 
-	function list(address _collection, uint256 _tokenId, address _paymentToken, uint256 _reservePrice, uint256 _limitPrice, uint256 _extension) external nonReentrant returns (uint256 _listingId)
+	function list(address _collection, uint256 _tokenId, address _paymentToken, uint256 _reservePrice, uint256 _limitPrice, uint256 _extension, bytes calldata _extra) external nonReentrant returns (uint256 _listingId)
 	{
 		address payable _seller = msg.sender;
 		require(_limitPrice * 1e18 / _limitPrice == 1e18, "price overflow");
 		require(0 < _reservePrice && _reservePrice <= _limitPrice, "invalid price");
 		require(30 minutes <= _extension && _extension <= 731 days, "invalid duration");
+		_validate(_extra);
 		IERC721(_collection).transferFrom(_seller, address(this), _tokenId);
 		items[_collection][_tokenId] = true;
 		_listingId = listings.length;
@@ -131,6 +136,7 @@ contract CollectivePurchase is ReentrancyGuard
 			reservePrice: _reservePrice,
 			limitPrice: _limitPrice,
 			extension: _extension,
+			extra: _extra,
 			amount: 0,
 			cutoff: uint256(-1),
 			fractionsCount: 0,
@@ -216,12 +222,10 @@ contract CollectivePurchase is ReentrancyGuard
 	{
 		ListingInfo storage _listing = listings[_listingId];
 		require(now > _listing.cutoff, "not available");
-		uint256 _fractionsCount = 100e6;
+		uint256 _fractionsCount = 100000e6;
 		uint256 _fractionPrice = (_listing.reservePrice + _fractionsCount - 1) / _fractionsCount;
 		_listing.state = State.Ended;
-		items[_listing.collection][_listing.tokenId] = false;
-		IERC721(_listing.collection).approve(fractionalizer, _listing.tokenId);
-		_listing.fractions = AuctionFractionalizer(fractionalizer).fractionalize(_listing.collection, _listing.tokenId, "", "", 6, _fractionsCount, 5 * _fractionPrice, _listing.paymentToken, 0, 24 hours, 1e16);
+		_listing.fractions = _fractionalize(_listing.collection, _listing.tokenId, 6, _fractionsCount, 5 * _fractionPrice, _listing.paymentToken, _listing.extra);
 		_listing.fractionsCount = _balanceOf(_listing.fractions);
 		balances[_listing.fractions] = _listing.fractionsCount;
 		emit Relisted(_listingId);
@@ -267,6 +271,28 @@ contract CollectivePurchase is ReentrancyGuard
 	{
 		if (items[_collection][_tokenId]) return;
 		IERC721(_collection).safeTransfer(_to, _tokenId);
+	}
+
+	function _validate(bytes calldata _extra) internal pure
+	{
+		(bytes32 _type, string memory _name, string memory _symbol, uint256 _fee) = abi.decode(_extra, (bytes32, string, string, uint256));
+		require(_type == "AUCTION" || _type == "SET_PRICE", "invalid type");
+		require(_fee <= 1e18, "invalid fee");
+		_name; _symbol;
+	}
+
+	function _fractionalize(address _collection, uint256 _tokenId, uint8 _decimals, uint256 _fractionsCount, uint256 _fractionPrice, address _paymentToken, bytes storage _extra) internal returns (address _fractions)
+	{
+		(bytes32 _type, string memory _name, string memory _symbol, uint256 _fee) = abi.decode(_extra, (bytes32, string, string, uint256));
+		items[_collection][_tokenId] = false;
+		if (_type == "AUCTION") {
+			IERC721(_collection).approve(auctionFractionalizer, _tokenId);
+			return AuctionFractionalizer(auctionFractionalizer).fractionalize(_collection, _tokenId, _name, _symbol, _decimals, _fractionsCount, _fractionPrice, _paymentToken, 0, 72 hours, _fee);
+		}
+		if (_type == "SET_PRICE") {
+			IERC721(_collection).approve(fractionalizer, _tokenId);
+			return Fractionalizer(fractionalizer).fractionalize(_collection, _tokenId, _name, _symbol, _decimals, _fractionsCount, _fractionPrice, _paymentToken);
+		}
 	}
 
 	function _balanceOf(address _token) internal view returns (uint256 _balance)
