@@ -218,7 +218,7 @@ contract CollectivePurchase is ReentrancyGuard
 		emit Leave(_listingId, _buyer, _amount);
 	}
 
-	function relist(uint256 _listingId) external nonReentrant inState(_listingId, State.Started)
+	function relist(uint256 _listingId) public nonReentrant inState(_listingId, State.Started)
 	{
 		ListingInfo storage _listing = listings[_listingId];
 		require(now > _listing.cutoff, "not available");
@@ -231,7 +231,7 @@ contract CollectivePurchase is ReentrancyGuard
 		emit Relisted(_listingId);
 	}
 
-	function payout(uint256 _listingId) external nonReentrant inState(_listingId, State.Ended)
+	function payout(uint256 _listingId) public nonReentrant inState(_listingId, State.Ended)
 	{
 		ListingInfo storage _listing = listings[_listingId];
 		uint256 _amount = _listing.amount;
@@ -245,7 +245,7 @@ contract CollectivePurchase is ReentrancyGuard
 		emit Payout(_listingId, _listing.seller, _netAmount, _feeAmount);
 	}
 
-	function claim(uint256 _listingId, address payable _buyer) external nonReentrant inState(_listingId, State.Ended)
+	function claim(uint256 _listingId, address payable _buyer) public nonReentrant inState(_listingId, State.Ended)
 	{
 		ListingInfo storage _listing = listings[_listingId];
 		uint256 _amount = _listing.buyers[_buyer].amount;
@@ -255,6 +255,29 @@ contract CollectivePurchase is ReentrancyGuard
 		balances[_listing.fractions] -= _fractionsCount;
 		_safeTransfer(_listing.fractions, _buyer, _fractionsCount);
 		emit Claim(_listingId, _buyer, _amount, _fractionsCount);
+	}
+
+	function relistPayoutAndClaim(uint256 _listingId, address payable[] calldata _buyers) external
+	{
+		ListingInfo storage _listing = listings[_listingId];
+		if (_listing.state != State.Ended) {
+			relist(_listingId);
+		}
+		if (_listing.amount > 0) {
+			payout(_listingId);
+		}
+		if (_listing.buyers[vault].amount > 0) {
+			claim(_listingId, vault);
+		}
+		if (_listing.buyers[_listing.seller].amount > 0) {
+			claim(_listingId, _listing.seller);
+		}
+		for (uint256 _i = 0; _i < _buyers.length; _i++) {
+			address payable _buyer = _buyers[_i];
+			if (_listing.buyers[_buyer].amount > 0) {
+				claim(_listingId, _buyer);
+			}
+		}
 	}
 
 	function recoverLostFunds(address _token, address payable _to) external nonReentrant
