@@ -248,6 +248,7 @@ contract CollectivePurchase is ReentrancyGuard
 		_listing.state = State.Ended;
 		_listing.fractions = _fractionalize(_listing.collection, _listing.tokenId, 6, _fractionsCount, 5 * _fractionPrice, _listing.paymentToken, _listing.extra);
 		_listing.fractionsCount = _balanceOf(_listing.fractions);
+		items[_listing.collection][_listing.tokenId] = false;
 		balances[_listing.fractions] = _listing.fractionsCount;
 		emit Relisted(_listingId);
 	}
@@ -338,7 +339,6 @@ contract CollectivePurchase is ReentrancyGuard
 	function _fractionalize(address _collection, uint256 _tokenId, uint8 _decimals, uint256 _fractionsCount, uint256 _fractionPrice, address _paymentToken, bytes storage _extra) internal returns (address _fractions)
 	{
 		(bytes32 _type, string memory _name, string memory _symbol, uint256 _fee) = abi.decode(_extra, (bytes32, string, string, uint256));
-		items[_collection][_tokenId] = false;
 		if (_type == "AUCTION") {
 			IERC721(_collection).approve(auctionFractionalizer, _tokenId);
 			return AuctionFractionalizer(auctionFractionalizer).fractionalize(_collection, _tokenId, _name, _symbol, _decimals, _fractionsCount, _fractionPrice, _paymentToken, 0, 72 hours, _fee);
