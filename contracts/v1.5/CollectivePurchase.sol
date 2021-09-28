@@ -18,6 +18,8 @@ contract CollectivePurchase is ReentrancyGuard
 	using SafeERC721 for IERC721;
 	using SafeMath for uint256;
 
+	uint256 constant FRACTIONS_COUNT = 100000e6;
+
 	enum State { Created, Funded, Started, Ended }
 
 	struct BuyerInfo {
@@ -115,6 +117,25 @@ contract CollectivePurchase is ReentrancyGuard
 		uint256 _amount = _listing.buyers[_buyer].amount;
 		_fractionsCount = (_amount * _listing.fractionsCount) / _listing.reservePrice;
 		return _fractionsCount;
+	}
+
+	function sellerPayout(uint256 _listingId) external view returns (uint256 _netAmount, uint256 _feeAmount, uint256 _netFractionsCount, uint256 _feeFractionsCount)
+	{
+		ListingInfo storage _listing = listings[_listingId];
+		uint256 _reservePrice = _listing.reservePrice;
+		uint256 _amount = _listing.amount;
+		_feeAmount = (_amount * fee) / 1e18;
+		_netAmount = _amount - _feeAmount;
+		_feeFractionsCount = 0;
+		_netFractionsCount = 0;
+		if (_reservePrice > _amount) {
+			uint256 _missingAmount = _reservePrice - _amount;
+			uint256 _missingFeeAmount = (_missingAmount * fee) / 1e18;
+			uint256 _missingNetAmount = _missingAmount - _missingFeeAmount;
+			uint256 _fractionsCount = _issuing(_listing.extra);
+			_feeFractionsCount = _fractionsCount * _missingFeeAmount / _reservePrice;
+			_netFractionsCount = _fractionsCount * _missingNetAmount / _reservePrice;
+		}
 	}
 
 	function list(address _collection, uint256 _tokenId, address _paymentToken, uint256 _reservePrice, uint256 _limitPrice, uint256 _extension, bytes calldata _extra) external nonReentrant returns (uint256 _listingId)
@@ -222,7 +243,7 @@ contract CollectivePurchase is ReentrancyGuard
 	{
 		ListingInfo storage _listing = listings[_listingId];
 		require(now > _listing.cutoff, "not available");
-		uint256 _fractionsCount = 100000e6;
+		uint256 _fractionsCount = FRACTIONS_COUNT;
 		uint256 _fractionPrice = (_listing.reservePrice + _fractionsCount - 1) / _fractionsCount;
 		_listing.state = State.Ended;
 		_listing.fractions = _fractionalize(_listing.collection, _listing.tokenId, 6, _fractionsCount, 5 * _fractionPrice, _listing.paymentToken, _listing.extra);
@@ -298,10 +319,20 @@ contract CollectivePurchase is ReentrancyGuard
 
 	function _validate(bytes calldata _extra) internal pure
 	{
-		(bytes32 _type, string memory _name, string memory _symbol, uint256 _fee) = abi.decode(_extra, (bytes32, string, string, uint256));
+		(bytes32 _type,,, uint256 _fee) = abi.decode(_extra, (bytes32, string, string, uint256));
 		require(_type == "AUCTION" || _type == "SET_PRICE", "invalid type");
 		require(_fee <= 1e18, "invalid fee");
-		_name; _symbol;
+	}
+
+	function _issuing(bytes storage _extra) internal pure returns (uint256 _fractionsCount)
+	{
+		(bytes32 _type,,, uint256 _fee) = abi.decode(_extra, (bytes32, string, string, uint256));
+		if (_type == "AUCTION") {
+			return FRACTIONS_COUNT - (FRACTIONS_COUNT * _fee / 1e18);
+		}
+		if (_type == "SET_PRICE") {
+			return FRACTIONS_COUNT;
+		}
 	}
 
 	function _fractionalize(address _collection, uint256 _tokenId, uint8 _decimals, uint256 _fractionsCount, uint256 _fractionPrice, address _paymentToken, bytes storage _extra) internal returns (address _fractions)
