@@ -22,8 +22,6 @@ contract CollectivePurchase is ReentrancyGuard
 	uint8 constant public FRACTIONS_DECIMALS = 6;
 	uint256 constant public FRACTIONS_COUNT = 100000e6;
 
-	uint256 constant public PRICE_MULTIPLIER = 5;
-
 	enum State { Created, Funded, Started, Ended }
 
 	struct BuyerInfo {
@@ -44,6 +42,7 @@ contract CollectivePurchase is ReentrancyGuard
 		uint256 cutoff;
 		uint256 fractionsCount;
 		address fractions;
+		uint256 priceMultiplier;
 		mapping (address => BuyerInfo) buyers;
 	}
 
@@ -144,12 +143,13 @@ contract CollectivePurchase is ReentrancyGuard
 		}
 	}
 
-	function list(address _collection, uint256 _tokenId, address _paymentToken, uint256 _reservePrice, uint256 _limitPrice, uint256 _extension, bytes calldata _extra) external nonReentrant returns (uint256 _listingId)
+	function list(address _collection, uint256 _tokenId, address _paymentToken, uint256 _reservePrice, uint256 _limitPrice, uint256 _extension, uint256 _priceMultiplier, bytes calldata _extra) external nonReentrant returns (uint256 _listingId)
 	{
 		address payable _seller = msg.sender;
 		require(_limitPrice * 1e18 / _limitPrice == 1e18, "price overflow");
 		require(0 < _reservePrice && _reservePrice <= _limitPrice, "invalid price");
 		require(30 minutes <= _extension && _extension <= 731 days, "invalid duration");
+		require(0 < _priceMultiplier && _priceMultiplier <= 10000, "invalid multiplier"); // from 1% up to 100x
 		_validate(_extra);
 		IERC721(_collection).transferFrom(_seller, address(this), _tokenId);
 		items[_collection][_tokenId] = true;
@@ -167,7 +167,8 @@ contract CollectivePurchase is ReentrancyGuard
 			amount: 0,
 			cutoff: uint256(-1),
 			fractionsCount: 0,
-			fractions: address(0)
+			fractions: address(0),
+			priceMultiplier: _priceMultiplier
 		}));
 		emit Listed(_listingId);
 		return _listingId;
@@ -251,8 +252,9 @@ contract CollectivePurchase is ReentrancyGuard
 		require(now > _listing.cutoff, "not available");
 		uint256 _fractionsCount = FRACTIONS_COUNT;
 		uint256 _fractionPrice = (_listing.reservePrice + _fractionsCount - 1) / _fractionsCount;
+		uint256 _relistFractionPrice = (_listing.priceMultiplier * _fractionPrice + 99) / 100;
 		_listing.state = State.Ended;
-		_listing.fractions = _fractionalize(_listing.collection, _listing.tokenId, FRACTIONS_DECIMALS, _fractionsCount, PRICE_MULTIPLIER * _fractionPrice, _listing.paymentToken, _listing.extra);
+		_listing.fractions = _fractionalize(_listing.collection, _listing.tokenId, FRACTIONS_DECIMALS, _fractionsCount, _relistFractionPrice, _listing.paymentToken, _listing.extra);
 		_listing.fractionsCount = _balanceOf(_listing.fractions);
 		items[_listing.collection][_listing.tokenId] = false;
 		balances[_listing.fractions] = _listing.fractionsCount;
