@@ -51,7 +51,7 @@ contract CollectivePurchase is ERC721Holder, Ownable, ReentrancyGuard
 
 	uint256 public immutable fee;
 	address payable public immutable vault;
-	mapping (bytes32 => address) fractionalizers;
+	mapping (bytes32 => address) public fractionalizers;
 
 	mapping (address => uint256) private balances;
 	mapping (address => mapping (uint256 => bool)) private items;
