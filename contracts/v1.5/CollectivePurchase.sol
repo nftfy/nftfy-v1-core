@@ -250,11 +250,10 @@ contract CollectivePurchase is ReentrancyGuard
 	{
 		ListingInfo storage _listing = listings[_listingId];
 		require(now > _listing.cutoff, "not available");
-		uint256 _fractionsCount = FRACTIONS_COUNT;
-		uint256 _fractionPrice = (_listing.reservePrice + _fractionsCount - 1) / _fractionsCount;
+		uint256 _fractionPrice = (_listing.reservePrice + (FRACTIONS_COUNT - 1)) / FRACTIONS_COUNT;
 		uint256 _relistFractionPrice = (_listing.priceMultiplier * _fractionPrice + 99) / 100;
 		_listing.state = State.Ended;
-		_listing.fractions = _fractionalize(_listing.collection, _listing.tokenId, FRACTIONS_DECIMALS, _fractionsCount, _relistFractionPrice, _listing.paymentToken, _listing.extra);
+		_listing.fractions = _fractionalize(_listingId, _relistFractionPrice);
 		_listing.fractionsCount = _balanceOf(_listing.fractions);
 		items[_listing.collection][_listing.tokenId] = false;
 		balances[_listing.fractions] = _listing.fractionsCount;
@@ -328,19 +327,22 @@ contract CollectivePurchase is ReentrancyGuard
 
 	function _validate(bytes calldata _extra) internal view
 	{
-		(bytes32 _type,,, uint256 _fee) = abi.decode(_extra, (bytes32, string, string, uint256));
+		(bytes32 _type,,, uint256 _duration, uint256 _fee) = abi.decode(_extra, (bytes32, string, string, uint256, uint256));
 		if (_type == "AUCTION") {
 			require(auctionFractionalizer != address(0), "unsupported type");
+			require(30 minutes <= _duration && _duration <= 731 days, "invalid duration");
 			require(_fee <= 1e18, "invalid fee");
 			return;
 		}
 		if (_type == "DUTCH_AUCTION") {
 			require(dutchAuctionFractionalizer != address(0), "unsupported type");
+			require(30 minutes <= _duration && _duration <= 731 days, "invalid duration");
 			require(_fee <= 1e18, "invalid fee");
 			return;
 		}
 		if (_type == "SET_PRICE") {
 			require(fractionalizer != address(0), "unsupported type");
+			require(_duration == 0, "invalid duration");
 			require(_fee == 0, "invalid fee");
 			return;
 		}
@@ -349,24 +351,25 @@ contract CollectivePurchase is ReentrancyGuard
 
 	function _issuing(bytes storage _extra) internal pure returns (uint256 _fractionsCount)
 	{
-		(,,, uint256 _fee) = abi.decode(_extra, (bytes32, string, string, uint256));
+		(,,,, uint256 _fee) = abi.decode(_extra, (bytes32, string, string, uint256, uint256));
 		return FRACTIONS_COUNT - (FRACTIONS_COUNT * _fee / 1e18);
 	}
 
-	function _fractionalize(address _collection, uint256 _tokenId, uint8 _decimals, uint256 _fractionsCount, uint256 _fractionPrice, address _paymentToken, bytes storage _extra) internal returns (address _fractions)
+	function _fractionalize(uint256 _listingId, uint256 _fractionPrice) internal returns (address _fractions)
 	{
-		(bytes32 _type, string memory _name, string memory _symbol, uint256 _fee) = abi.decode(_extra, (bytes32, string, string, uint256));
+		ListingInfo storage _listing = listings[_listingId];
+		(bytes32 _type, string memory _name, string memory _symbol, uint256 _duration, uint256 _fee) = abi.decode(_listing.extra, (bytes32, string, string, uint256, uint256));
 		if (_type == "AUCTION") {
-			IERC721(_collection).approve(auctionFractionalizer, _tokenId);
-			return AuctionFractionalizer(auctionFractionalizer).fractionalize(_collection, _tokenId, _name, _symbol, _decimals, _fractionsCount, _fractionPrice, _paymentToken, 0, 72 hours, _fee);
+			IERC721(_listing.collection).approve(auctionFractionalizer, _listing.tokenId);
+			return AuctionFractionalizer(auctionFractionalizer).fractionalize(_listing.collection, _listing.tokenId, _name, _symbol, FRACTIONS_DECIMALS, FRACTIONS_COUNT, _fractionPrice, _listing.paymentToken, 0, _duration, _fee);
 		}
 		if (_type == "DUTCH_AUCTION") {
-			IERC721(_collection).approve(dutchAuctionFractionalizer, _tokenId);
-			return DutchAuctionFractionalizer(dutchAuctionFractionalizer).fractionalize(_collection, _tokenId, _name, _symbol, _decimals, _fractionsCount, _fractionPrice, _paymentToken, 0, 2 weeks, _fee);
+			IERC721(_listing.collection).approve(dutchAuctionFractionalizer, _listing.tokenId);
+			return DutchAuctionFractionalizer(dutchAuctionFractionalizer).fractionalize(_listing.collection, _listing.tokenId, _name, _symbol, FRACTIONS_DECIMALS, FRACTIONS_COUNT, _fractionPrice, _listing.paymentToken, 0, _duration, _fee);
 		}
 		if (_type == "SET_PRICE") {
-			IERC721(_collection).approve(fractionalizer, _tokenId);
-			return Fractionalizer(fractionalizer).fractionalize(_collection, _tokenId, _name, _symbol, _decimals, _fractionsCount, _fractionPrice, _paymentToken);
+			IERC721(_listing.collection).approve(fractionalizer, _listing.tokenId);
+			return Fractionalizer(fractionalizer).fractionalize(_listing.collection, _listing.tokenId, _name, _symbol, FRACTIONS_DECIMALS, FRACTIONS_COUNT, _fractionPrice, _listing.paymentToken);
 		}
 	}
 
