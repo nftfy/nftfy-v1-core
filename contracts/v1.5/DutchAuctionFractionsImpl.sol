@@ -68,7 +68,7 @@ contract DutchAuctionFractionsImpl is ERC721Holder, ERC20, ReentrancyGuard
 
 	modifier inAuction()
 	{
-		require(now >= kickoff && !released, "not available");
+		require(kickoff <= now && !released, "not available");
 		_;
 	}
 
@@ -205,7 +205,7 @@ contract DutchAuctionFractionsImpl is ERC721Holder, ERC20, ReentrancyGuard
 	function _cleanup() internal
 	{
 		uint256 _fractionsCount = totalSupply();
-		if (_fractionsCount == 0) {
+		if (released && _fractionsCount == 0) {
 			selfdestruct(address(0));
 		}
 	}
