@@ -10,6 +10,7 @@ import { ReentrancyGuard } from "@openzeppelin/contracts/utils/ReentrancyGuard.s
 import { SafeERC721 } from "./SafeERC721.sol";
 
 import { AuctionFractionalizer } from "./AuctionFractionalizer.sol";
+import { DutchAuctionFractionalizer } from "./DutchAuctionFractionalizer.sol";
 import { Fractionalizer } from "./Fractionalizer.sol";
 
 contract CollectivePurchase is ReentrancyGuard
@@ -18,7 +19,10 @@ contract CollectivePurchase is ReentrancyGuard
 	using SafeERC721 for IERC721;
 	using SafeMath for uint256;
 
-	uint256 constant FRACTIONS_COUNT = 100000e6;
+	uint8 constant public FRACTIONS_DECIMALS = 6;
+	uint256 constant public FRACTIONS_COUNT = 100000e6;
+
+	uint256 constant public PRICE_MULTIPLIER = 5;
 
 	enum State { Created, Funded, Started, Ended }
 
@@ -47,6 +51,7 @@ contract CollectivePurchase is ReentrancyGuard
 	address payable public immutable vault;
 	address public immutable fractionalizer;
 	address public immutable auctionFractionalizer;
+	address public immutable dutchAuctionFractionalizer;
 
 	mapping (address => uint256) private balances;
 	mapping (address => mapping (uint256 => bool)) private items;
@@ -74,7 +79,7 @@ contract CollectivePurchase is ReentrancyGuard
 		_;
 	}
 
-	constructor (uint256 _fee, address payable _vault, address _fractionalizer, address _auctionFractionalizer) public
+	constructor (uint256 _fee, address payable _vault, address _fractionalizer, address _auctionFractionalizer, address _dutchAuctionFractionalizer) public
 	{
 		require(_fee <= 1e18, "invalid fee");
 		require(_vault != address(0), "invalid address");
@@ -82,6 +87,7 @@ contract CollectivePurchase is ReentrancyGuard
 		vault = _vault;
 		fractionalizer = _fractionalizer;
 		auctionFractionalizer = _auctionFractionalizer;
+		dutchAuctionFractionalizer = _dutchAuctionFractionalizer;
 	}
 
 	function listingCount() external view returns (uint256 _count)
@@ -246,7 +252,7 @@ contract CollectivePurchase is ReentrancyGuard
 		uint256 _fractionsCount = FRACTIONS_COUNT;
 		uint256 _fractionPrice = (_listing.reservePrice + _fractionsCount - 1) / _fractionsCount;
 		_listing.state = State.Ended;
-		_listing.fractions = _fractionalize(_listing.collection, _listing.tokenId, 6, _fractionsCount, 5 * _fractionPrice, _listing.paymentToken, _listing.extra);
+		_listing.fractions = _fractionalize(_listing.collection, _listing.tokenId, FRACTIONS_DECIMALS, _fractionsCount, PRICE_MULTIPLIER * _fractionPrice, _listing.paymentToken, _listing.extra);
 		_listing.fractionsCount = _balanceOf(_listing.fractions);
 		items[_listing.collection][_listing.tokenId] = false;
 		balances[_listing.fractions] = _listing.fractionsCount;
@@ -318,22 +324,31 @@ contract CollectivePurchase is ReentrancyGuard
 		IERC721(_collection).safeTransfer(_to, _tokenId);
 	}
 
-	function _validate(bytes calldata _extra) internal pure
+	function _validate(bytes calldata _extra) internal view
 	{
 		(bytes32 _type,,, uint256 _fee) = abi.decode(_extra, (bytes32, string, string, uint256));
-		require(_type == "AUCTION" || _type == "SET_PRICE", "invalid type");
-		require(_fee <= 1e18, "invalid fee");
+		if (_type == "AUCTION") {
+			require(auctionFractionalizer != address(0), "unsupported type");
+			require(_fee <= 1e18, "invalid fee");
+			return;
+		}
+		if (_type == "DUTCH_AUCTION") {
+			require(dutchAuctionFractionalizer != address(0), "unsupported type");
+			require(_fee <= 1e18, "invalid fee");
+			return;
+		}
+		if (_type == "SET_PRICE") {
+			require(fractionalizer != address(0), "unsupported type");
+			require(_fee == 0, "invalid fee");
+			return;
+		}
+		require(false, "invalid type");
 	}
 
 	function _issuing(bytes storage _extra) internal pure returns (uint256 _fractionsCount)
 	{
-		(bytes32 _type,,, uint256 _fee) = abi.decode(_extra, (bytes32, string, string, uint256));
-		if (_type == "AUCTION") {
-			return FRACTIONS_COUNT - (FRACTIONS_COUNT * _fee / 1e18);
-		}
-		if (_type == "SET_PRICE") {
-			return FRACTIONS_COUNT;
-		}
+		(,,, uint256 _fee) = abi.decode(_extra, (bytes32, string, string, uint256));
+		return FRACTIONS_COUNT - (FRACTIONS_COUNT * _fee / 1e18);
 	}
 
 	function _fractionalize(address _collection, uint256 _tokenId, uint8 _decimals, uint256 _fractionsCount, uint256 _fractionPrice, address _paymentToken, bytes storage _extra) internal returns (address _fractions)
@@ -342,6 +357,10 @@ contract CollectivePurchase is ReentrancyGuard
 		if (_type == "AUCTION") {
 			IERC721(_collection).approve(auctionFractionalizer, _tokenId);
 			return AuctionFractionalizer(auctionFractionalizer).fractionalize(_collection, _tokenId, _name, _symbol, _decimals, _fractionsCount, _fractionPrice, _paymentToken, 0, 72 hours, _fee);
+		}
+		if (_type == "DUTCH_AUCTION") {
+			IERC721(_collection).approve(dutchAuctionFractionalizer, _tokenId);
+			return DutchAuctionFractionalizer(dutchAuctionFractionalizer).fractionalize(_collection, _tokenId, _name, _symbol, _decimals, _fractionsCount, _fractionPrice, _paymentToken, 0, 2 weeks, _fee);
 		}
 		if (_type == "SET_PRICE") {
 			IERC721(_collection).approve(fractionalizer, _tokenId);
