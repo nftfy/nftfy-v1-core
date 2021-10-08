@@ -34,12 +34,12 @@ contract CollectivePurchase is ReentrancyGuard
 		uint256 reservePrice;
 		uint256 limitPrice;
 		uint256 extension;
+		uint256 priceMultiplier;
 		bytes extra;
 		uint256 amount;
 		uint256 cutoff;
 		uint256 fractionsCount;
 		address fractions;
-		uint256 priceMultiplier;
 		mapping (address => BuyerInfo) buyers;
 	}
 
@@ -163,12 +163,12 @@ contract CollectivePurchase is ReentrancyGuard
 			reservePrice: _reservePrice,
 			limitPrice: _limitPrice,
 			extension: _extension,
+			priceMultiplier: _priceMultiplier,
 			extra: _extra,
 			amount: 0,
 			cutoff: uint256(-1),
 			fractionsCount: 0,
-			fractions: address(0),
-			priceMultiplier: _priceMultiplier
+			fractions: address(0)
 		}));
 		emit Listed(_listingId);
 		return _listingId;
