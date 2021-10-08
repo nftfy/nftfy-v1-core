@@ -19,9 +19,6 @@ contract CollectivePurchase is ReentrancyGuard
 	using SafeERC721 for IERC721;
 	using SafeMath for uint256;
 
-	uint8 constant public FRACTIONS_DECIMALS = 6;
-	uint256 constant public FRACTIONS_COUNT = 100000e6;
-
 	enum State { Created, Funded, Started, Ended }
 
 	struct BuyerInfo {
@@ -45,6 +42,9 @@ contract CollectivePurchase is ReentrancyGuard
 		uint256 priceMultiplier;
 		mapping (address => BuyerInfo) buyers;
 	}
+
+	uint8 constant public FRACTIONS_DECIMALS = 6;
+	uint256 constant public FRACTIONS_COUNT = 100000e6;
 
 	uint256 public immutable fee;
 	address payable public immutable vault;
