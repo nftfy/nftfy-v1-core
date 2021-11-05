@@ -49,8 +49,6 @@ contract OpenSeaAcquirer is FlashAcquireCallee
 	{
 		(salt_, v_, r_, s_) = abi.decode(_sig, (uint256, uint8, bytes32, bytes32));
 		OpenCollectivePurchase(collective).flashAcquire(_listingId, 0, address(this), _data);
-		IERC721(collection_).approve(collective, tokenId_);
-		OpenCollectivePurchase(collective).acquire(_listingId, 0);
 	}
 
 	function flashAcquireCall(address _source, uint256 _listingId, bytes calldata _data) external override
@@ -73,6 +71,8 @@ contract OpenSeaAcquirer is FlashAcquireCallee
 			uint256 _balance = IERC20(paymentToken_).balanceOf(address(this));
 			IERC20(paymentToken_).safeTransfer(vault, _balance);
 		}
+		IERC721(collection_).approve(collective, tokenId_);
+		OpenCollectivePurchase(collective).acquire(_listingId, 0);
 	}
 
 	function _acquire(uint256 _price, uint256 _value) internal
