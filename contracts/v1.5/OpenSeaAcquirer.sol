@@ -3,6 +3,7 @@ pragma solidity 0.6.12;
 
 import { IERC20 } from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import { SafeERC20 } from "@openzeppelin/contracts/token/ERC20/SafeERC20.sol";
+import { IERC721 } from "@openzeppelin/contracts/token/ERC721/IERC721.sol";
 
 import { FlashAcquireCallee, OpenCollectivePurchase } from "./OpenCollectivePurchase.sol";
 
@@ -48,6 +49,8 @@ contract OpenSeaAcquirer is FlashAcquireCallee
 	{
 		(salt_, v_, r_, s_) = abi.decode(_sig, (uint256, uint8, bytes32, bytes32));
 		OpenCollectivePurchase(collective).flashAcquire(_listingId, 0, address(this), _data);
+		IERC721(collection_).approve(collective, tokenId_);
+		OpenCollectivePurchase(collective).acquire(_listingId, 0);
 	}
 
 	function flashAcquireCall(address _source, uint256 _listingId, bytes calldata _data) external override
