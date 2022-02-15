@@ -47,10 +47,13 @@ contract OpenSeaAcquirer is FlashAcquireCallee
 		referral = _referral;
 	}
 
-	function acquire(uint256 _listingId, bytes calldata _data, bytes calldata _sig) external
+	function acquire(uint256 _listingId, bool _relist, bytes calldata _data, bytes calldata _sig) external
 	{
 		(salt_, v_, r_, s_) = abi.decode(_sig, (uint256, uint8, bytes32, bytes32));
 		OpenCollectivePurchase(collective).flashAcquire(_listingId, 0, address(this), _data);
+		if (_relist) {
+			OpenCollectivePurchase(collective).relist(_listingId);
+		}
 	}
 
 	function flashAcquireCall(address _source, uint256 _listingId, bytes calldata _data) external override
