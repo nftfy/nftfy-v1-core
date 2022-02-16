@@ -20,7 +20,6 @@ function serialize(params: { [name: string]: string[] | string | number | boolea
 }
 
 function httpGet(url: string, headers: { [name: string]: string } = {}): Promise<string> {
-  console.log(url, headers);
   return new Promise((resolve, reject) => {
     axios.get(url, { headers, transformResponse: (data) => data })
       .then((response) => resolve(response.data))
@@ -221,7 +220,6 @@ async function listOpenseaOrders(params: Partial<ListOpenseaOrdersParams> = {}, 
     order_direction: 'desc',
   };
   const _params: ListOpenseaOrdersParams = Object.assign({ ...DEFAULT_PARAMS }, params);
-  console.log(params, _params);
   const API_KEY = '2f6f419a083c46de9d83ce3dbe7db601';
   const url = 'https://' + (testnet ? 'testnets-' : '') + 'api.opensea.io/wyvern/v1/orders?' + serialize(_params);
   const response = await httpGet(url, { 'X-API-KEY': API_KEY });
@@ -229,7 +227,57 @@ async function listOpenseaOrders(params: Partial<ListOpenseaOrdersParams> = {}, 
   return result as ListOpenseaOrdersResult;
 }
 
-type NftData = {
+const ZERO_ADDRESS = '0x0000000000000000000000000000000000000000';
+const TRANSFER_FROM_SELECTOR = '0x23b872dd'; // transferFrom(address,address,uint256)
+
+const OPENSEA_WALLET = '0x5b3256965e7c3cf26e11fcaf296dfc8807c01073';
+const OPENSEA_CONTRACT: { [name: string]: string } = {
+  'mainnet': '0x7be8076f4ea4a4ad08075c2508e481d6c946d12b',
+  'rinkeby': '0x5206e78b21ce315ce284fb24cf05e0585a93b1d9',
+};
+
+function _filterOrder(order: OpenseaOrder): boolean {
+  return order.asset !== null
+      && order.taker_relayer_fee === '0'
+      && order.fee_recipient.address !== ZERO_ADDRESS
+      && order.calldata.substring(0, 10) === TRANSFER_FROM_SELECTOR;
+}
+
+function _validateOrder(order: OpenseaOrder, network: string): void {
+  const contract = OPENSEA_CONTRACT[network];
+
+  const { asset: { token_id }, exchange, maker: { address: seller },
+    maker_relayer_fee, taker_relayer_fee, maker_protocol_fee, taker_protocol_fee,
+    fee_recipient: { address: fee_recipient }, fee_method, side, sale_kind, how_to_call,
+    calldata, replacement_pattern, static_target, static_extradata,
+    approved_on_chain, cancelled, finalized, marked_invalid } = order;
+
+  const _calldata = TRANSFER_FROM_SELECTOR
+    + seller.substring(2).padStart(64, '0')
+    + ''.padStart(64, '0')
+    + BigInt(token_id).toString(16).padStart(64, '0');
+
+  if (exchange !== contract) throw new Error('Invalid exchange: ' + exchange);
+  // if (!['0', '250', '251', '255', '350', '450', '500', '530', '540', '550', '600', '650', '700', '720', '750', '759', '800', '850', '900', '916', '940', '950', '1000', '1050', '1100', '1150', '1200', '1250'].includes(maker_relayer_fee)) throw new Error('Invalid maker_relayer_fee: ' + maker_relayer_fee);
+  if (!['0'].includes(taker_relayer_fee)) throw new Error('Invalid taker_relayer_fee: ' + taker_relayer_fee);
+  if (maker_protocol_fee !== '0') throw new Error('Invalid maker_protocol_fee: ' + maker_protocol_fee);
+  if (taker_protocol_fee !== '0') throw new Error('Invalid taker_protocol_fee: ' + taker_protocol_fee);
+  if (fee_recipient !== OPENSEA_WALLET) throw new Error('Invalid fee_recipient: ' + fee_recipient);
+  if (![1].includes(fee_method)) throw new Error('Invalid fee_method: ' + fee_method);
+  if (side !== 1) throw new Error('Invalid side: ' + side);
+  if (![0, 1].includes(sale_kind)) throw new Error('Invalid sale_kind: ' + sale_kind);
+  if (how_to_call !== 0) throw new Error('Invalid how_to_call: ' + how_to_call);
+  if (calldata !== _calldata) throw new Error('Invalid calldata: ' + calldata);
+  if (replacement_pattern !== '0x000000000000000000000000000000000000000000000000000000000000000000000000ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff0000000000000000000000000000000000000000000000000000000000000000') throw new Error('Invalid replacement_pattern: ' + replacement_pattern);
+  if (!['0x0000000000000000000000000000000000000000'].includes(static_target)) throw new Error('Invalid static_target: ' + static_target);
+  if (static_extradata !== '0x') throw new Error('Invalid static_extradata: ' + static_extradata);
+  if (approved_on_chain) throw new Error('Invalid approved_on_chain: ' + approved_on_chain);
+  if (cancelled) throw new Error('Invalid cancelled: ' + cancelled);
+  if (finalized) throw new Error('Invalid finalized: ' + finalized);
+  if (marked_invalid) throw new Error('Invalid marked_invalid: ' + marked_invalid);
+}
+
+export type NftData = {
   collection: string;
   tokenId: string;
   paymentToken: string;
@@ -248,175 +296,62 @@ type NftData = {
   s: string;
 };
 
-const ZERO_ADDRESS = '0x0000000000000000000000000000000000000000';
-const TRANSFER_FROM_SELECTOR = '0x23b872dd'; // transferFrom(address,address,uint256)
+function _translateOrder(order: OpenseaOrder): NftData {
+  return {
+    collection: order.target,
+    tokenId: order.asset.token_id,
+    paymentToken: order.payment_token,
 
-function _validateOrder(order: OpenseaOrder): void {
-/*
-      const { asset: { token_id }, exchange, maker: { address: seller },
-        maker_relayer_fee, taker_relayer_fee, maker_protocol_fee, taker_protocol_fee,
-        fee_recipient: { address: fee_recipient }, fee_method, side, sale_kind, how_to_call,
-        calldata, replacement_pattern, static_target, static_extradata,
-        approved_on_chain, cancelled, finalized, marked_invalid } = item;
+    seller: order.maker.address,
+    saleKind: order.sale_kind,
+    basePrice: order.base_price,
+    makerRelayerFee: order.maker_relayer_fee,
+    listingTime: order.listing_time,
+    expirationTime: order.expiration_time,
+    extra: order.extra,
 
-      _calldata = '0x23b872dd'
-        + seller.substring(2).padStart(64, '0')
-        + ''.padStart(64, '0')
-        + BigInt(token_id).toString(16).padStart(64, '0');
-
-      if (exchange !== contract) throw new Error('Invalid exchange: ' + exchange);
-      // if (!['0', '250', '251', '255', '350', '450', '500', '530', '540', '550', '600', '650', '700', '720', '750', '759', '800', '850', '900', '916', '940', '950', '1000', '1050', '1100', '1150', '1200', '1250'].includes(maker_relayer_fee)) throw new Error('Invalid maker_relayer_fee: ' + maker_relayer_fee);
-      if (!['0'].includes(taker_relayer_fee)) throw new Error('Invalid taker_relayer_fee: ' + taker_relayer_fee);
-      if (maker_protocol_fee !== '0') throw new Error('Invalid maker_protocol_fee: ' + maker_protocol_fee);
-      if (taker_protocol_fee !== '0') throw new Error('Invalid taker_protocol_fee: ' + taker_protocol_fee);
-      if (fee_recipient !== wallet) throw new Error('Invalid fee_recipient: ' + fee_recipient);
-      if (![1].includes(fee_method)) throw new Error('Invalid fee_method: ' + fee_method);
-      if (side !== 1) throw new Error('Invalid side: ' + side);
-      if (![0, 1].includes(sale_kind)) throw new Error('Invalid sale_kind: ' + sale_kind);
-      if (how_to_call !== 0) throw new Error('Invalid how_to_call: ' + how_to_call);
-      if (calldata !== _calldata) throw new Error('Invalid calldata: ' + calldata);
-      if (replacement_pattern !== '0x000000000000000000000000000000000000000000000000000000000000000000000000ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff0000000000000000000000000000000000000000000000000000000000000000') throw new Error('Invalid replacement_pattern: ' + replacement_pattern);
-      if (!['0x0000000000000000000000000000000000000000'].includes(static_target)) throw new Error('Invalid static_target: ' + static_target);
-      if (static_extradata !== '0x') throw new Error('Invalid static_extradata: ' + static_extradata);
-      if (approved_on_chain) throw new Error('Invalid approved_on_chain: ' + approved_on_chain);
-      if (cancelled) throw new Error('Invalid cancelled: ' + cancelled);
-      if (finalized) throw new Error('Invalid finalized: ' + finalized);
-      if (marked_invalid) throw new Error('Invalid marked_invalid: ' + marked_invalid);
-*/
+    salt: order.salt,
+    v: order.v,
+    r: order.r,
+    s: order.s,
+  };
 }
 
-export async function listNfts(network = 'mainnet', page = 0, pageCount = 1, pause = 1000): Promise<NftData[]> {
+export async function listNfts(network = 'mainnet', validate = false, pageCount = 1, page = 0, pause = 1000): Promise<NftData[]> {
   if (!['mainnet', 'rinkeby'].includes(network)) throw new Error('Unsupported network: ' + network);
   const testnet = network === 'rinkeby';
-  const list: NftData[] = [];
+  const items: NftData[] = [];
   const limit = 50;
   for (let offset = page * limit; offset < (page + pageCount) * limit; offset += limit) {
-    const params = {
-      side: 1,
-      offset,
-      limit,
-    };
-    const result = await listOpenseaOrders(params, testnet);
-
-    const orders = result.orders.filter(({ asset, taker_relayer_fee, fee_recipient: { address: fee_recipient }, calldata }) =>
-      asset !== null
-      && taker_relayer_fee === '0'
-      && fee_recipient !== ZERO_ADDRESS
-      && calldata.substring(0, 10) === TRANSFER_FROM_SELECTOR);
-
-    for (const order of orders) {
-      _validateOrder(order);
+    const result = await listOpenseaOrders({ side: 1, offset, limit }, testnet);
+    const orders = result.orders.filter(_filterOrder);
+    if (validate) {
+      orders.forEach((order) => _validateOrder(order, network));
     }
-
-    const items = orders.map((order) => ({
-      collection: order.target,
-      tokenId: order.asset.token_id,
-      paymentToken: order.payment_token,
-
-      seller: order.maker.address,
-      saleKind: order.sale_kind,
-      basePrice: order.base_price,
-      makerRelayerFee: order.maker_relayer_fee,
-      listingTime: order.listing_time,
-      expirationTime: order.expiration_time,
-      extra: order.extra,
-
-      salt: order.salt,
-      v: order.v,
-      r: order.r,
-      s: order.s,
-    }));
-
-    list.push(...items);
-
+    items.push(...orders.map(_translateOrder));
+    console.log('>', offset, result.orders.length, orders.length);
     if (result.orders.length < limit) break;
     await sleep(pause);
   }
-  return list;
+  return items;
 }
 
-/*
-async function main() {
-  const testnet = true;
-  const contract = testnet ? '0x5206e78b21ce315ce284fb24cf05e0585a93b1d9' : '0x7be8076f4ea4a4ad08075c2508e481d6c946d12b';
-  const wallet = '0x5b3256965e7c3cf26e11fcaf296dfc8807c01073';
-  const selectors = [
-    '0x23b872dd', // 721 / transferFrom(address,address,uint256)
-    '0xf242432a', // 1155 / safeTransferFrom(address,address,uint256,uint256,bytes)
-    '0x68f0bcaa', // ?
-  ];
-
-  const items = [];
-
-  const limit = 50;
-  for (offset = 0; ; offset += limit) {
-
-    const data = await listOpenseaItems({ side: 1, offset, limit, order_direction: 'desc', asset_contract_address: '0x46bEF163D6C470a4774f9585F3500Ae3b642e751', token_id: 11 }, testnet);
-    const filtered = data.filter(({ asset, taker_relayer_fee, fee_recipient: { address: fee_recipient }, calldata}) =>
-      asset !== null &&
-      taker_relayer_fee === '0'
-      && fee_recipient !== '0x0000000000000000000000000000000000000000'
-      && calldata.substring(0, 10) === '0x23b872dd');
-    console.log(JSON.stringify(filtered, undefined, 2));
-
-    for (const item of data) {
-      const { calldata } = item;
-      const selector = calldata.substring(0, 10);
-      if (!selectors.includes(selector)) {
-        selectors.push(selector);
-        console.log(selector);
-      }
-    }
-
-    for (const item of filtered) {
-      const { asset: { token_id }, exchange, maker: { address: seller },
-        maker_relayer_fee, taker_relayer_fee, maker_protocol_fee, taker_protocol_fee,
-        fee_recipient: { address: fee_recipient }, fee_method, side, sale_kind, how_to_call,
-        calldata, replacement_pattern, static_target, static_extradata,
-        approved_on_chain, cancelled, finalized, marked_invalid } = item;
-
-      _calldata = '0x23b872dd'
-        + seller.substring(2).padStart(64, '0')
-        + ''.padStart(64, '0')
-        + BigInt(token_id).toString(16).padStart(64, '0');
-
-      if (exchange !== contract) throw new Error('Invalid exchange: ' + exchange);
-      // if (!['0', '250', '251', '255', '350', '450', '500', '530', '540', '550', '600', '650', '700', '720', '750', '759', '800', '850', '900', '916', '940', '950', '1000', '1050', '1100', '1150', '1200', '1250'].includes(maker_relayer_fee)) throw new Error('Invalid maker_relayer_fee: ' + maker_relayer_fee);
-      if (!['0'].includes(taker_relayer_fee)) throw new Error('Invalid taker_relayer_fee: ' + taker_relayer_fee);
-      if (maker_protocol_fee !== '0') throw new Error('Invalid maker_protocol_fee: ' + maker_protocol_fee);
-      if (taker_protocol_fee !== '0') throw new Error('Invalid taker_protocol_fee: ' + taker_protocol_fee);
-      if (fee_recipient !== wallet) throw new Error('Invalid fee_recipient: ' + fee_recipient);
-      if (![1].includes(fee_method)) throw new Error('Invalid fee_method: ' + fee_method);
-      if (side !== 1) throw new Error('Invalid side: ' + side);
-      if (![0, 1].includes(sale_kind)) throw new Error('Invalid sale_kind: ' + sale_kind);
-      if (how_to_call !== 0) throw new Error('Invalid how_to_call: ' + how_to_call);
-      if (calldata !== _calldata) throw new Error('Invalid calldata: ' + calldata);
-      if (replacement_pattern !== '0x000000000000000000000000000000000000000000000000000000000000000000000000ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff0000000000000000000000000000000000000000000000000000000000000000') throw new Error('Invalid replacement_pattern: ' + replacement_pattern);
-      if (!['0x0000000000000000000000000000000000000000'].includes(static_target)) throw new Error('Invalid static_target: ' + static_target);
-      if (static_extradata !== '0x') throw new Error('Invalid static_extradata: ' + static_extradata);
-      if (approved_on_chain) throw new Error('Invalid approved_on_chain: ' + approved_on_chain);
-      if (cancelled) throw new Error('Invalid cancelled: ' + cancelled);
-      if (finalized) throw new Error('Invalid finalized: ' + finalized);
-      if (marked_invalid) throw new Error('Invalid marked_invalid: ' + marked_invalid);
-    }
-
-    for (const item of data) {
-      const { maker: { address: seller }, maker_relayer_fee, target: collection, expiration_time, listing_time, base_price, extra, payment_token, sale_kind, v, r, s, salt } = item;
-      items.push({ seller, maker_relayer_fee, collection, base_price, payment_token, extra, listing_time, expiration_time, salt, sale_kind, v, r, s });
-    }
-
-    if (data.length < limit) break;
-
-    await sleep(1000);
+export async function fetchNft(collection: string, tokenId: string, network = 'mainnet', validate = false): Promise<NftData | null> {
+  if (!['mainnet', 'rinkeby'].includes(network)) throw new Error('Unsupported network: ' + network);
+  const testnet = network === 'rinkeby';
+  const result = await listOpenseaOrders({ side: 1 }, testnet);
+  if (result.orders.length > 1) throw new Error('panic');
+  const orders = result.orders.filter(_filterOrder);
+  if (validate) {
+    orders.forEach((order) => _validateOrder(order, network));
   }
-
-  // console.log(JSON.stringify(items, undefined, 2));
+  const items = orders.map(_translateOrder);
+  return items[0] || null;
 }
-*/
 
 async function main(args: string[]): Promise<void> {
   const network = args[2] || 'mainnet';
-  console.log(await listNfts(network));
+  console.log(await listNfts(network, true, Number.MAX_VALUE));
 }
 
 type MainFn = (args: string[]) => Promise<void>;
