@@ -209,6 +209,180 @@ type ListOpenseaOrdersResult = {
   orders: OpenseaOrder[];
 };
 
+function hasProperty<K extends string | number | symbol>(value: NonNullable<object>, property: K): value is { [property in K]: unknown } {
+  return property in value;
+}
+
+function castOpenseaUser(value: unknown): OpenseaUser {
+  if (typeof value !== 'object' || value === null) throw new Error('panic');
+  if (!hasProperty(value, 'address')) throw new Error('panic');
+  const {
+    address,
+  } = value;
+  if (typeof address !== 'string') throw new Error('panic');
+  return {
+    address,
+  };
+}
+
+function castOpenseaAsset(value: unknown): OpenseaAsset {
+  if (typeof value !== 'object' || value === null) throw new Error('panic');
+  if (!hasProperty(value, 'token_id')) throw new Error('panic');
+  const {
+    token_id,
+  } = value;
+  if (typeof token_id !== 'string') throw new Error('panic');
+  return {
+    token_id,
+  };
+}
+
+function castOpenseaOrder(value: unknown): OpenseaOrder {
+  if (typeof value !== 'object' || value === null) throw new Error('panic');
+  if (!hasProperty(value, 'asset')) throw new Error('panic');
+  if (!hasProperty(value, 'expiration_time')) throw new Error('panic');
+  if (!hasProperty(value, 'listing_time')) throw new Error('panic');
+  if (!hasProperty(value, 'exchange')) throw new Error('panic');
+  if (!hasProperty(value, 'maker')) throw new Error('panic');
+  if (!hasProperty(value, 'maker_relayer_fee')) throw new Error('panic');
+  if (!hasProperty(value, 'taker_relayer_fee')) throw new Error('panic');
+  if (!hasProperty(value, 'maker_protocol_fee')) throw new Error('panic');
+  if (!hasProperty(value, 'taker_protocol_fee')) throw new Error('panic');
+  if (!hasProperty(value, 'fee_recipient')) throw new Error('panic');
+  if (!hasProperty(value, 'fee_method')) throw new Error('panic');
+  if (!hasProperty(value, 'side')) throw new Error('panic');
+  if (!hasProperty(value, 'sale_kind')) throw new Error('panic');
+  if (!hasProperty(value, 'target')) throw new Error('panic');
+  if (!hasProperty(value, 'how_to_call')) throw new Error('panic');
+  if (!hasProperty(value, 'calldata')) throw new Error('panic');
+  if (!hasProperty(value, 'replacement_pattern')) throw new Error('panic');
+  if (!hasProperty(value, 'static_target')) throw new Error('panic');
+  if (!hasProperty(value, 'static_extradata')) throw new Error('panic');
+  if (!hasProperty(value, 'payment_token')) throw new Error('panic');
+  if (!hasProperty(value, 'base_price')) throw new Error('panic');
+  if (!hasProperty(value, 'extra')) throw new Error('panic');
+  if (!hasProperty(value, 'salt')) throw new Error('panic');
+  if (!hasProperty(value, 'v')) throw new Error('panic');
+  if (!hasProperty(value, 'r')) throw new Error('panic');
+  if (!hasProperty(value, 's')) throw new Error('panic');
+  if (!hasProperty(value, 'approved_on_chain')) throw new Error('panic');
+  if (!hasProperty(value, 'cancelled')) throw new Error('panic');
+  if (!hasProperty(value, 'finalized')) throw new Error('panic');
+  if (!hasProperty(value, 'marked_invalid')) throw new Error('panic');
+  const {
+    asset,
+    expiration_time,
+    listing_time,
+    exchange,
+    maker,
+    maker_relayer_fee,
+    taker_relayer_fee,
+    maker_protocol_fee,
+    taker_protocol_fee,
+    fee_recipient,
+    fee_method,
+    side,
+    sale_kind,
+    target,
+    how_to_call,
+    calldata,
+    replacement_pattern,
+    static_target,
+    static_extradata,
+    payment_token,
+    base_price,
+    extra,
+    salt,
+    v,
+    r,
+    s,
+    approved_on_chain,
+    cancelled,
+    finalized,
+    marked_invalid,
+  } = value;
+  const _asset = castOpenseaAsset(asset);
+  if (typeof expiration_time !== 'number') throw new Error('panic');
+  if (typeof listing_time !== 'number') throw new Error('panic');
+  if (typeof exchange !== 'string') throw new Error('panic');
+  const _maker = castOpenseaUser(maker);
+  if (typeof maker_relayer_fee !== 'string') throw new Error('panic');
+  if (typeof taker_relayer_fee !== 'string') throw new Error('panic');
+  if (typeof maker_protocol_fee !== 'string') throw new Error('panic');
+  if (typeof taker_protocol_fee !== 'string') throw new Error('panic');
+  const _fee_recipient = castOpenseaUser(fee_recipient);
+  if (typeof fee_method !== 'number') throw new Error('panic');
+  if (typeof side !== 'number') throw new Error('panic');
+  if (typeof sale_kind !== 'number') throw new Error('panic');
+  if (typeof target !== 'string') throw new Error('panic');
+  if (typeof how_to_call !== 'number') throw new Error('panic');
+  if (typeof calldata !== 'string') throw new Error('panic');
+  if (typeof replacement_pattern !== 'string') throw new Error('panic');
+  if (typeof static_target !== 'string') throw new Error('panic');
+  if (typeof static_extradata !== 'string') throw new Error('panic');
+  if (typeof payment_token !== 'string') throw new Error('panic');
+  if (typeof base_price !== 'string') throw new Error('panic');
+  if (typeof extra !== 'string') throw new Error('panic');
+  if (typeof salt !== 'string') throw new Error('panic');
+  if (typeof v !== 'number') throw new Error('panic');
+  if (typeof r !== 'string') throw new Error('panic');
+  if (typeof s !== 'string') throw new Error('panic');
+  if (typeof approved_on_chain !== 'boolean') throw new Error('panic');
+  if (typeof cancelled !== 'boolean') throw new Error('panic');
+  if (typeof finalized !== 'boolean') throw new Error('panic');
+  if (typeof marked_invalid !== 'boolean') throw new Error('panic');
+  return {
+    asset: _asset,
+    expiration_time,
+    listing_time,
+    exchange,
+    maker: _maker,
+    maker_relayer_fee,
+    taker_relayer_fee,
+    maker_protocol_fee,
+    taker_protocol_fee,
+    fee_recipient: _fee_recipient,
+    fee_method,
+    side,
+    sale_kind,
+    target,
+    how_to_call,
+    calldata,
+    replacement_pattern,
+    static_target,
+    static_extradata,
+    payment_token,
+    base_price,
+    extra,
+    salt,
+    v,
+    r,
+    s,
+    approved_on_chain,
+    cancelled,
+    finalized,
+    marked_invalid,
+  };
+}
+
+function castListOpenseaOrdersResult(value: unknown): ListOpenseaOrdersResult {
+  if (typeof value !== 'object' || value === null) throw new Error('panic');
+  if (!hasProperty(value, 'count')) throw new Error('panic');
+  if (!hasProperty(value, 'orders')) throw new Error('panic');
+  const {
+    count,
+    orders,
+  } = value;
+  if (typeof count !== 'number') throw new Error('panic');
+  if (typeof orders !== 'object' || orders === null) throw new Error('panic');
+  if (!(orders instanceof Array)) throw new Error('panic');
+  const _orders = orders.map(castOpenseaOrder);
+  return {
+    count,
+    orders: _orders,
+  };
+}
+
 async function listOpenseaOrders(params: Partial<ListOpenseaOrdersParams> = {}, testnet = false): Promise<ListOpenseaOrdersResult> {
   const DEFAULT_PARAMS: ListOpenseaOrdersParams = {
     bundled: false,
@@ -224,7 +398,7 @@ async function listOpenseaOrders(params: Partial<ListOpenseaOrdersParams> = {}, 
   const url = 'https://' + (testnet ? 'testnets-' : '') + 'api.opensea.io/wyvern/v1/orders?' + serialize(_params);
   const response = await httpGet(url, { 'X-API-KEY': API_KEY });
   const result: unknown = JSON.parse(response);
-  return result as ListOpenseaOrdersResult;
+  return castListOpenseaOrdersResult(result);
 }
 
 const ZERO_ADDRESS = '0x0000000000000000000000000000000000000000';
@@ -237,14 +411,14 @@ const OPENSEA_CONTRACT: { [name: string]: string } = {
   'rinkeby': '0x5206e78b21ce315ce284fb24cf05e0585a93b1d9',
 };
 
-function _filterOrder(order: OpenseaOrder): boolean {
+function filterOrder(order: OpenseaOrder): boolean {
   return order.asset !== null
       && order.taker_relayer_fee === '0'
       && order.fee_recipient.address !== ZERO_ADDRESS
       && order.calldata.substring(0, 10) === TRANSFER_FROM_SELECTOR;
 }
 
-function _validateOrder(order: OpenseaOrder, network: string): void {
+function validateOrder(order: OpenseaOrder, network: string): void {
   const contract = OPENSEA_CONTRACT[network];
   const calldata = TRANSFER_FROM_SELECTOR
     + order.maker.address.substring(2).padStart(64, '0')
@@ -292,7 +466,7 @@ export type NftData = {
   s: string;
 };
 
-function _translateOrder(order: OpenseaOrder): NftData {
+function translateOrder(order: OpenseaOrder): NftData {
   return {
     collection: order.target,
     tokenId: order.asset.token_id,
@@ -320,11 +494,11 @@ export async function listNfts(network = 'mainnet', validate = false, pageCount 
   const limit = 50;
   for (let offset = page * limit; offset < (page + pageCount) * limit; offset += limit) {
     const result = await listOpenseaOrders({ side: 1, offset, limit }, testnet);
-    const orders = result.orders.filter(_filterOrder);
+    const orders = result.orders.filter(filterOrder);
     if (validate) {
-      orders.forEach((order) => _validateOrder(order, network));
+      orders.forEach((order) => validateOrder(order, network));
     }
-    items.push(...orders.map(_translateOrder));
+    items.push(...orders.map(translateOrder));
     console.log('>', offset, result.orders.length, orders.length);
     if (result.orders.length < limit) break;
     await sleep(pause);
@@ -337,11 +511,11 @@ export async function fetchNft(collection: string, tokenId: string, network = 'm
   const testnet = network === 'rinkeby';
   const result = await listOpenseaOrders({ asset_contract_address: collection, token_id: tokenId, side: 1 }, testnet);
   if (result.orders.length > 1) throw new Error('panic');
-  const orders = result.orders.filter(_filterOrder);
+  const orders = result.orders.filter(filterOrder);
   if (validate) {
-    orders.forEach((order) => _validateOrder(order, network));
+    orders.forEach((order) => validateOrder(order, network));
   }
-  const items = orders.map(_translateOrder);
+  const items = orders.map(translateOrder);
   return items[0] || null;
 }
 
