@@ -40,6 +40,31 @@ type OpenseaUser = {
 //  config: string;
 };
 
+type OpenseaAssetContract = {
+  address: string;
+//  asset_contract_type: string;
+//  created_date: string;
+//  name: string;
+//  nft_version: string;
+//  opensea_version: null;
+//  owner: number;
+  schema_name: string;
+//  symbol: string;
+//  total_supply: string;
+//  description: string;
+//  external_link: string;
+//  image_url: string;
+//  default_to_fiat: boolean;
+//  dev_buyer_fee_basis_points: number;
+//  dev_seller_fee_basis_points: number;
+//  only_proxied_transfers: boolean;
+//  opensea_buyer_fee_basis_points: number;
+//  opensea_seller_fee_basis_points: number;
+//  buyer_fee_basis_points: number;
+//  seller_fee_basis_points: number;
+//  payout_address: string;
+};
+
 type OpenseaAsset = {
 //  id: number;
 //  num_sales: number;
@@ -53,30 +78,7 @@ type OpenseaAsset = {
 //  name: null;
 //  description: null;
 //  external_link: null;
-//  asset_contract: {
-//    address: string;
-//    asset_contract_type: string;
-//    created_date: string;
-//    name: string;
-//    nft_version: string;
-//    opensea_version: null;
-//    owner: number;
-//    schema_name: string;
-//    symbol: string;
-//    total_supply: string;
-//    description: string;
-//    external_link: string;
-//    image_url: string;
-//    default_to_fiat: boolean;
-//    dev_buyer_fee_basis_points: number;
-//    dev_seller_fee_basis_points: number;
-//    only_proxied_transfers: boolean;
-//    opensea_buyer_fee_basis_points: number;
-//    opensea_seller_fee_basis_points: number;
-//    buyer_fee_basis_points: number;
-//    seller_fee_basis_points: number;
-//    payout_address: string;
-//  };
+  asset_contract: OpenseaAssetContract;
 //  permalink: string;
 //  collection: {
 //    banner_image_url: string;
@@ -120,7 +122,7 @@ type OpenseaAsset = {
 
 type OpenseaOrder = {
 //  id: number;
-  asset: OpenseaAsset;
+  asset: OpenseaAsset | null;
 //  asset_bundle: null;
 //  created_date: string;
 //  closing_date: string;
@@ -172,9 +174,9 @@ type OpenseaOrder = {
   extra: string;
 //  quantity: string;
   salt: string;
-  v: number;
-  r: string;
-  s: string;
+  v: number | null;
+  r: string | null;
+  s: string | null;
   approved_on_chain: boolean;
   cancelled: boolean;
   finalized: boolean;
@@ -225,14 +227,35 @@ function castOpenseaUser(value: unknown): OpenseaUser {
   };
 }
 
-function castOpenseaAsset(value: unknown): OpenseaAsset {
+function castOpenseaAssetContract(value: unknown): OpenseaAssetContract {
   if (typeof value !== 'object' || value === null) throw new Error('panic');
+  if (!hasProperty(value, 'address')) throw new Error('panic');
+  if (!hasProperty(value, 'schema_name')) throw new Error('panic');
+  const {
+    address,
+    schema_name,
+  } = value;
+  if (typeof address !== 'string') throw new Error('panic');
+  if (typeof schema_name !== 'string') throw new Error('panic');
+  return {
+    address,
+    schema_name,
+  };
+}
+
+function castOpenseaAsset(value: unknown): OpenseaAsset | null {
+  if (value === null) return null;
+  if (typeof value !== 'object') throw new Error('panic');
+  if (!hasProperty(value, 'asset_contract')) throw new Error('panic');
   if (!hasProperty(value, 'token_id')) throw new Error('panic');
   const {
+    asset_contract,
     token_id,
   } = value;
+  const _asset_contract = castOpenseaAssetContract(asset_contract);
   if (typeof token_id !== 'string') throw new Error('panic');
   return {
+    asset_contract: _asset_contract,
     token_id,
   };
 }
@@ -324,9 +347,9 @@ function castOpenseaOrder(value: unknown): OpenseaOrder {
   if (typeof base_price !== 'string') throw new Error('panic');
   if (typeof extra !== 'string') throw new Error('panic');
   if (typeof salt !== 'string') throw new Error('panic');
-  if (typeof v !== 'number') throw new Error('panic');
-  if (typeof r !== 'string') throw new Error('panic');
-  if (typeof s !== 'string') throw new Error('panic');
+  if (typeof v !== 'number' && v !== null) throw new Error('panic');
+  if (typeof r !== 'string' && r !== null) throw new Error('panic');
+  if (typeof s !== 'string' && s !== null) throw new Error('panic');
   if (typeof approved_on_chain !== 'boolean') throw new Error('panic');
   if (typeof cancelled !== 'boolean') throw new Error('panic');
   if (typeof finalized !== 'boolean') throw new Error('panic');
@@ -413,12 +436,14 @@ const OPENSEA_CONTRACT: { [name: string]: string } = {
 
 function filterOrder(order: OpenseaOrder): boolean {
   return order.asset !== null
+      && order.asset.asset_contract.schema_name === 'ERC721'
       && order.taker_relayer_fee === '0'
       && order.fee_recipient.address !== ZERO_ADDRESS
       && order.calldata.substring(0, 10) === TRANSFER_FROM_SELECTOR;
 }
 
 function validateOrder(order: OpenseaOrder, network: string): void {
+  if (order.asset === null) throw new Error('panic');
   const contract = OPENSEA_CONTRACT[network];
   const calldata = TRANSFER_FROM_SELECTOR
     + order.maker.address.substring(2).padStart(64, '0')
@@ -436,6 +461,7 @@ function validateOrder(order: OpenseaOrder, network: string): void {
   if (order.fee_method !== 1) throw new Error('Invalid fee_method: ' + order.fee_method);
   if (![0, 1].includes(order.side)) throw new Error('Invalid side: ' + order.side);
   if (![0, 1].includes(order.sale_kind)) throw new Error('Invalid sale_kind: ' + order.sale_kind);
+  if (order.target !== order.asset.asset_contract.address) throw new Error('Invalid target: ' + order.target);
   if (order.how_to_call !== 0) throw new Error('Invalid how_to_call: ' + order.how_to_call);
   if (order.calldata !== calldata) throw new Error('Invalid calldata: ' + order.calldata);
   if (order.replacement_pattern !== replacementPattern) throw new Error('Invalid replacement_pattern: ' + order.replacement_pattern);
@@ -467,8 +493,12 @@ export type NftData = {
 };
 
 function translateOrder(order: OpenseaOrder): NftData {
+  if (order.asset === null) throw new Error('panic');
+  if (order.v === null) throw new Error('panic');
+  if (order.r === null) throw new Error('panic');
+  if (order.s === null) throw new Error('panic');
   return {
-    collection: order.target,
+    collection: order.asset.asset_contract.address,
     tokenId: order.asset.token_id,
     paymentToken: order.payment_token,
 
