@@ -32,121 +32,121 @@ function sleep(delay: number): Promise<void> {
 }
 
 type OpenseaUser = {
-  user: {
-    username: string;
-  } | null;
-  profile_img_url: string;
+//  user: {
+//    username: string;
+//  } | null;
+//  profile_img_url: string;
   address: string;
-  config: string;
+//  config: string;
 };
 
 type OpenseaAsset = {
-  id: number;
-  num_sales: number;
-  background_color: null;
-  image_url: string;
-  image_preview_url: string;
-  image_thumbnail_url: string;
-  image_original_url: string;
-  animation_url: string;
-  animation_original_url: string;
-  name: null;
-  description: null;
-  external_link: null;
-  asset_contract: {
-    address: string;
-    asset_contract_type: string;
-    created_date: string;
-    name: string;
-    nft_version: string;
-    opensea_version: null;
-    owner: number;
-    schema_name: string;
-    symbol: string;
-    total_supply: string;
-    description: string;
-    external_link: string;
-    image_url: string;
-    default_to_fiat: boolean;
-    dev_buyer_fee_basis_points: number;
-    dev_seller_fee_basis_points: number;
-    only_proxied_transfers: boolean;
-    opensea_buyer_fee_basis_points: number;
-    opensea_seller_fee_basis_points: number;
-    buyer_fee_basis_points: number;
-    seller_fee_basis_points: number;
-    payout_address: string;
-  };
-  permalink: string;
-  collection: {
-    banner_image_url: string;
-    chat_url: null;
-    created_date: string;
-    default_to_fiat: boolean;
-    description: string;
-    dev_buyer_fee_basis_points: string;
-    dev_seller_fee_basis_points: string;
-    discord_url: string;
-    display_data: {
-      card_display_style: string;
-    };
-    external_url: string;
-    featured: boolean;
-    featured_image_url: string;
-    hidden: boolean;
-    safelist_request_status: string;
-    image_url: string;
-    is_subject_to_whitelist: boolean;
-    large_image_url: string;
-    medium_username: null;
-    name: string;
-    only_proxied_transfers: boolean;
-    opensea_buyer_fee_basis_points: string;
-    opensea_seller_fee_basis_points: string;
-    payout_address: string;
-    require_email: boolean;
-    short_description: null;
-    slug: string;
-    telegram_url: null;
-    twitter_username: null;
-    instagram_username: string;
-    wiki_url: null;
-  };
-  decimals: 0;
-  token_metadata: string;
-  owner: OpenseaUser;
+//  id: number;
+//  num_sales: number;
+//  background_color: null;
+//  image_url: string;
+//  image_preview_url: string;
+//  image_thumbnail_url: string;
+//  image_original_url: string;
+//  animation_url: string;
+//  animation_original_url: string;
+//  name: null;
+//  description: null;
+//  external_link: null;
+//  asset_contract: {
+//    address: string;
+//    asset_contract_type: string;
+//    created_date: string;
+//    name: string;
+//    nft_version: string;
+//    opensea_version: null;
+//    owner: number;
+//    schema_name: string;
+//    symbol: string;
+//    total_supply: string;
+//    description: string;
+//    external_link: string;
+//    image_url: string;
+//    default_to_fiat: boolean;
+//    dev_buyer_fee_basis_points: number;
+//    dev_seller_fee_basis_points: number;
+//    only_proxied_transfers: boolean;
+//    opensea_buyer_fee_basis_points: number;
+//    opensea_seller_fee_basis_points: number;
+//    buyer_fee_basis_points: number;
+//    seller_fee_basis_points: number;
+//    payout_address: string;
+//  };
+//  permalink: string;
+//  collection: {
+//    banner_image_url: string;
+//    chat_url: null;
+//    created_date: string;
+//    default_to_fiat: boolean;
+//    description: string;
+//    dev_buyer_fee_basis_points: string;
+//    dev_seller_fee_basis_points: string;
+//    discord_url: string;
+//    display_data: {
+//      card_display_style: string;
+//    };
+//    external_url: string;
+//    featured: boolean;
+//    featured_image_url: string;
+//    hidden: boolean;
+//    safelist_request_status: string;
+//    image_url: string;
+//    is_subject_to_whitelist: boolean;
+//    large_image_url: string;
+//    medium_username: null;
+//    name: string;
+//    only_proxied_transfers: boolean;
+//    opensea_buyer_fee_basis_points: string;
+//    opensea_seller_fee_basis_points: string;
+//    payout_address: string;
+//    require_email: boolean;
+//    short_description: null;
+//    slug: string;
+//    telegram_url: null;
+//    twitter_username: null;
+//    instagram_username: string;
+//    wiki_url: null;
+//  };
+//  decimals: 0;
+//  token_metadata: string;
+//  owner: OpenseaUser;
   token_id: string;
 };
 
 type OpenseaOrder = {
-  id: number;
+//  id: number;
   asset: OpenseaAsset;
-  asset_bundle: null;
-  created_date: string;
-  closing_date: string;
-  closing_extendable: boolean;
+//  asset_bundle: null;
+//  created_date: string;
+//  closing_date: string;
+//  closing_extendable: boolean;
   expiration_time: number;
   listing_time: number;
-  order_hash: string;
-  metadata: {
-    asset: {
-      id: string;
-      address: string;
-    };
-    schema: string;
-    referrerAddress: string;
-  };
+//  order_hash: string;
+//  metadata: {
+//    asset: {
+//      id: string;
+//      address: string;
+//    };
+//    schema: string;
+//    referrerAddress: string;
+//  };
   exchange: string;
   maker: OpenseaUser;
-  taker: OpenseaUser;
-  current_price: string;
-  current_bounty: string;
-  bounty_multiple: string;
+//  taker: OpenseaUser;
+//  current_price: string;
+//  current_bounty: string;
+//  bounty_multiple: string;
   maker_relayer_fee: string;
   taker_relayer_fee: string;
   maker_protocol_fee: string;
   taker_protocol_fee: string;
-  maker_referrer_fee: string;
+//  maker_referrer_fee: string;
   fee_recipient: OpenseaUser;
   fee_method: number;
   side: number;
@@ -158,19 +158,19 @@ type OpenseaOrder = {
   static_target: string;
   static_extradata: string;
   payment_token: string;
-  payment_token_contract: {
-    id: number;
-    symbol: string;
-    address: string;
-    image_url: string;
-    name: string;
-    decimals: number;
-    eth_price: string;
-    usd_price: string;
-  };
+//  payment_token_contract: {
+//    id: number;
+//    symbol: string;
+//    address: string;
+//    image_url: string;
+//    name: string;
+//    decimals: number;
+//    eth_price: string;
+//    usd_price: string;
+//  };
   base_price: string;
   extra: string;
-  quantity: string;
+//  quantity: string;
   salt: string;
   v: number;
   r: string;
@@ -179,7 +179,7 @@ type OpenseaOrder = {
   cancelled: boolean;
   finalized: boolean;
   marked_invalid: boolean;
-  prefixed_hash: string;
+//  prefixed_hash: string;
 };
 
 type ListOpenseaOrdersParams = {
@@ -228,6 +228,7 @@ async function listOpenseaOrders(params: Partial<ListOpenseaOrdersParams> = {}, 
 }
 
 const ZERO_ADDRESS = '0x0000000000000000000000000000000000000000';
+const ZERO_SELECTOR = '0x00000000';
 const TRANSFER_FROM_SELECTOR = '0x23b872dd'; // transferFrom(address,address,uint256)
 
 const OPENSEA_WALLET = '0x5b3256965e7c3cf26e11fcaf296dfc8807c01073';
@@ -245,36 +246,31 @@ function _filterOrder(order: OpenseaOrder): boolean {
 
 function _validateOrder(order: OpenseaOrder, network: string): void {
   const contract = OPENSEA_CONTRACT[network];
-
-  const { asset: { token_id }, exchange, maker: { address: seller },
-    maker_relayer_fee, taker_relayer_fee, maker_protocol_fee, taker_protocol_fee,
-    fee_recipient: { address: fee_recipient }, fee_method, side, sale_kind, how_to_call,
-    calldata, replacement_pattern, static_target, static_extradata,
-    approved_on_chain, cancelled, finalized, marked_invalid } = order;
-
-  const _calldata = TRANSFER_FROM_SELECTOR
-    + seller.substring(2).padStart(64, '0')
+  const calldata = TRANSFER_FROM_SELECTOR
+    + order.maker.address.substring(2).padStart(64, '0')
     + ''.padStart(64, '0')
-    + BigInt(token_id).toString(16).padStart(64, '0');
-
-  if (exchange !== contract) throw new Error('Invalid exchange: ' + exchange);
-  // if (!['0', '250', '251', '255', '350', '450', '500', '530', '540', '550', '600', '650', '700', '720', '750', '759', '800', '850', '900', '916', '940', '950', '1000', '1050', '1100', '1150', '1200', '1250'].includes(maker_relayer_fee)) throw new Error('Invalid maker_relayer_fee: ' + maker_relayer_fee);
-  if (!['0'].includes(taker_relayer_fee)) throw new Error('Invalid taker_relayer_fee: ' + taker_relayer_fee);
-  if (maker_protocol_fee !== '0') throw new Error('Invalid maker_protocol_fee: ' + maker_protocol_fee);
-  if (taker_protocol_fee !== '0') throw new Error('Invalid taker_protocol_fee: ' + taker_protocol_fee);
-  if (fee_recipient !== OPENSEA_WALLET) throw new Error('Invalid fee_recipient: ' + fee_recipient);
-  if (![1].includes(fee_method)) throw new Error('Invalid fee_method: ' + fee_method);
-  if (side !== 1) throw new Error('Invalid side: ' + side);
-  if (![0, 1].includes(sale_kind)) throw new Error('Invalid sale_kind: ' + sale_kind);
-  if (how_to_call !== 0) throw new Error('Invalid how_to_call: ' + how_to_call);
-  if (calldata !== _calldata) throw new Error('Invalid calldata: ' + calldata);
-  if (replacement_pattern !== '0x000000000000000000000000000000000000000000000000000000000000000000000000ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff0000000000000000000000000000000000000000000000000000000000000000') throw new Error('Invalid replacement_pattern: ' + replacement_pattern);
-  if (!['0x0000000000000000000000000000000000000000'].includes(static_target)) throw new Error('Invalid static_target: ' + static_target);
-  if (static_extradata !== '0x') throw new Error('Invalid static_extradata: ' + static_extradata);
-  if (approved_on_chain) throw new Error('Invalid approved_on_chain: ' + approved_on_chain);
-  if (cancelled) throw new Error('Invalid cancelled: ' + cancelled);
-  if (finalized) throw new Error('Invalid finalized: ' + finalized);
-  if (marked_invalid) throw new Error('Invalid marked_invalid: ' + marked_invalid);
+    + BigInt(order.asset.token_id).toString(16).padStart(64, '0');
+  const replacementPattern = ZERO_SELECTOR
+    + ''.padStart(64, '0')
+    + ''.padStart(64, 'f')
+    + ''.padStart(64, '0');
+  if (order.exchange !== contract) throw new Error('Invalid exchange: ' + order.exchange);
+  if (order.taker_relayer_fee !== '0') throw new Error('Invalid taker_relayer_fee: ' + order.taker_relayer_fee);
+  if (order.maker_protocol_fee !== '0') throw new Error('Invalid maker_protocol_fee: ' + order.maker_protocol_fee);
+  if (order.taker_protocol_fee !== '0') throw new Error('Invalid taker_protocol_fee: ' + order.taker_protocol_fee);
+  if (order.fee_recipient.address !== OPENSEA_WALLET) throw new Error('Invalid fee_recipient: ' + order.fee_recipient.address);
+  if (order.fee_method !== 1) throw new Error('Invalid fee_method: ' + order.fee_method);
+  if (![0, 1].includes(order.side)) throw new Error('Invalid side: ' + order.side);
+  if (![0, 1].includes(order.sale_kind)) throw new Error('Invalid sale_kind: ' + order.sale_kind);
+  if (order.how_to_call !== 0) throw new Error('Invalid how_to_call: ' + order.how_to_call);
+  if (order.calldata !== calldata) throw new Error('Invalid calldata: ' + order.calldata);
+  if (order.replacement_pattern !== replacementPattern) throw new Error('Invalid replacement_pattern: ' + order.replacement_pattern);
+  if (order.static_target !== ZERO_ADDRESS) throw new Error('Invalid static_target: ' + order.static_target);
+  if (order.static_extradata !== '0x') throw new Error('Invalid static_extradata: ' + order.static_extradata);
+  if (order.approved_on_chain) throw new Error('Invalid approved_on_chain: ' + order.approved_on_chain);
+  if (order.cancelled) throw new Error('Invalid cancelled: ' + order.cancelled);
+  if (order.finalized) throw new Error('Invalid finalized: ' + order.finalized);
+  if (order.marked_invalid) throw new Error('Invalid marked_invalid: ' + order.marked_invalid);
 }
 
 export type NftData = {
@@ -339,7 +335,7 @@ export async function listNfts(network = 'mainnet', validate = false, pageCount 
 export async function fetchNft(collection: string, tokenId: string, network = 'mainnet', validate = false): Promise<NftData | null> {
   if (!['mainnet', 'rinkeby'].includes(network)) throw new Error('Unsupported network: ' + network);
   const testnet = network === 'rinkeby';
-  const result = await listOpenseaOrders({ side: 1 }, testnet);
+  const result = await listOpenseaOrders({ asset_contract_address: collection, token_id: tokenId, side: 1 }, testnet);
   if (result.orders.length > 1) throw new Error('panic');
   const orders = result.orders.filter(_filterOrder);
   if (validate) {
