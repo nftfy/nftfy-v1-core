@@ -427,6 +427,7 @@ async function listOpenseaOrders(params: Partial<ListOpenseaOrdersParams> = {}, 
 const ZERO_ADDRESS = '0x0000000000000000000000000000000000000000';
 const ZERO_SELECTOR = '0x00000000';
 const TRANSFER_FROM_SELECTOR = '0x23b872dd'; // transferFrom(address,address,uint256)
+const MATCH_ERC721_USING_CRITERIA = '0xfb16a595'; // matchERC721UsingCriteria(address,address,address,uint256,bytes32,bytes32[])
 
 const OPENSEA_WALLET = '0x5b3256965e7c3cf26e11fcaf296dfc8807c01073';
 const OPENSEA_CONTRACT: { [name: string]: string } = {
@@ -435,24 +436,49 @@ const OPENSEA_CONTRACT: { [name: string]: string } = {
 };
 
 function filterOrder(order: OpenseaOrder): boolean {
+  const selector = order.calldata.substring(0, 10);
   return order.asset !== null
       && order.asset.asset_contract.schema_name === 'ERC721'
       && order.taker_relayer_fee === '0'
       && order.fee_recipient.address !== ZERO_ADDRESS
-      && order.calldata.substring(0, 10) === TRANSFER_FROM_SELECTOR;
+      && [TRANSFER_FROM_SELECTOR, MATCH_ERC721_USING_CRITERIA].includes(selector);
 }
 
 function validateOrder(order: OpenseaOrder, network: string): void {
   if (order.asset === null) throw new Error('panic');
   const contract = OPENSEA_CONTRACT[network];
-  const calldata = TRANSFER_FROM_SELECTOR
-    + order.maker.address.substring(2).padStart(64, '0')
-    + ''.padStart(64, '0')
-    + BigInt(order.asset.token_id).toString(16).padStart(64, '0');
-  const replacementPattern = ZERO_SELECTOR
-    + ''.padStart(64, '0')
-    + ''.padStart(64, 'f')
-    + ''.padStart(64, '0');
+  const selector = order.calldata.substring(0, 10);
+  let calldata = '';
+  let replacementPattern = '';
+  if (selector === TRANSFER_FROM_SELECTOR) {
+    calldata = selector
+      + order.maker.address.substring(2).padStart(64, '0')
+      + ''.padStart(64, '0')
+      + BigInt(order.asset.token_id).toString(16).padStart(64, '0');
+    replacementPattern = ZERO_SELECTOR
+      + ''.padStart(64, '0')
+      + ''.padStart(64, 'f')
+      + ''.padStart(64, '0');
+  }
+  else
+  if (selector === MATCH_ERC721_USING_CRITERIA) {
+    calldata = selector
+      + order.maker.address.substring(2).padStart(64, '0')
+      + ''.padStart(64, '0')
+      + order.asset.asset_contract.address.substring(2).padStart(64, '0')
+      + BigInt(order.asset.token_id).toString(16).padStart(64, '0')
+      + ''.padStart(64, '0')
+      + BigInt(192).toString(16).padStart(64, '0')
+      + ''.padStart(64, '0');
+    replacementPattern = ZERO_SELECTOR
+      + ''.padStart(64, '0')
+      + ''.padStart(64, 'f')
+      + ''.padStart(64, '0')
+      + ''.padStart(64, '0')
+      + ''.padStart(64, '0')
+      + ''.padStart(64, '0')
+      + ''.padStart(64, '0');
+  }
   if (order.exchange !== contract) throw new Error('Invalid exchange: ' + order.exchange);
   if (order.taker_relayer_fee !== '0') throw new Error('Invalid taker_relayer_fee: ' + order.taker_relayer_fee);
   if (order.maker_protocol_fee !== '0') throw new Error('Invalid maker_protocol_fee: ' + order.maker_protocol_fee);
@@ -461,8 +487,7 @@ function validateOrder(order: OpenseaOrder, network: string): void {
   if (order.fee_method !== 1) throw new Error('Invalid fee_method: ' + order.fee_method);
   if (![0, 1].includes(order.side)) throw new Error('Invalid side: ' + order.side);
   if (![0, 1].includes(order.sale_kind)) throw new Error('Invalid sale_kind: ' + order.sale_kind);
-  if (order.target !== order.asset.asset_contract.address) throw new Error('Invalid target: ' + order.target);
-  if (order.how_to_call !== 0) throw new Error('Invalid how_to_call: ' + order.how_to_call);
+  if (![0, 1].includes(order.how_to_call)) throw new Error('Invalid how_to_call: ' + order.how_to_call);
   if (order.calldata !== calldata) throw new Error('Invalid calldata: ' + order.calldata);
   if (order.replacement_pattern !== replacementPattern) throw new Error('Invalid replacement_pattern: ' + order.replacement_pattern);
   if (order.static_target !== ZERO_ADDRESS) throw new Error('Invalid static_target: ' + order.static_target);
@@ -477,6 +502,8 @@ export type NftData = {
   collection: string;
   tokenId: string;
   paymentToken: string;
+
+  target: string;
 
   seller: string;
   saleKind: number;
@@ -501,6 +528,8 @@ function translateOrder(order: OpenseaOrder): NftData {
     collection: order.asset.asset_contract.address,
     tokenId: order.asset.token_id,
     paymentToken: order.payment_token,
+
+    target: order.target,
 
     seller: order.maker.address,
     saleKind: order.sale_kind,
@@ -552,6 +581,7 @@ export async function fetchNft(collection: string, tokenId: string, network = 'm
 async function main(args: string[]): Promise<void> {
   const network = args[2] || 'mainnet';
   console.log(await listNfts(network, true, Number.MAX_VALUE));
+//  console.log(await fetchNft('0x46bEF163D6C470a4774f9585F3500Ae3b642e751', '12', network, true));
 }
 
 type MainFn = (args: string[]) => Promise<void>;
