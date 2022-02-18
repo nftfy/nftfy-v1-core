@@ -143,7 +143,7 @@ type OpenseaOrder = {
   exchange: string;
   maker: OpenseaUser;
   taker: OpenseaUser;
-//  current_price: string;
+  current_price: string;
 //  current_bounty: string;
 //  bounty_multiple: string;
   maker_relayer_fee: string;
@@ -270,6 +270,7 @@ function castOpenseaOrder(value: unknown): OpenseaOrder {
   if (!hasProperty(value, 'exchange')) throw new Error('panic');
   if (!hasProperty(value, 'maker')) throw new Error('panic');
   if (!hasProperty(value, 'taker')) throw new Error('panic');
+  if (!hasProperty(value, 'current_price')) throw new Error('panic');
   if (!hasProperty(value, 'maker_relayer_fee')) throw new Error('panic');
   if (!hasProperty(value, 'taker_relayer_fee')) throw new Error('panic');
   if (!hasProperty(value, 'maker_protocol_fee')) throw new Error('panic');
@@ -302,6 +303,7 @@ function castOpenseaOrder(value: unknown): OpenseaOrder {
     exchange,
     maker,
     taker,
+    current_price,
     maker_relayer_fee,
     taker_relayer_fee,
     maker_protocol_fee,
@@ -334,6 +336,7 @@ function castOpenseaOrder(value: unknown): OpenseaOrder {
   if (typeof exchange !== 'string') throw new Error('panic');
   const _maker = castOpenseaUser(maker);
   const _taker = castOpenseaUser(taker);
+  if (typeof current_price !== 'string') throw new Error('panic');
   if (typeof maker_relayer_fee !== 'string') throw new Error('panic');
   if (typeof taker_relayer_fee !== 'string') throw new Error('panic');
   if (typeof maker_protocol_fee !== 'string') throw new Error('panic');
@@ -366,6 +369,7 @@ function castOpenseaOrder(value: unknown): OpenseaOrder {
     exchange,
     maker: _maker,
     taker: _taker,
+    current_price,
     maker_relayer_fee,
     taker_relayer_fee,
     maker_protocol_fee,
@@ -412,6 +416,7 @@ function castListOpenseaOrdersResult(value: unknown): ListOpenseaOrdersResult {
 }
 
 async function listOpenseaOrders(params: Partial<ListOpenseaOrdersParams> = {}, testnet = false): Promise<ListOpenseaOrdersResult> {
+  const API_KEY = '2f6f419a083c46de9d83ce3dbe7db601'; // TODO
   const DEFAULT_PARAMS: ListOpenseaOrdersParams = {
     bundled: false,
     include_bundled: true,
@@ -422,7 +427,6 @@ async function listOpenseaOrders(params: Partial<ListOpenseaOrdersParams> = {}, 
     order_direction: 'desc',
   };
   const _params: ListOpenseaOrdersParams = Object.assign({ ...DEFAULT_PARAMS }, params);
-  const API_KEY = '2f6f419a083c46de9d83ce3dbe7db601';
   const url = 'https://' + (testnet ? 'testnets-' : '') + 'api.opensea.io/wyvern/v1/orders?' + serialize(_params);
   const response = await httpGet(url, { 'X-API-KEY': API_KEY });
   const result: unknown = JSON.parse(response);
@@ -430,83 +434,25 @@ async function listOpenseaOrders(params: Partial<ListOpenseaOrdersParams> = {}, 
 }
 
 const ZERO_ADDRESS = '0x0000000000000000000000000000000000000000';
-const ZERO_SELECTOR = '0x00000000';
-const TRANSFER_FROM_SELECTOR = '0x23b872dd'; // transferFrom(address,address,uint256)
-const MATCH_ERC721_USING_CRITERIA = '0xfb16a595'; // matchERC721UsingCriteria(address,address,address,uint256,bytes32,bytes32[])
-
-const OPENSEA_WALLET = '0x5b3256965e7c3cf26e11fcaf296dfc8807c01073';
-const OPENSEA_CONTRACT: { [name: string]: string } = {
-  'mainnet': '0x7be8076f4ea4a4ad08075c2508e481d6c946d12b',
-  'rinkeby': '0x5206e78b21ce315ce284fb24cf05e0585a93b1d9',
-};
-
-const ACQUIRER = '0x6E6aB245993225393e9C39B0E6997A7F384149e6';
+const ZERO_BYTES32 = '0x0000000000000000000000000000000000000000000000000000000000000000';
 
 function filterOrder(order: OpenseaOrder): boolean {
-  const selector = order.calldata.substring(0, 10);
   return order.asset !== null
       && order.asset.asset_contract.schema_name === 'ERC721'
-      && order.taker_relayer_fee === '0'
-      && order.fee_recipient.address !== ZERO_ADDRESS
-      && [TRANSFER_FROM_SELECTOR, MATCH_ERC721_USING_CRITERIA].includes(selector);
+      && order.taker.address === ZERO_ADDRESS
+      && order.v !== null
+      && order.r !== null
+      && order.s !== null;
 }
 
 function validateOrder(order: OpenseaOrder, network: string): void {
-  if (order.asset === null) throw new Error('panic');
-  const contract = OPENSEA_CONTRACT[network];
-  const selector = order.calldata.substring(0, 10);
-  let calldata = '';
-  let replacementPattern = '';
-  if (selector === TRANSFER_FROM_SELECTOR) {
-    calldata = selector
-      + order.maker.address.substring(2).padStart(64, '0')
-      + ''.padStart(64, '0')
-      + BigInt(order.asset.token_id).toString(16).padStart(64, '0');
-    replacementPattern = ZERO_SELECTOR
-      + ''.padStart(64, '0')
-      + ''.padStart(64, 'f')
-      + ''.padStart(64, '0');
-  }
-  else
-  if (selector === MATCH_ERC721_USING_CRITERIA) {
-    calldata = selector
-      + order.maker.address.substring(2).padStart(64, '0')
-      + ''.padStart(64, '0')
-      + order.asset.asset_contract.address.substring(2).padStart(64, '0')
-      + BigInt(order.asset.token_id).toString(16).padStart(64, '0')
-      + ''.padStart(64, '0')
-      + BigInt(192).toString(16).padStart(64, '0')
-      + ''.padStart(64, '0');
-    replacementPattern = ZERO_SELECTOR
-      + ''.padStart(64, '0')
-      + ''.padStart(64, 'f')
-      + ''.padStart(64, '0')
-      + ''.padStart(64, '0')
-      + ''.padStart(64, '0')
-      + ''.padStart(64, '0')
-      + ''.padStart(64, '0');
-  }
-  if (order.exchange !== contract) throw new Error('Invalid exchange: ' + order.exchange);
-  if (order.taker_relayer_fee !== '0') throw new Error('Invalid taker_relayer_fee: ' + order.taker_relayer_fee);
-  if (order.maker_protocol_fee !== '0') throw new Error('Invalid maker_protocol_fee: ' + order.maker_protocol_fee);
-  if (order.taker_protocol_fee !== '0') throw new Error('Invalid taker_protocol_fee: ' + order.taker_protocol_fee);
-  if (order.fee_recipient.address !== OPENSEA_WALLET) throw new Error('Invalid fee_recipient: ' + order.fee_recipient.address);
-  if (order.fee_method !== 1) throw new Error('Invalid fee_method: ' + order.fee_method);
-  if (![0, 1].includes(order.side)) throw new Error('Invalid side: ' + order.side);
-  if (![0, 1].includes(order.sale_kind)) throw new Error('Invalid sale_kind: ' + order.sale_kind);
-  if (![0, 1].includes(order.how_to_call)) throw new Error('Invalid how_to_call: ' + order.how_to_call);
-  if (order.calldata !== calldata) throw new Error('Invalid calldata: ' + order.calldata);
-  if (order.replacement_pattern !== replacementPattern) throw new Error('Invalid replacement_pattern: ' + order.replacement_pattern);
-  if (order.static_target !== ZERO_ADDRESS) throw new Error('Invalid static_target: ' + order.static_target);
-  if (order.static_extradata !== '0x') throw new Error('Invalid static_extradata: ' + order.static_extradata);
-  if (order.approved_on_chain) throw new Error('Invalid approved_on_chain: ' + order.approved_on_chain);
+  if (order.side !== 1) throw new Error('Invalid size: ' + order.side);
   if (order.cancelled) throw new Error('Invalid cancelled: ' + order.cancelled);
   if (order.finalized) throw new Error('Invalid finalized: ' + order.finalized);
   if (order.marked_invalid) throw new Error('Invalid marked_invalid: ' + order.marked_invalid);
 }
 
-function encodeCalldata(order: OpenseaOrder): string {
-  const now = Math.floor(Date.now() / 1000);
+function encodeCalldata(order: OpenseaOrder, acquirer: string, price: string): string {
   if (order.v === null) throw new Error('panic');
   if (order.r === null) throw new Error('panic');
   if (order.s === null) throw new Error('panic');
@@ -528,12 +474,23 @@ function encodeCalldata(order: OpenseaOrder): string {
         { type: 'bytes32[5]', name: '_rssMetadata' },
       ],
   };
-  const params: (number | string | (number | string)[])[] = [
+  const feeRecipient = order.fee_recipient.address === ZERO_ADDRESS ? acquirer : ZERO_ADDRESS;
+  let calldata = order.calldata;
+  let replacementPattern = order.replacement_pattern;
+  const mask = 'f'.repeat(64);
+  while (true) {
+    const index = replacementPattern.indexOf(mask);
+    if (index < 0) break;
+    calldata = calldata.substring(0, index) + '0'.repeat(24) + acquirer.substring(2) + calldata.substring(index + 64);
+    replacementPattern = replacementPattern.substring(0, index) + '0'.repeat(64) + replacementPattern.substring(index + 64);
+  }
+  type Param = number | string | (number | string)[];
+  const params: Param[] = [
     [
       order.exchange,               // exchange
-      ACQUIRER,                     // maker
-      ZERO_ADDRESS,                 // taker
-      ZERO_ADDRESS,                 // feeRecipient
+      acquirer,                     // maker
+      order.maker.address,          // taker
+      feeRecipient,                 // feeRecipient
       order.target,                 // target
       ZERO_ADDRESS,                 // staticTarget
       order.payment_token,          // paymentToken
@@ -551,9 +508,9 @@ function encodeCalldata(order: OpenseaOrder): string {
       order.taker_relayer_fee,      // takerRelayerFee
       order.maker_protocol_fee,     // makerProtocolFee
       order.taker_protocol_fee,     // takerProtocolFee
-      order.base_price,             // price
+      price,                        // price
       '0',                          // extra
-      now,                          // listimtime
+      '0',                          // listimtime
       '0',                          // expirationTime
       '0',                          // salt
 
@@ -570,7 +527,7 @@ function encodeCalldata(order: OpenseaOrder): string {
     [
       order.fee_method,             // feeMethod
       0,                            // side
-      order.sale_kind,              // saleKind
+      0,                            // saleKind
       order.how_to_call,            // howToCall
 
       order.fee_method,             // feeMethod
@@ -578,9 +535,9 @@ function encodeCalldata(order: OpenseaOrder): string {
       order.sale_kind,              // saleKind
       order.how_to_call,            // howToCall
     ],
+    calldata,                       // calldata
     order.calldata,                 // calldata
-    order.calldata,                 // calldata
-    order.replacement_pattern,      // replacementPattern
+    '0x',                           // replacementPattern
     order.replacement_pattern,      // replacementPattern
     '0x',                           // staticExtradata
     order.static_extradata,         // staticExtradata
@@ -589,61 +546,38 @@ function encodeCalldata(order: OpenseaOrder): string {
       order.v,                      // v
     ],
     [
-      '0x',                         // r
-      '0x',                         // s
+      ZERO_BYTES32,                 // r
+      ZERO_BYTES32,                 // s
       order.r,                      // r
       order.s,                      // s
-      '0x',                         // metadata
+      ZERO_BYTES32,                 // metadata TODO
     ],
   ];
-  return web3.eth.abi.encodeFunctionCall(abi, params as any);
+  const spender = '0x82d102457854c985221249f86659c9d6cf12aa72'; // TODO
+  const target = order.exchange;
+  const _calldata = web3.eth.abi.encodeFunctionCall(abi, params as any);
+  return web3.eth.abi.encodeParameters(['address', 'address', 'bytes'], [spender, target, _calldata]);
 }
 
 export type NftData = {
   collection: string;
-  tokenId: string;
+  tokenId: bigint;
+  price: bigint;
   paymentToken: string;
-
-  target: string;
-
-  seller: string;
-  saleKind: number;
-  basePrice: string;
-  makerRelayerFee: string;
-  listingTime: number;
-  expirationTime: number;
-  extra: string;
-
-  salt: string;
-  v: number;
-  r: string;
-  s: string;
+  data: string;
 };
 
 function translateOrder(order: OpenseaOrder): NftData {
   if (order.asset === null) throw new Error('panic');
-  if (order.v === null) throw new Error('panic');
-  if (order.r === null) throw new Error('panic');
-  if (order.s === null) throw new Error('panic');
+  const ACQUIRER = '0x38da86b08A514c4061b535372C31bb932E8fF25e'; // TODO
+  const [floor, frac] = order.current_price.split('.');
+  const price = BigInt(floor || '0') + (BigInt(frac || '0') > 0n ? 1n : 0n);
   return {
     collection: order.asset.asset_contract.address,
-    tokenId: order.asset.token_id,
+    tokenId: BigInt(order.asset.token_id),
+    price,
     paymentToken: order.payment_token,
-
-    target: order.target,
-
-    seller: order.maker.address,
-    saleKind: order.sale_kind,
-    basePrice: order.base_price,
-    makerRelayerFee: order.maker_relayer_fee,
-    listingTime: order.listing_time,
-    expirationTime: order.expiration_time,
-    extra: order.extra,
-
-    salt: order.salt,
-    v: order.v,
-    r: order.r,
-    s: order.s,
+    data: encodeCalldata(order, ACQUIRER, String(price)),
   };
 }
 
@@ -675,7 +609,6 @@ export async function fetchNft(collection: string, tokenId: string, network = 'm
   if (validate) {
     orders.forEach((order) => validateOrder(order, network));
   }
-  console.log(JSON.stringify(orders[0], undefined, 2));
   const items = orders.map(translateOrder);
   return items[0] || null;
 }
