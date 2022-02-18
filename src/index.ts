@@ -1,5 +1,7 @@
 import 'source-map-support/register';
 import axios from 'axios';
+import Web3 from 'web3';
+import { AbiItem } from 'web3-utils';
 
 function serialize(params: { [name: string]: string[] | string | number | boolean }): string {
   return Object.keys(params)
@@ -7,7 +9,7 @@ function serialize(params: { [name: string]: string[] | string | number | boolea
     .map((name) => {
       const value = params[name];
       if (value === undefined) throw new Error('panic');
-      if (typeof value === 'object') {
+      if (value instanceof Array) {
         const list: string[] = [];
         for (const v of value) {
           list.push(encodeURIComponent(name) + '=' + encodeURIComponent(v));
@@ -140,7 +142,7 @@ type OpenseaOrder = {
 //  };
   exchange: string;
   maker: OpenseaUser;
-//  taker: OpenseaUser;
+  taker: OpenseaUser;
 //  current_price: string;
 //  current_bounty: string;
 //  bounty_multiple: string;
@@ -267,6 +269,7 @@ function castOpenseaOrder(value: unknown): OpenseaOrder {
   if (!hasProperty(value, 'listing_time')) throw new Error('panic');
   if (!hasProperty(value, 'exchange')) throw new Error('panic');
   if (!hasProperty(value, 'maker')) throw new Error('panic');
+  if (!hasProperty(value, 'taker')) throw new Error('panic');
   if (!hasProperty(value, 'maker_relayer_fee')) throw new Error('panic');
   if (!hasProperty(value, 'taker_relayer_fee')) throw new Error('panic');
   if (!hasProperty(value, 'maker_protocol_fee')) throw new Error('panic');
@@ -298,6 +301,7 @@ function castOpenseaOrder(value: unknown): OpenseaOrder {
     listing_time,
     exchange,
     maker,
+    taker,
     maker_relayer_fee,
     taker_relayer_fee,
     maker_protocol_fee,
@@ -329,6 +333,7 @@ function castOpenseaOrder(value: unknown): OpenseaOrder {
   if (typeof listing_time !== 'number') throw new Error('panic');
   if (typeof exchange !== 'string') throw new Error('panic');
   const _maker = castOpenseaUser(maker);
+  const _taker = castOpenseaUser(taker);
   if (typeof maker_relayer_fee !== 'string') throw new Error('panic');
   if (typeof taker_relayer_fee !== 'string') throw new Error('panic');
   if (typeof maker_protocol_fee !== 'string') throw new Error('panic');
@@ -360,6 +365,7 @@ function castOpenseaOrder(value: unknown): OpenseaOrder {
     listing_time,
     exchange,
     maker: _maker,
+    taker: _taker,
     maker_relayer_fee,
     taker_relayer_fee,
     maker_protocol_fee,
@@ -397,7 +403,6 @@ function castListOpenseaOrdersResult(value: unknown): ListOpenseaOrdersResult {
     orders,
   } = value;
   if (typeof count !== 'number') throw new Error('panic');
-  if (typeof orders !== 'object' || orders === null) throw new Error('panic');
   if (!(orders instanceof Array)) throw new Error('panic');
   const _orders = orders.map(castOpenseaOrder);
   return {
@@ -434,6 +439,8 @@ const OPENSEA_CONTRACT: { [name: string]: string } = {
   'mainnet': '0x7be8076f4ea4a4ad08075c2508e481d6c946d12b',
   'rinkeby': '0x5206e78b21ce315ce284fb24cf05e0585a93b1d9',
 };
+
+const ACQUIRER = '0x6E6aB245993225393e9C39B0E6997A7F384149e6';
 
 function filterOrder(order: OpenseaOrder): boolean {
   const selector = order.calldata.substring(0, 10);
@@ -496,6 +503,100 @@ function validateOrder(order: OpenseaOrder, network: string): void {
   if (order.cancelled) throw new Error('Invalid cancelled: ' + order.cancelled);
   if (order.finalized) throw new Error('Invalid finalized: ' + order.finalized);
   if (order.marked_invalid) throw new Error('Invalid marked_invalid: ' + order.marked_invalid);
+}
+
+function encodeCalldata(order: OpenseaOrder): string {
+  const now = Math.floor(Date.now() / 1000);
+  if (order.v === null) throw new Error('panic');
+  if (order.r === null) throw new Error('panic');
+  if (order.s === null) throw new Error('panic');
+  const web3 = new Web3();
+  const abi: AbiItem = {
+      type: 'function',
+      name: 'atomicMatch_',
+      inputs: [
+        { type: 'address[14]', name: '_addrs' },
+        { type: 'uint256[18]', name: '_uints' },
+        { type: 'uint8[8]', name: '_feeMethodsSidesKindsHowToCalls' },
+        { type: 'bytes', name: '_calldataBuy' },
+        { type: 'bytes', name: '_calldataSell' },
+        { type: 'bytes', name: '_replacementPatternBuy' },
+        { type: 'bytes', name: '_replacementPatternSell' },
+        { type: 'bytes', name: '_staticExtradataBuy' },
+        { type: 'bytes', name: '_staticExtradataSell' },
+        { type: 'uint8[2]', name: '_vs' },
+        { type: 'bytes32[5]', name: '_rssMetadata' },
+      ],
+  };
+  const params: (number | string | (number | string)[])[] = [
+    [
+      order.exchange,               // exchange
+      ACQUIRER,                     // maker
+      ZERO_ADDRESS,                 // taker
+      ZERO_ADDRESS,                 // feeRecipient
+      order.target,                 // target
+      ZERO_ADDRESS,                 // staticTarget
+      order.payment_token,          // paymentToken
+
+      order.exchange,               // exchange
+      order.maker.address,          // maker
+      order.taker.address,          // taker
+      order.fee_recipient.address,  // feeRecipient
+      order.target,                 // target
+      order.static_target,          // staticTarget
+      order.payment_token,          // paymentToken
+    ],
+    [
+      order.maker_relayer_fee,      // makerRelayerFee
+      order.taker_relayer_fee,      // takerRelayerFee
+      order.maker_protocol_fee,     // makerProtocolFee
+      order.taker_protocol_fee,     // takerProtocolFee
+      order.base_price,             // price
+      '0',                          // extra
+      now,                          // listimtime
+      '0',                          // expirationTime
+      '0',                          // salt
+
+      order.maker_relayer_fee,      // makerRelayerFee
+      order.taker_relayer_fee,      // takerRelayerFee
+      order.maker_protocol_fee,     // makerProtocolFee
+      order.taker_protocol_fee,     // takerProtocolFee
+      order.base_price,             // basePrice
+      order.extra,                  // extra
+      order.listing_time,           // listimtime
+      order.expiration_time,        // expirationTime
+      order.salt,                   // salt
+    ],
+    [
+      order.fee_method,             // feeMethod
+      0,                            // side
+      order.sale_kind,              // saleKind
+      order.how_to_call,            // howToCall
+
+      order.fee_method,             // feeMethod
+      order.side,                   // side
+      order.sale_kind,              // saleKind
+      order.how_to_call,            // howToCall
+    ],
+    order.calldata,                 // calldata
+    order.calldata,                 // calldata
+    order.replacement_pattern,      // replacementPattern
+    order.replacement_pattern,      // replacementPattern
+    '0x',                           // staticExtradata
+    order.static_extradata,         // staticExtradata
+    [
+      0,                            // v
+      order.v,                      // v
+    ],
+    [
+      '0x',                         // r
+      '0x',                         // s
+      order.r,                      // r
+      order.s,                      // s
+      '0x',                         // metadata
+    ],
+  ];
+  return web3.eth.abi.encodeFunctionCall(abi, params as any);
 }
 
 export type NftData = {
@@ -574,14 +675,15 @@ export async function fetchNft(collection: string, tokenId: string, network = 'm
   if (validate) {
     orders.forEach((order) => validateOrder(order, network));
   }
+  console.log(JSON.stringify(orders[0], undefined, 2));
   const items = orders.map(translateOrder);
   return items[0] || null;
 }
 
 async function main(args: string[]): Promise<void> {
   const network = args[2] || 'mainnet';
-  console.log(await listNfts(network, true, Number.MAX_VALUE));
-//  console.log(await fetchNft('0x46bEF163D6C470a4774f9585F3500Ae3b642e751', '12', network, true));
+//  console.log(await listNfts(network, true, Number.MAX_VALUE));
+  console.log(await fetchNft('0x46bEF163D6C470a4774f9585F3500Ae3b642e751', '12', network, true));
 }
 
 type MainFn = (args: string[]) => Promise<void>;
