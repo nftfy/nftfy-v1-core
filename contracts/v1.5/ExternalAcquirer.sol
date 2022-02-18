@@ -34,22 +34,23 @@ contract ExternalAcquirer is FlashAcquireCallee
 	{
 		require(msg.sender == collective, "invalid sender");
 		require(_source == address(this), "invalid source");
+		(address _spender, address _target, bytes memory _calldata) = abi.decode(_data, (address, address, bytes));
 		(,,address _collection, uint256 _tokenId, address _paymentToken,,,,,,) = OpenCollectivePurchase(collective).listings(_listingId);
-		(address _spender, address _target, uint256 _value, bytes memory _calldata) = abi.decode(_data, (address, address, uint256, bytes));
-		if (_paymentToken != address(0)) {
-			uint256 _balance = IERC20(_paymentToken).balanceOf(address(this));
-			IERC20(_paymentToken).safeApprove(_spender, _balance);
-		}
-		(bool _success, bytes memory _returndata) = _target.call{value: _value}(_calldata);
-		require(_success, string(_returndata));
 		if (_paymentToken == address(0)) {
 			uint256 _balance = address(this).balance;
+			(bool _success, bytes memory _returndata) = _target.call{value: _balance}(_calldata);
+			require(_success, string(_returndata));
+			_balance = address(this).balance;
 			if (_balance > 0) {
 				vault.sendValue(_balance);
 			}
 		} else {
-			IERC20(_paymentToken).safeApprove(_spender, 0);
 			uint256 _balance = IERC20(_paymentToken).balanceOf(address(this));
+			IERC20(_paymentToken).safeApprove(_spender, _balance);
+			(bool _success, bytes memory _returndata) = _target.call(_calldata);
+			require(_success, string(_returndata));
+			IERC20(_paymentToken).safeApprove(_spender, 0);
+			_balance = IERC20(_paymentToken).balanceOf(address(this));
 			if (_balance > 0) {
 				IERC20(_paymentToken).safeTransfer(vault, _balance);
 			}
