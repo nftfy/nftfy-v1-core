@@ -415,8 +415,7 @@ function castListOpenseaOrdersResult(value: unknown): ListOpenseaOrdersResult {
   };
 }
 
-async function listOpenseaOrders(params: Partial<ListOpenseaOrdersParams> = {}, testnet = false): Promise<ListOpenseaOrdersResult> {
-  const API_KEY = '2f6f419a083c46de9d83ce3dbe7db601'; // TODO
+async function listOpenseaOrders(apiKey: string, params: Partial<ListOpenseaOrdersParams> = {}, testnet = false): Promise<ListOpenseaOrdersResult> {
   const DEFAULT_PARAMS: ListOpenseaOrdersParams = {
     bundled: false,
     include_bundled: true,
@@ -428,7 +427,7 @@ async function listOpenseaOrders(params: Partial<ListOpenseaOrdersParams> = {}, 
   };
   const _params: ListOpenseaOrdersParams = Object.assign({ ...DEFAULT_PARAMS }, params);
   const url = 'https://' + (testnet ? 'testnets-' : '') + 'api.opensea.io/wyvern/v1/orders?' + serialize(_params);
-  const response = await httpGet(url, { 'X-API-KEY': API_KEY });
+  const response = await httpGet(url, { 'X-API-KEY': apiKey });
   const result: unknown = JSON.parse(response);
   return castListOpenseaOrdersResult(result);
 }
@@ -436,23 +435,33 @@ async function listOpenseaOrders(params: Partial<ListOpenseaOrdersParams> = {}, 
 const ZERO_ADDRESS = '0x0000000000000000000000000000000000000000';
 const ZERO_BYTES32 = '0x0000000000000000000000000000000000000000000000000000000000000000';
 
+const TOKEN_TRANSFER_PROXY: { [name: string]: string } = {
+  '0x7be8076f4ea4a4ad08075c2508e481d6c946d12b': '0xe5c783ee536cf5e63e792988335c4255169be4e1', // mainnet
+  '0x7f268357a8c2552623316e2562d90e642bb538e5': '0xe5c783ee536cf5e63e792988335c4255169be4e1', // mainnet
+  '0x5206e78b21ce315ce284fb24cf05e0585a93b1d9': '0x82d102457854c985221249f86659c9d6cf12aa72', // rinkeby
+  '0xdd54d660178b28f6033a953b0e55073cfa7e3744': '0xcdc9188485316bf6fa416d02b4f680227c50b89e', // rinkeby
+}
+
 function filterOrder(order: OpenseaOrder): boolean {
   return order.asset !== null
       && order.asset.asset_contract.schema_name === 'ERC721'
       && order.taker.address === ZERO_ADDRESS
+      && /^\d*\.?\d*$/.test(order.current_price)
+      && order.calldata.length === order.replacement_pattern.length
       && order.v !== null
       && order.r !== null
       && order.s !== null;
 }
 
 function validateOrder(order: OpenseaOrder, network: string): void {
+  if (TOKEN_TRANSFER_PROXY[order.exchange] === undefined) throw new Error('Invalid exchange: ' + order.exchange);
   if (order.side !== 1) throw new Error('Invalid size: ' + order.side);
   if (order.cancelled) throw new Error('Invalid cancelled: ' + order.cancelled);
   if (order.finalized) throw new Error('Invalid finalized: ' + order.finalized);
   if (order.marked_invalid) throw new Error('Invalid marked_invalid: ' + order.marked_invalid);
 }
 
-function encodeCalldata(order: OpenseaOrder, acquirer: string, price: string): string {
+function encodeCalldata(order: OpenseaOrder, acquirer: string, price: string, metadata: string): string {
   if (order.v === null) throw new Error('panic');
   if (order.r === null) throw new Error('panic');
   if (order.s === null) throw new Error('panic');
@@ -550,14 +559,21 @@ function encodeCalldata(order: OpenseaOrder, acquirer: string, price: string): s
       ZERO_BYTES32,                 // s
       order.r,                      // r
       order.s,                      // s
-      ZERO_BYTES32,                 // metadata TODO
+      metadata,                     // metadata
     ],
   ];
-  const spender = '0x82d102457854c985221249f86659c9d6cf12aa72'; // TODO
+  const spender = TOKEN_TRANSFER_PROXY[order.exchange] || ZERO_ADDRESS;
   const target = order.exchange;
   const _calldata = web3.eth.abi.encodeFunctionCall(abi, params as any);
   return web3.eth.abi.encodeParameters(['address', 'address', 'bytes'], [spender, target, _calldata]);
 }
+
+const EXTERNAL_ACQUIRER = '0x38da86b08a514c4061b535372c31bb932e8ff25e';
+
+const OPENSEA_REFERRAL: { [name: string]: string } = {
+  'mainnet': '0x1bf2ad2b8ba93dacd8b7b1686d7db71e9481e73f',
+  'rinkeby': '0x3112eb8e651611fdb8c9a5b9f80222b090e36601',
+};
 
 export type NftData = {
   collection: string;
@@ -567,32 +583,33 @@ export type NftData = {
   data: string;
 };
 
-function translateOrder(order: OpenseaOrder): NftData {
+function translateOrder(order: OpenseaOrder, network: string): NftData {
   if (order.asset === null) throw new Error('panic');
-  const ACQUIRER = '0x38da86b08A514c4061b535372C31bb932E8fF25e'; // TODO
   const [floor, frac] = order.current_price.split('.');
   const price = BigInt(floor || '0') + (BigInt(frac || '0') > 0n ? 1n : 0n);
+  const referral = OPENSEA_REFERRAL[network] || ZERO_ADDRESS;
+  const metadata = '0x' + '0'.repeat(24) + referral.substring(2);
   return {
     collection: order.asset.asset_contract.address,
     tokenId: BigInt(order.asset.token_id),
     price,
     paymentToken: order.payment_token,
-    data: encodeCalldata(order, ACQUIRER, String(price)),
+    data: encodeCalldata(order, EXTERNAL_ACQUIRER, String(price), metadata),
   };
 }
 
-export async function listNfts(network = 'mainnet', validate = false, pageCount = 1, page = 0, pause = 1000): Promise<NftData[]> {
+export async function listNfts(apiKey: string, network = 'mainnet', validate = false, pageCount = 1, page = 0, pause = 1000): Promise<NftData[]> {
   if (!['mainnet', 'rinkeby'].includes(network)) throw new Error('Unsupported network: ' + network);
   const testnet = network === 'rinkeby';
   const items: NftData[] = [];
   const limit = 50;
   for (let offset = page * limit; offset < (page + pageCount) * limit; offset += limit) {
-    const result = await listOpenseaOrders({ side: 1, offset, limit }, testnet);
+    const result = await listOpenseaOrders(apiKey, { side: 1, offset, limit }, testnet);
     const orders = result.orders.filter(filterOrder);
     if (validate) {
       orders.forEach((order) => validateOrder(order, network));
     }
-    items.push(...orders.map(translateOrder));
+    items.push(...orders.map((order) => translateOrder(order, network)));
     console.log('>', offset, result.orders.length, orders.length);
     if (result.orders.length < limit) break;
     await sleep(pause);
@@ -600,23 +617,24 @@ export async function listNfts(network = 'mainnet', validate = false, pageCount 
   return items;
 }
 
-export async function fetchNft(collection: string, tokenId: string, network = 'mainnet', validate = false): Promise<NftData | null> {
+export async function fetchNft(apiKey: string, collection: string, tokenId: string, network = 'mainnet', validate = false): Promise<NftData | null> {
   if (!['mainnet', 'rinkeby'].includes(network)) throw new Error('Unsupported network: ' + network);
   const testnet = network === 'rinkeby';
-  const result = await listOpenseaOrders({ asset_contract_address: collection, token_id: tokenId, side: 1 }, testnet);
+  const result = await listOpenseaOrders(apiKey, { asset_contract_address: collection, token_id: tokenId, side: 1 }, testnet);
   if (result.orders.length > 1) throw new Error('panic');
   const orders = result.orders.filter(filterOrder);
   if (validate) {
     orders.forEach((order) => validateOrder(order, network));
   }
-  const items = orders.map(translateOrder);
+  const items = orders.map((order) => translateOrder(order, network));
   return items[0] || null;
 }
 
 async function main(args: string[]): Promise<void> {
   const network = args[2] || 'mainnet';
-//  console.log(await listNfts(network, true, Number.MAX_VALUE));
-  console.log(await fetchNft('0x46bEF163D6C470a4774f9585F3500Ae3b642e751', '12', network, true));
+  const apiKey = args[3] || '2f6f419a083c46de9d83ce3dbe7db601';
+  console.log(await listNfts(apiKey, network, true, Number.MAX_VALUE));
+//  console.log(await fetchNft(apiKey, '0x46bef163d6c470a4774f9585f3500ae3b642e751', '12', network, true));
 }
 
 type MainFn = (args: string[]) => Promise<void>;
