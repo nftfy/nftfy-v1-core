@@ -6,6 +6,7 @@
     "esModuleInterop": true,
 
     "outDir": "./build/",
+    "declaration": true,
     "removeComments": true,
     "noEmitOnError": true,
     "sourceMap": true,

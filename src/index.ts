@@ -629,7 +629,7 @@ export async function fetchNft(apiKey: string, collection: string, tokenId: stri
   const items = orders.map((order) => translateOrder(order, network));
   return items[0] || null;
 }
-
+/*
 async function main(args: string[]): Promise<void> {
   const network = args[2] || 'mainnet';
   const apiKey = args[3] || '2f6f419a083c46de9d83ce3dbe7db601';
@@ -650,3 +650,4 @@ async function __entrypoint(main: MainFn): Promise<void> {
 }
 
 __entrypoint(main);
+*/

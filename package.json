@@ -1,10 +1,14 @@
 {
-  "name": "nftfy-v1-core",
-  "version": "1.0.0",
+  "name": "@nftfyorg/v1-core",
+  "version": "1.5.0",
   "description": "Nftfy V1 Core Smart Contracts",
+  "main": "build/index.js",
+  "types": "build/index.d.ts",
   "files": [
-    "/contracts/**/*.sol",
-    "/build/contracts/*.json"
+    "contracts/**/*.sol",
+    "build/**/*.d.ts",
+    "build/**/*.js",
+    "build/**/*.json"
   ],
   "dependencies": {
     "axios": "^0.26.0",
@@ -35,6 +39,7 @@
     "deploy:ftmtest": "truffle migrate --network ftmtest",
     "deploy:maticmain": "truffle migrate --network maticmain",
     "deploy:matictest": "truffle migrate --network matictest",
+    "prepublishOnly": "npm run build && npm run tsc",
     "source": "truffle-flattener contracts/*.sol | sed '/^.*SPDX-License-Identifier:.*$/d' | sed '1s/^/\\/\\/ SPDX-License-Identifier: GPL-3.0-only\\n/' > Contracts.sol",
     "test": "truffle test",
     "test:mainnet": "truffle test",
