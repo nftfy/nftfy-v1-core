@@ -56,16 +56,6 @@ module.exports = {
       provider: () => new HDWalletProvider(privateKey, 'https://data-seed-prebsc-1-s1.binance.org:8545/'),
       skipDryRun: true,
     },
-    ftmmain: {
-      network_id: 250,
-      gasPrice,
-      provider: () => new HDWalletProvider(privateKey, 'https://rpcapi.fantom.network/'),
-    },
-    ftmtest: {
-      network_id: 4002,
-      provider: () => new HDWalletProvider(privateKey, 'https://rpc.testnet.fantom.network/'),
-      skipDryRun: true,
-    },
     maticmain: {
       network_id: 137,
       gasPrice,
@@ -74,6 +64,26 @@ module.exports = {
     matictest: {
       network_id: 80001,
       provider: () => new HDWalletProvider(privateKey, 'https://rpc-mumbai.maticvigil.com/'),
+      skipDryRun: true,
+    },
+    avaxmain: {
+      network_id: 43114,
+      gasPrice,
+      provider: () => new HDWalletProvider(privateKey, 'https://api.avax.network/ext/bc/C/rpc'),
+    },
+    avaxtest: {
+      network_id: 43113,
+      provider: () => new HDWalletProvider(privateKey, 'https://api.avax-test.network/ext/bc/C/rpc'),
+      skipDryRun: true,
+    },
+    ftmmain: {
+      network_id: 250,
+      gasPrice,
+      provider: () => new HDWalletProvider(privateKey, 'https://rpcapi.fantom.network/'),
+    },
+    ftmtest: {
+      network_id: 4002,
+      provider: () => new HDWalletProvider(privateKey, 'https://rpc.testnet.fantom.network/'),
       skipDryRun: true,
     },
     development: {
