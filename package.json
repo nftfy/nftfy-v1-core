@@ -35,6 +35,8 @@
     "deploy:goerli": "truffle migrate --network goerli",
     "deploy:bscmain": "truffle migrate --network bscmain",
     "deploy:bsctest": "truffle migrate --network bsctest",
+    "deploy:avaxmain": "truffle migrate --network avaxmain",
+    "deploy:avaxtest": "truffle migrate --network avaxtest",
     "deploy:ftmmain": "truffle migrate --network ftmmain",
     "deploy:ftmtest": "truffle migrate --network ftmtest",
     "deploy:maticmain": "truffle migrate --network maticmain",
@@ -49,10 +51,12 @@
     "test:goerli": "truffle test",
     "test:bscmain": "GAS_LIMIT=30000000 truffle test",
     "test:bsctest": "GAS_LIMIT=30000000 truffle test",
-    "test:ftmmain": "truffle test",
-    "test:ftmtest": "truffle test",
     "test:maticmain": "truffle test",
     "test:matictest": "truffle test",
+    "test:avaxmain": "truffle test",
+    "test:avaxtest": "truffle test",
+    "test:ftmmain": "truffle test",
+    "test:ftmtest": "truffle test",
     "tsc": "tsc"
   },
   "repository": {

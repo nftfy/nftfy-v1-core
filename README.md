@@ -32,11 +32,18 @@ Polygon Matic:
 | maticmain (137)   | [0x727638740980aA0aA0B346d02dd91120Eaac75ed](https://polygonscan.com/address/0x727638740980aA0aA0B346d02dd91120Eaac75ed)                 |
 | matictest (80001) | [0x727638740980aA0aA0B346d02dd91120Eaac75ed](https://mumbai.polygonscan.com/address/0x727638740980aA0aA0B346d02dd91120Eaac75ed)          |
 
+Avalanche:
+
+| Network (ID)      | Address                                                                                                                                  |
+| ----------------- | ---------------------------------------------------------------------------------------------------------------------------------------- |
+| avaxmain (43114)  | [0x727638740980aA0aA0B346d02dd91120Eaac75ed](https://snowtrace.io/address/0x727638740980aA0aA0B346d02dd91120Eaac75ed)                    |
+| avaxtest (43113)  | [0x727638740980aA0aA0B346d02dd91120Eaac75ed](https://testnet.snowtrace.io/address/0x727638740980aA0aA0B346d02dd91120Eaac75ed)            |
+
 Fantom Network:
 
 | Network (ID)      | Address                                                                                                                                  |
 | ----------------- | ---------------------------------------------------------------------------------------------------------------------------------------- |
-| ftmmain (250)     | TBD                                                                                                                                      |
+| ftmmain (250)     | [0x727638740980aA0aA0B346d02dd91120Eaac75ed](https://ftmscan.com/address/0x727638740980aA0aA0B346d02dd91120Eaac75ed)                     |
 | ftmtest (4002)    | [0x727638740980aA0aA0B346d02dd91120Eaac75ed](https://testnet.ftmscan.com/address/0x727638740980aA0aA0B346d02dd91120Eaac75ed)             |
 
 ### Version 1.5
@@ -82,3 +89,25 @@ Polygon Matic:
 | matictest (80001) | AUCTION             | [0x5EF37b60C374634Ff917BaafECB515Bf1482cAc3](https://mumbai.polygonscan.com/address/0x5EF37b60C374634Ff917BaafECB515Bf1482cAc3) |
 | matictest (80001) | SET_PRICE           | [0x8279BE8f740DBeDB05C0Ce165447E8bc1457a137](https://mumbai.polygonscan.com/address/0x8279BE8f740DBeDB05C0Ce165447E8bc1457a137) |
 | matictest (80001) | COLLECTIVE_PURCHASE | [0x1e95B705Dbbb3E1128445aFc06D9dA401552FDCb](https://mumbai.polygonscan.com/address/0x1e95B705Dbbb3E1128445aFc06D9dA401552FDCb) |
+
+Avalanche:
+
+| Network (ID)      | Type                | Address                                                                                                                         |
+| ----------------- | ------------------- | ------------------------------------------------------------------------------------------------------------------------------- |
+| avaxmain (43114)  | AUCTION             | [0x5EF37b60C374634Ff917BaafECB515Bf1482cAc3](https://snowtrace.io/address/0x5EF37b60C374634Ff917BaafECB515Bf1482cAc3)           |
+| avaxmain (43114)  | SET_PRICE           | [0x8279BE8f740DBeDB05C0Ce165447E8bc1457a137](https://snowtrace.io/address/0x8279BE8f740DBeDB05C0Ce165447E8bc1457a137)           |
+| avaxmain (43114)  | COLLECTIVE_PURCHASE | [0x1e95B705Dbbb3E1128445aFc06D9dA401552FDCb](https://snowtrace.io/address/0x1e95B705Dbbb3E1128445aFc06D9dA401552FDCb)           |
+| avaxtest (43113)  | AUCTION             | [0x5EF37b60C374634Ff917BaafECB515Bf1482cAc3](https://testnet.snowtrace.io/address/0x5EF37b60C374634Ff917BaafECB515Bf1482cAc3)   |
+| avaxtest (43113)  | SET_PRICE           | [0x8279BE8f740DBeDB05C0Ce165447E8bc1457a137](https://testnet.snowtrace.io/address/0x8279BE8f740DBeDB05C0Ce165447E8bc1457a137)   |
+| avaxtest (43113)  | COLLECTIVE_PURCHASE | [0x1e95B705Dbbb3E1128445aFc06D9dA401552FDCb](https://testnet.snowtrace.io/address/0x1e95B705Dbbb3E1128445aFc06D9dA401552FDCb)   |
+
+Fantom Network:
+
+| Network (ID)      | Type                | Address                                                                                                                         |
+| ----------------- | ------------------- | ------------------------------------------------------------------------------------------------------------------------------- |
+| ftmmain (250)     | AUCTION             | [0x5EF37b60C374634Ff917BaafECB515Bf1482cAc3](https://ftmscan.com/address/0x5EF37b60C374634Ff917BaafECB515Bf1482cAc3)            |
+| ftmmain (250)     | SET_PRICE           | [0x8279BE8f740DBeDB05C0Ce165447E8bc1457a137](https://ftmscan.com/address/0x8279BE8f740DBeDB05C0Ce165447E8bc1457a137)            |
+| ftmmain (250)     | COLLECTIVE_PURCHASE | [0x1e95B705Dbbb3E1128445aFc06D9dA401552FDCb](https://ftmscan.com/address/0x1e95B705Dbbb3E1128445aFc06D9dA401552FDCb)            |
+| ftmtest (4002)    | AUCTION             | [0x5EF37b60C374634Ff917BaafECB515Bf1482cAc3](https://testnet.ftmscan.com/address/0x5EF37b60C374634Ff917BaafECB515Bf1482cAc3)    |
+| ftmtest (4002)    | SET_PRICE           | [0x8279BE8f740DBeDB05C0Ce165447E8bc1457a137](https://testnet.ftmscan.com/address/0x8279BE8f740DBeDB05C0Ce165447E8bc1457a137)    |
+| ftmtest (4002)    | COLLECTIVE_PURCHASE | [0x1e95B705Dbbb3E1128445aFc06D9dA401552FDCb](https://testnet.ftmscan.com/address/0x1e95B705Dbbb3E1128445aFc06D9dA401552FDCb)    |
