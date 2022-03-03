@@ -36,14 +36,14 @@ Avalanche:
 
 | Network (ID)      | Address                                                                                                                                  |
 | ----------------- | ---------------------------------------------------------------------------------------------------------------------------------------- |
-| avaxmain (43114)  | [0x727638740980aA0aA0B346d02dd91120Eaac75ed](https://snowtrace.io/address/0x727638740980aA0aA0B346d02dd91120Eaac75ed)                    |
+| avaxmain (43114)  | N/A                                                                                                                                      |
 | avaxtest (43113)  | [0x727638740980aA0aA0B346d02dd91120Eaac75ed](https://testnet.snowtrace.io/address/0x727638740980aA0aA0B346d02dd91120Eaac75ed)            |
 
 Fantom Network:
 
 | Network (ID)      | Address                                                                                                                                  |
 | ----------------- | ---------------------------------------------------------------------------------------------------------------------------------------- |
-| ftmmain (250)     | [0x727638740980aA0aA0B346d02dd91120Eaac75ed](https://ftmscan.com/address/0x727638740980aA0aA0B346d02dd91120Eaac75ed)                     |
+| ftmmain (250)     | N/A                                                                                                                                      |
 | ftmtest (4002)    | [0x727638740980aA0aA0B346d02dd91120Eaac75ed](https://testnet.ftmscan.com/address/0x727638740980aA0aA0B346d02dd91120Eaac75ed)             |
 
 ### Version 1.5
