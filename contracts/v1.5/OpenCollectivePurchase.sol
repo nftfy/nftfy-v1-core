@@ -114,6 +114,7 @@ contract OpenCollectivePurchase is ERC721Holder, Ownable, ReentrancyGuard
 
 	function list(address _collection, uint256 _tokenId, bool _listed, address _paymentToken, uint256 _priceMultiplier, bytes calldata _extra) external nonReentrant returns (uint256 _listingId)
 	{
+		address _creator = msg.sender;
 		require(0 < _priceMultiplier && _priceMultiplier <= 10000, "invalid multiplier"); // from 1% up to 100x
 		_validate(_extra);
 		_listingId = listings.length;
@@ -131,7 +132,7 @@ contract OpenCollectivePurchase is ERC721Holder, Ownable, ReentrancyGuard
 			fractionsCount: 0,
 			fractions: address(0)
 		}));
-		emit Listed(_listingId);
+		emit Listed(_listingId, _creator);
 		return _listingId;
 	}
 
@@ -313,7 +314,7 @@ contract OpenCollectivePurchase is ERC721Holder, Ownable, ReentrancyGuard
 	}
 
 	event AddFractionalizer(bytes32 indexed _type, address indexed _fractionalizer);
-	event Listed(uint256 indexed _listingId);
+	event Listed(uint256 indexed _listingId, address indexed _creator);
 	event Acquired(uint256 indexed _listingId);
 	event Relisted(uint256 indexed _listingId);
 	event Join(uint256 indexed _listingId, address indexed _buyer, uint256 _amount);
