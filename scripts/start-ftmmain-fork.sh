@@ -4,7 +4,7 @@ source .env
 
 CHAIN_ID=250
 GAS_LIMIT=281474976710655
-FORK_URL='https://rpcapi.fantom.network/'
+FORK_URL='https://rpc.ftm.tools/'
 
 BALANCE=100000000000000000000000
 

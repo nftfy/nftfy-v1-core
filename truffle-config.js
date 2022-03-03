@@ -59,7 +59,7 @@ module.exports = {
     maticmain: {
       network_id: 137,
       gasPrice,
-      provider: () => new HDWalletProvider(privateKey, 'https://rpc-mainnet.maticvigil.com/'),
+      provider: () => new HDWalletProvider(privateKey, 'https://polygon-rpc.com/'),
     },
     matictest: {
       network_id: 80001,
@@ -79,7 +79,7 @@ module.exports = {
     ftmmain: {
       network_id: 250,
       gasPrice,
-      provider: () => new HDWalletProvider(privateKey, 'https://rpcapi.fantom.network/'),
+      provider: () => new HDWalletProvider(privateKey, 'https://rpc.ftm.tools/'),
     },
     ftmtest: {
       network_id: 4002,
