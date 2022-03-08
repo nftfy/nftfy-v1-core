@@ -122,6 +122,17 @@ type OpenseaAsset = {
   token_id: string;
 };
 
+type OpenseaPaymentTokenContract = {
+//  id: number;
+//  symbol: string;
+//  address: string;
+//  image_url: string;
+//  name: string;
+  decimals: number;
+//  eth_price: string;
+//  usd_price: string;
+};
+
 type OpenseaOrder = {
 //  id: number;
   asset: OpenseaAsset | null;
@@ -162,16 +173,7 @@ type OpenseaOrder = {
   static_target: string;
   static_extradata: string;
   payment_token: string;
-//  payment_token_contract: {
-//    id: number;
-//    symbol: string;
-//    address: string;
-//    image_url: string;
-//    name: string;
-//    decimals: number;
-//    eth_price: string;
-//    usd_price: string;
-//  };
+  payment_token_contract: OpenseaPaymentTokenContract;
   base_price: string;
   extra: string;
 //  quantity: string;
@@ -262,6 +264,18 @@ function castOpenseaAsset(value: unknown): OpenseaAsset | null {
   };
 }
 
+function castOpenseaPaymentTokenContract(value: unknown): OpenseaPaymentTokenContract {
+  if (typeof value !== 'object' || value === null) throw new Error('panic');
+  if (!hasProperty(value, 'decimals')) throw new Error('panic');
+  const {
+    decimals,
+  } = value;
+  if (typeof decimals !== 'number') throw new Error('panic');
+  return {
+    decimals,
+  };
+}
+
 function castOpenseaOrder(value: unknown): OpenseaOrder {
   if (typeof value !== 'object' || value === null) throw new Error('panic');
   if (!hasProperty(value, 'asset')) throw new Error('panic');
@@ -286,6 +300,7 @@ function castOpenseaOrder(value: unknown): OpenseaOrder {
   if (!hasProperty(value, 'static_target')) throw new Error('panic');
   if (!hasProperty(value, 'static_extradata')) throw new Error('panic');
   if (!hasProperty(value, 'payment_token')) throw new Error('panic');
+  if (!hasProperty(value, 'payment_token_contract')) throw new Error('panic');
   if (!hasProperty(value, 'base_price')) throw new Error('panic');
   if (!hasProperty(value, 'extra')) throw new Error('panic');
   if (!hasProperty(value, 'salt')) throw new Error('panic');
@@ -319,6 +334,7 @@ function castOpenseaOrder(value: unknown): OpenseaOrder {
     static_target,
     static_extradata,
     payment_token,
+    payment_token_contract,
     base_price,
     extra,
     salt,
@@ -352,6 +368,7 @@ function castOpenseaOrder(value: unknown): OpenseaOrder {
   if (typeof static_target !== 'string') throw new Error('panic');
   if (typeof static_extradata !== 'string') throw new Error('panic');
   if (typeof payment_token !== 'string') throw new Error('panic');
+  const _payment_token_contract = castOpenseaPaymentTokenContract(payment_token_contract);
   if (typeof base_price !== 'string') throw new Error('panic');
   if (typeof extra !== 'string') throw new Error('panic');
   if (typeof salt !== 'string') throw new Error('panic');
@@ -385,6 +402,7 @@ function castOpenseaOrder(value: unknown): OpenseaOrder {
     static_target,
     static_extradata,
     payment_token,
+    payment_token_contract: _payment_token_contract,
     base_price,
     extra,
     salt,
@@ -579,6 +597,7 @@ export type NftData = {
   collection: string;
   tokenId: bigint;
   price: bigint;
+  decimals: number;
   paymentToken: string;
   data: string;
 };
@@ -593,6 +612,7 @@ function translateOrder(order: OpenseaOrder, network: string): NftData {
     collection: order.asset.asset_contract.address,
     tokenId: BigInt(order.asset.token_id),
     price,
+    decimals: order.payment_token_contract.decimals,
     paymentToken: order.payment_token,
     data: encodeCalldata(order, EXTERNAL_ACQUIRER, String(price), metadata),
   };
