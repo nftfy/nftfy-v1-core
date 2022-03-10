@@ -586,7 +586,7 @@ function encodeCalldata(order: OpenseaOrder, acquirer: string, price: string, me
   return web3.eth.abi.encodeParameters(['address', 'address', 'bytes'], [spender, target, _calldata]);
 }
 
-const EXTERNAL_ACQUIRER = '0x38da86b08a514c4061b535372c31bb932e8ff25e';
+const EXTERNAL_ACQUIRER = '0xa92528b10e8379d4ca283343a3b70bf8464351b6';
 
 const OPENSEA_REFERRAL: { [name: string]: string } = {
   'mainnet': '0x1bf2ad2b8ba93dacd8b7b1686d7db71e9481e73f',
