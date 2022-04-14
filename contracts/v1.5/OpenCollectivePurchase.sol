@@ -40,13 +40,14 @@ contract OpenCollectivePurchase is ERC721Holder, Ownable, ReentrancyGuard
 		uint256 amount;
 		uint256 fractionsCount;
 		address fractions;
+		uint256 fee;
 		mapping (address => BuyerInfo) buyers;
 	}
 
 	uint8 constant public FRACTIONS_DECIMALS = 6;
 	uint256 constant public FRACTIONS_COUNT = 100000e6;
 
-	uint256 public immutable fee;
+	uint256 public fee;
 	address payable public immutable vault;
 	mapping (bytes32 => address) public fractionalizers;
 
@@ -101,8 +102,14 @@ contract OpenCollectivePurchase is ERC721Holder, Ownable, ReentrancyGuard
 	{
 		ListingInfo storage _listing = listings[_listingId];
 		uint256 _amount = _listing.amount;
-		_feeAmount = (_amount * fee) / 1e18;
+		_feeAmount = (_amount * _listing.fee) / 1e18;
 		_netAmount = _amount - _feeAmount;
+	}
+
+	function setFee(uint256 _fee) external onlyOwner
+	{
+		fee = _fee;
+		emit UpdateFee(_fee);
 	}
 
 	function addFractionalizer(bytes32 _type, address _fractionalizer) external onlyOwner
@@ -130,7 +137,8 @@ contract OpenCollectivePurchase is ERC721Holder, Ownable, ReentrancyGuard
 			extra: _extra,
 			amount: 0,
 			fractionsCount: 0,
-			fractions: address(0)
+			fractions: address(0),
+			fee: fee
 		}));
 		emit Listed(_listingId, _creator);
 		return _listingId;
@@ -208,7 +216,7 @@ contract OpenCollectivePurchase is ERC721Holder, Ownable, ReentrancyGuard
 		ListingInfo storage _listing = listings[_listingId];
 		uint256 _amount = _listing.amount;
 		require(_amount > 0, "insufficient balance");
-		uint256 _feeAmount = (_amount * fee) / 1e18;
+		uint256 _feeAmount = (_amount * _listing.fee) / 1e18;
 		uint256 _netAmount = _amount - _feeAmount;
 		_listing.amount = 0;
 		balances[_listing.paymentToken] -= _amount;
@@ -313,6 +321,7 @@ contract OpenCollectivePurchase is ERC721Holder, Ownable, ReentrancyGuard
 		}
 	}
 
+	event UpdateFee(uint256 _fee);
 	event AddFractionalizer(bytes32 indexed _type, address indexed _fractionalizer);
 	event Listed(uint256 indexed _listingId, address indexed _creator);
 	event Acquired(uint256 indexed _listingId);
