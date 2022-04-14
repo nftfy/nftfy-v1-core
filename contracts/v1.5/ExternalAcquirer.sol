@@ -35,7 +35,7 @@ contract ExternalAcquirer is FlashAcquireCallee
 		require(msg.sender == collective, "invalid sender");
 		require(_source == address(this), "invalid source");
 		(address _spender, address _target, bytes memory _calldata) = abi.decode(_data, (address, address, bytes));
-		(,,address _collection, uint256 _tokenId,, address _paymentToken,,,,,,) = OpenCollectivePurchase(collective).listings(_listingId);
+		(,,address _collection, uint256 _tokenId,, address _paymentToken,,,,,,,) = OpenCollectivePurchase(collective).listings(_listingId);
 		if (_paymentToken == address(0)) {
 			uint256 _balance = address(this).balance;
 			(bool _success, bytes memory _returndata) = _target.call{value: _balance}(_calldata);
