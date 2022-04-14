@@ -108,6 +108,7 @@ contract OpenCollectivePurchase is ERC721Holder, Ownable, ReentrancyGuard
 
 	function setFee(uint256 _fee) external onlyOwner
 	{
+		require(_fee <= 1e18, "invalid fee");
 		fee = _fee;
 		emit UpdateFee(_fee);
 	}
