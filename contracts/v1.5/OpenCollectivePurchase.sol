@@ -44,6 +44,11 @@ contract OpenCollectivePurchase is ERC721Holder, Ownable, ReentrancyGuard
 		mapping (address => BuyerInfo) buyers;
 	}
 
+	struct CreatorInfo {
+		address payable creator;
+		uint256 fee;
+	}
+
 	uint8 constant public FRACTIONS_DECIMALS = 6;
 	uint256 constant public FRACTIONS_COUNT = 100000e6;
 
@@ -54,11 +59,19 @@ contract OpenCollectivePurchase is ERC721Holder, Ownable, ReentrancyGuard
 	mapping (address => uint256) private balances;
 	mapping (address => mapping (uint256 => bool)) private items;
 	ListingInfo[] public listings;
+	CreatorInfo[] public creators;
 
 	modifier inState(uint256 _listingId, State _state)
 	{
 		ListingInfo storage _listing = listings[_listingId];
 		require(_state == _listing.state, "not available");
+		_;
+	}
+
+	modifier onlyCreator(uint256 _listingId)
+	{
+		CreatorInfo storage _creator = creators[_listingId];
+		require(msg.sender == _creator.creator, "not available");
 		_;
 	}
 
@@ -98,19 +111,29 @@ contract OpenCollectivePurchase is ERC721Holder, Ownable, ReentrancyGuard
 		return _fractionsCount;
 	}
 
-	function sellerPayout(uint256 _listingId) external view returns (uint256 _netAmount, uint256 _feeAmount)
+	function sellerPayout(uint256 _listingId) external view returns (uint256 _netAmount, uint256 _feeAmount, uint256 _creatorFeeAmount)
 	{
 		ListingInfo storage _listing = listings[_listingId];
+		CreatorInfo storage _creator = creators[_listingId];
 		uint256 _amount = _listing.amount;
 		_feeAmount = (_amount * _listing.fee) / 1e18;
-		_netAmount = _amount - _feeAmount;
+		_creatorFeeAmount = (_amount * _creator.fee) / 1e18;
+		_netAmount = _amount - (_feeAmount + _creatorFeeAmount);
 	}
 
 	function setFee(uint256 _fee) external onlyOwner
 	{
-		require(_fee <= 1e18, "invalid fee");
+		require(_fee <= 50e16, "invalid fee");
 		fee = _fee;
 		emit UpdateFee(_fee);
+	}
+
+	function setCreatorFee(uint256 _listingId, uint256 _fee) external onlyCreator(_listingId) inState(_listingId, State.Created)
+	{
+		require(_fee <= 50e16, "invalid fee");
+		CreatorInfo storage _creator = creators[_listingId];
+		_creator.fee = _fee;
+		emit UpdateCreatorFee(_listingId, _fee);
 	}
 
 	function addFractionalizer(bytes32 _type, address _fractionalizer) external onlyOwner
@@ -120,9 +143,9 @@ contract OpenCollectivePurchase is ERC721Holder, Ownable, ReentrancyGuard
 		emit AddFractionalizer(_type, _fractionalizer);
 	}
 
-	function list(address _collection, uint256 _tokenId, bool _listed, address _paymentToken, uint256 _priceMultiplier, bytes calldata _extra) external nonReentrant returns (uint256 _listingId)
+	function list(address _collection, uint256 _tokenId, bool _listed, uint256 _fee, address _paymentToken, uint256 _priceMultiplier, bytes calldata _extra) external nonReentrant returns (uint256 _listingId)
 	{
-		address _creator = msg.sender;
+		address payable _creator = msg.sender;
 		require(0 < _priceMultiplier && _priceMultiplier <= 10000, "invalid multiplier"); // from 1% up to 100x
 		_validate(_extra);
 		_listingId = listings.length;
@@ -140,6 +163,10 @@ contract OpenCollectivePurchase is ERC721Holder, Ownable, ReentrancyGuard
 			fractionsCount: 0,
 			fractions: address(0),
 			fee: fee
+		}));
+		creators.push(CreatorInfo({
+			creator: _creator,
+			fee: _fee
 		}));
 		emit Listed(_listingId, _creator);
 		return _listingId;
@@ -215,15 +242,18 @@ contract OpenCollectivePurchase is ERC721Holder, Ownable, ReentrancyGuard
 	function payout(uint256 _listingId) public nonReentrant inState(_listingId, State.Ended)
 	{
 		ListingInfo storage _listing = listings[_listingId];
+		CreatorInfo storage _creator = creators[_listingId];
 		uint256 _amount = _listing.amount;
 		require(_amount > 0, "insufficient balance");
 		uint256 _feeAmount = (_amount * _listing.fee) / 1e18;
-		uint256 _netAmount = _amount - _feeAmount;
+		uint256 _creatorFeeAmount = (_amount * _creator.fee) / 1e18;
+		uint256 _netAmount = _amount - (_feeAmount + _creatorFeeAmount);
 		_listing.amount = 0;
 		balances[_listing.paymentToken] -= _amount;
+		_safeTransfer(_listing.paymentToken, _creator.creator, _creatorFeeAmount);
 		_safeTransfer(_listing.paymentToken, vault, _feeAmount);
 		_safeTransfer(_listing.paymentToken, _listing.seller, _netAmount);
-		emit Payout(_listingId, _listing.seller, _netAmount, _feeAmount);
+		emit Payout(_listingId, _listing.seller, _netAmount, _feeAmount, _creatorFeeAmount);
 	}
 
 	function claim(uint256 _listingId, address payable _buyer) public nonReentrant inState(_listingId, State.Ended)
@@ -323,12 +353,13 @@ contract OpenCollectivePurchase is ERC721Holder, Ownable, ReentrancyGuard
 	}
 
 	event UpdateFee(uint256 _fee);
+	event UpdateCreatorFee(uint256 indexed _listingId, uint256 _fee);
 	event AddFractionalizer(bytes32 indexed _type, address indexed _fractionalizer);
 	event Listed(uint256 indexed _listingId, address indexed _creator);
 	event Acquired(uint256 indexed _listingId);
 	event Relisted(uint256 indexed _listingId);
 	event Join(uint256 indexed _listingId, address indexed _buyer, uint256 _amount);
 	event Leave(uint256 indexed _listingId, address indexed _buyer, uint256 _amount);
-	event Payout(uint256 indexed _listingId, address indexed _seller, uint256 _netAmount, uint256 _feeAmount);
+	event Payout(uint256 indexed _listingId, address indexed _seller, uint256 _netAmount, uint256 _feeAmount, uint256 _creatorFeeAmount);
 	event Claim(uint256 indexed _listingId, address indexed _buyer, uint256 _amount, uint256 _fractionsCount);
 }
