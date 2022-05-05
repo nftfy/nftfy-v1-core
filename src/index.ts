@@ -582,7 +582,7 @@ function encodeCalldata(order: OpenseaOrder, acquirer: string, price: string, me
   ];
   const spender = TOKEN_TRANSFER_PROXY[order.exchange] || ZERO_ADDRESS;
   const target = order.exchange;
-  const _calldata = web3.eth.abi.encodeFunctionCall(abi, params as any);
+  const _calldata = web3.eth.abi.encodeFunctionCall(abi, params as any); // type is incorrect on Web3
   return web3.eth.abi.encodeParameters(['address', 'address', 'bytes'], [spender, target, _calldata]);
 }
 
