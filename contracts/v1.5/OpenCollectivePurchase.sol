@@ -77,7 +77,7 @@ contract OpenCollectivePurchase is ERC721Holder, Ownable, ReentrancyGuard
 
 	constructor (uint256 _fee, address payable _vault) public
 	{
-		require(_fee <= 50e16, "invalid fee");
+		require(_fee <= 100e16, "invalid fee");
 		require(_vault != address(0), "invalid address");
 		fee = _fee;
 		vault = _vault;
@@ -123,15 +123,16 @@ contract OpenCollectivePurchase is ERC721Holder, Ownable, ReentrancyGuard
 
 	function setFee(uint256 _fee) external onlyOwner
 	{
-		require(_fee <= 50e16, "invalid fee");
+		require(_fee <= 100e16, "invalid fee");
 		fee = _fee;
 		emit UpdateFee(_fee);
 	}
 
 	function setCreatorFee(uint256 _listingId, uint256 _fee) external onlyCreator(_listingId) inState(_listingId, State.Created)
 	{
-		require(_fee <= 50e16, "invalid fee");
+		ListingInfo storage _listing = listings[_listingId];
 		CreatorInfo storage _creator = creators[_listingId];
+		require(_listing.fee + _fee <= 100e16, "invalid fee");
 		_creator.fee = _fee;
 		emit UpdateCreatorFee(_listingId, _fee);
 	}
@@ -146,7 +147,7 @@ contract OpenCollectivePurchase is ERC721Holder, Ownable, ReentrancyGuard
 	function list(address _collection, uint256 _tokenId, bool _listed, uint256 _fee, address _paymentToken, uint256 _priceMultiplier, bytes calldata _extra) external nonReentrant returns (uint256 _listingId)
 	{
 		address payable _creator = msg.sender;
-		require(_fee <= 50e16, "invalid fee");
+		require(fee + _fee <= 100e16, "invalid fee");
 		require(0 < _priceMultiplier && _priceMultiplier <= 10000, "invalid multiplier"); // from 1% up to 100x
 		_validate(_extra);
 		_listingId = listings.length;
@@ -307,7 +308,7 @@ contract OpenCollectivePurchase is ERC721Holder, Ownable, ReentrancyGuard
 		(bytes32 _type,,, uint256 _duration, uint256 _fee) = abi.decode(_extra, (bytes32, string, string, uint256, uint256));
 		require(fractionalizers[_type] != address(0), "unsupported type");
 		require(30 minutes <= _duration && _duration <= 731 days, "invalid duration");
-		require(_fee <= 1e18, "invalid fee");
+		require(_fee <= 100e16, "invalid fee");
 	}
 
 	function _issuing(bytes storage _extra) internal pure returns (uint256 _fractionsCount)
