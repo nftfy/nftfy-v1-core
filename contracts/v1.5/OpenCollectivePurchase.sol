@@ -77,7 +77,7 @@ contract OpenCollectivePurchase is ERC721Holder, Ownable, ReentrancyGuard
 
 	constructor (uint256 _fee, address payable _vault) public
 	{
-		require(_fee <= 1e18, "invalid fee");
+		require(_fee <= 50e16, "invalid fee");
 		require(_vault != address(0), "invalid address");
 		fee = _fee;
 		vault = _vault;
@@ -146,6 +146,7 @@ contract OpenCollectivePurchase is ERC721Holder, Ownable, ReentrancyGuard
 	function list(address _collection, uint256 _tokenId, bool _listed, uint256 _fee, address _paymentToken, uint256 _priceMultiplier, bytes calldata _extra) external nonReentrant returns (uint256 _listingId)
 	{
 		address payable _creator = msg.sender;
+		require(_fee <= 50e16, "invalid fee");
 		require(0 < _priceMultiplier && _priceMultiplier <= 10000, "invalid multiplier"); // from 1% up to 100x
 		_validate(_extra);
 		_listingId = listings.length;
