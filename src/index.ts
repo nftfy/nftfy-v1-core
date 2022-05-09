@@ -582,11 +582,11 @@ function encodeCalldata(order: OpenseaOrder, acquirer: string, price: string, me
   ];
   const spender = TOKEN_TRANSFER_PROXY[order.exchange] || ZERO_ADDRESS;
   const target = order.exchange;
-  const _calldata = web3.eth.abi.encodeFunctionCall(abi, params as any);
+  const _calldata = web3.eth.abi.encodeFunctionCall(abi, params as any); // type is incorrect on Web3
   return web3.eth.abi.encodeParameters(['address', 'address', 'bytes'], [spender, target, _calldata]);
 }
 
-const EXTERNAL_ACQUIRER = '0xa92528b10e8379d4ca283343a3b70bf8464351b6';
+const EXTERNAL_ACQUIRER = '0x485294A18ebbBB143081c7bD05F4c96d28472F84';
 
 const OPENSEA_REFERRAL: { [name: string]: string } = {
   'mainnet': '0x1bf2ad2b8ba93dacd8b7b1686d7db71e9481e73f',
@@ -641,7 +641,7 @@ export async function fetchNft(apiKey: string, collection: string, tokenId: stri
   if (!['mainnet', 'rinkeby'].includes(network)) throw new Error('Unsupported network: ' + network);
   const testnet = network === 'rinkeby';
   const result = await listOpenseaOrders(apiKey, { asset_contract_address: collection, token_id: tokenId, side: 1 }, testnet);
-  if (result.orders.length > 1) throw new Error('panic');
+  //if (result.orders.length > 1) throw new Error('panic');
   const orders = result.orders.filter(filterOrder);
   if (validate) {
     orders.forEach((order) => validateOrder(order, network));
