@@ -1,4 +1,7 @@
-import { NftData } from './common';
+import Web3 from 'web3';
+import { AbiItem } from 'web3-utils';
+
+import { EXTERNAL_ACQUIRER, NftData } from './common';
 import { hasProperty } from './utils';
 import { serialize, httpGet } from './urlfetch';
 
@@ -174,6 +177,108 @@ const TOKENS: { [name: string]: string[] } = {
   'rinkeby': ['0xc778417E063141139Fce010982780140Aa0cD5Ab'],
 };
 
+const LOOKSRARE_EXCHANGE: { [name: string]: string } = {
+  'mainnet': '0x59728544b08ab483533076417fbbb2fd0b17ce3a', // mainnet
+  'rinkeby': '0x1AA777972073Ff66DCFDeD85749bDD555C0665dA', // rinkeby
+}
+
+const LOOKSRARE_STRATEGY_STANDARD_SALE_FOR_FIXED_PRICE: { [name: string]: string } = {
+  'mainnet': '0x56244bb70cbd3ea9dc8007399f61dfc065190031', // mainnet
+  'rinkeby': '0x732319A3590E4fA838C111826f9584a9A2fDEa1a', // rinkeby
+}
+
+function filterOrder(order: LooksrareOrder, network: string): boolean {
+  return order.strategy === LOOKSRARE_STRATEGY_STANDARD_SALE_FOR_FIXED_PRICE[network];
+}
+
+function validateOrder(order: LooksrareOrder, network: string): void {
+  const now = Math.floor(Date.now() / 1000);
+  if (order.isOrderAsk !== true) throw new Error('Invalid isOrderAsk: ' + order.isOrderAsk);
+  if (order.status !== 'VALID') throw new Error('Invalid status: ' + order.status);
+  if (order.startTime > now) throw new Error('Invalid startTime: ' + order.startTime);
+  if (order.endTime < now) throw new Error('Invalid endTime: ' + order.endTime);
+}
+
+function encodeCalldata(order: LooksrareOrder, acquirer: string, network: string): string {
+  if (order.v === null) throw new Error('panic');
+  if (order.r === null) throw new Error('panic');
+  if (order.s === null) throw new Error('panic');
+  const web3 = new Web3();
+  const abi: AbiItem = {
+      type: 'function',
+      name: 'matchAskWithTakerBid',
+      inputs: [
+        {
+          type: 'tuple',
+          components: [
+            { type: 'bool', name: 'isOrderAsk' },
+            { type: 'address', name: 'taker' },
+            { type: 'uint256', name: 'price' },
+            { type: 'uint256', name: 'tokenId' },
+            { type: 'uint256', name: 'minPercentageToAsk' },
+            { type: 'bytes', name: 'params' },
+          ],
+          name: 'takerBid',
+        },
+        {
+          type: 'tuple',
+          "components": [
+            { type: 'bool', name: 'isOrderAsk' },
+            { type: 'address', name: 'signer' },
+            { type: 'address', name: 'collection' },
+            { type: 'uint256', name: 'price' },
+            { type: 'uint256', name: 'tokenId' },
+            { type: 'uint256', name: 'amount' },
+            { type: 'address', name: 'strategy' },
+            { type: 'address', name: 'currency' },
+            { type: 'uint256', name: 'nonce' },
+            { type: 'uint256', name: 'startTime' },
+            { type: 'uint256', name: 'endTime' },
+            { type: 'uint256', name: 'minPercentageToAsk' },
+            { type: 'bytes', name: 'params' },
+            { type: 'uint8', name: 'v' },
+            { type: 'bytes32', name: 'r' },
+            { type: 'bytes32', name: 's' },
+          ],
+          name: 'makerAsk',
+        }
+      ],
+  };
+  type Param = boolean | number | string | (boolean | number | string)[];
+  const params: Param[] = [
+    [
+      false,
+      acquirer,
+      order.price,
+      order.tokenId,
+      order.minPercentageToAsk,
+      '0x' + order.params,
+    ],
+    [
+      true,
+      order.signer,
+      order.collectionAddress,
+      order.price,
+      order.tokenId,
+      order.amount,
+      order.strategy,
+      order.currencyAddress,
+      order.nonce,
+      order.startTime,
+      order.endTime,
+      order.minPercentageToAsk,
+      '0x' + order.params,
+      order.v,
+      order.r,
+      order.s,
+    ],
+  ];
+  const spender = LOOKSRARE_EXCHANGE[network] || '';
+  const target = LOOKSRARE_EXCHANGE[network] || '';
+  const _calldata = web3.eth.abi.encodeFunctionCall(abi, params as any); // type is incorrect on Web3
+  return web3.eth.abi.encodeParameters(['address', 'address', 'bytes'], [spender, target, _calldata]);
+}
+
 function translateOrder(order: LooksrareOrder, network: string): NftData {
   if (!(TOKENS[network] || []).includes(order.currencyAddress)) throw new Error('panic');
   return {
@@ -183,7 +288,7 @@ function translateOrder(order: LooksrareOrder, network: string): NftData {
     decimals: 18,
     paymentToken: order.currencyAddress,
     source: 'looksrare',
-    data: '',//encodeCalldata(order, EXTERNAL_ACQUIRER, String(price), metadata),
+    data: encodeCalldata(order, EXTERNAL_ACQUIRER, network),
   };
 }
 
@@ -193,10 +298,10 @@ export async function fetchNft(apiKey: string, collection: string, tokenId: bigi
   const result = await listLooksrareOrders(apiKey, { collection, tokenId: String(tokenId), isOrderAsk: true }, testnet);
   if (!result.success || result.data === null) throw new Error(result.message || 'Missing data');
   if (result.data.length > 1) throw new Error('panic');
-  const orders = result.data;//.filter(filterOrder);
-  //if (validate) {
-  //  orders.forEach((order) => validateOrder(order, network));
-  //}
+  const orders = result.data.filter((order) => filterOrder(order, network));
+  if (validate) {
+    orders.forEach((order) => validateOrder(order, network));
+  }
   const items = orders.map((order) => translateOrder(order, network));
   return items[0] || null;
 }

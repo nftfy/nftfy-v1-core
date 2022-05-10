@@ -1,7 +1,7 @@
 import Web3 from 'web3';
 import { AbiItem } from 'web3-utils';
 
-import { NftData } from './common';
+import { EXTERNAL_ACQUIRER, NftData } from './common';
 import { hasProperty, sleep } from './utils';
 import { serialize, httpGet } from './urlfetch';
 
@@ -553,8 +553,6 @@ function encodeCalldata(order: OpenseaOrder, acquirer: string, price: string, me
   const _calldata = web3.eth.abi.encodeFunctionCall(abi, params as any); // type is incorrect on Web3
   return web3.eth.abi.encodeParameters(['address', 'address', 'bytes'], [spender, target, _calldata]);
 }
-
-const EXTERNAL_ACQUIRER = '0x485294A18ebbBB143081c7bD05F4c96d28472F84';
 
 const OPENSEA_REFERRAL: { [name: string]: string } = {
   'mainnet': '0x1bf2ad2b8ba93dacd8b7b1686d7db71e9481e73f',
