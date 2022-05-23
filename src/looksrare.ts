@@ -297,7 +297,7 @@ export async function fetchNft(apiKey: string, collection: string, tokenId: bigi
   const testnet = network === 'rinkeby';
   const result = await listLooksrareOrders(apiKey, { collection, tokenId: String(tokenId), isOrderAsk: true }, testnet);
   if (!result.success || result.data === null) throw new Error(result.message || 'Missing data');
-  if (result.data.length > 1) throw new Error('panic');
+  //if (result.data.length > 1) throw new Error('panic');
   const orders = result.data.filter((order) => filterOrder(order, network));
   if (validate) {
     orders.forEach((order) => validateOrder(order, network));
