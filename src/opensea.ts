@@ -172,8 +172,9 @@ type ListOpenseaOrdersParams = {
   include_invalid: boolean;
   listed_after?: number;
   listed_before?: number;
-  token_id?: string;
-  token_ids?: string[];
+  //token_id?: string;    // 0 not supported
+  //token_ids?: string[]; // string[] not supported
+  token_ids?: string;
   side?: number;
   sale_kind?: number;
   limit: number;
@@ -579,7 +580,7 @@ function translateOrder(order: OpenseaOrder, network: string): NftData {
 export async function fetchNft(apiKey: string, collection: string, tokenId: bigint, network = 'mainnet', validate = false): Promise<NftData | null> {
   if (!['mainnet', 'rinkeby'].includes(network)) throw new Error('Unsupported network: ' + network);
   const testnet = network === 'rinkeby';
-  const result = await listOpenseaOrders(apiKey, { asset_contract_address: collection, token_id: String(tokenId), side: 1 }, testnet);
+  const result = await listOpenseaOrders(apiKey, { asset_contract_address: collection, token_ids: String(tokenId), side: 1 }, testnet);
   //if (result.orders.length > 1) throw new Error('panic');
   const orders = result.orders.filter(filterOrder);
   if (validate) {
