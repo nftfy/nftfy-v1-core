@@ -9,7 +9,7 @@ type OpenseaAccount = {
   config: string;
 };
 
-type OpenseaFee = {
+type OpenseaFees = {
   account: OpenseaAccount;
   basis_points: string;
 };
@@ -62,8 +62,8 @@ type OpenseaOrder = {
   maker: OpenseaAccount,
   taker: OpenseaAccount | null,
   current_price: string;
-  maker_fees: OpenseaFee[];
-  taker_fees: OpenseaFee[];
+  maker_fees: OpenseaFees[];
+  taker_fees: OpenseaFees[];
   side: string;
   order_type: string;
   cancelled: boolean;
@@ -111,7 +111,7 @@ function castOpenseaAccount(value: unknown): OpenseaAccount {
   };
 }
 
-function castOpenseaFee(value: unknown): OpenseaFee {
+function castOpenseaFees(value: unknown): OpenseaFees {
   if (typeof value !== 'object' || value === null) throw new Error('panic');
   if (!hasProperty(value, 'account')) throw new Error('panic');
   if (!hasProperty(value, 'basis_points')) throw new Error('panic');
@@ -314,9 +314,9 @@ function castOpenseaOrder(value: unknown): OpenseaOrder {
   const _taker = taker === null ? null : castOpenseaAccount(taker);
   if (typeof current_price !== 'string') throw new Error('panic');
   if (typeof maker_fees !== 'object' || maker_fees === null || !(maker_fees instanceof Array)) throw new Error('panic');
-  const _maker_fees = maker_fees.map(castOpenseaFee);
+  const _maker_fees = maker_fees.map(castOpenseaFees);
   if (typeof taker_fees !== 'object' || taker_fees === null || !(taker_fees instanceof Array)) throw new Error('panic');
-  const _taker_fees = taker_fees.map(castOpenseaFee);
+  const _taker_fees = taker_fees.map(castOpenseaFees);
   if (typeof side !== 'string') throw new Error('panic');
   if (typeof order_type !== 'string') throw new Error('panic');
   if (typeof cancelled !== 'boolean') throw new Error('panic');
