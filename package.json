@@ -59,6 +59,9 @@
     "test:ftmtest": "truffle test",
     "tsc": "tsc"
   },
+  "publishConfig": {
+    "access": "public"
+  },
   "repository": {
     "type": "git",
     "url": "git+https://github.com/nftfy/nftfy-v1-core.git"
