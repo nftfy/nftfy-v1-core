@@ -1,3 +1,6 @@
+import Web3 from 'web3';
+import { AbiItem } from 'web3-utils';
+
 import { NftData } from './common';
 import { hasProperty } from './utils';
 import { serialize, httpGet } from './urlfetch';
@@ -385,16 +388,17 @@ function filterOrder(order: OpenseaOrder): boolean {
   const parameters = order.protocol_data.parameters;
   const [offerItem] = parameters.offer;
   const [considerationItem] = parameters.consideration;
-  return parameters.offer.length === 1
-    && offerItem?.itemType === 2
-    && BigInt(offerItem?.startAmount) === 1n
-    && BigInt(offerItem?.endAmount) === 1n
-    && parameters.consideration.length >= 1
-    && (considerationItem?.itemType === 0 && considerationItem?.token === ZERO_ADDRESS || considerationItem?.itemType === 1)
-    && BigInt(considerationItem?.identifierOrCriteria) === 0n
-    && parameters.offerer.toLowerCase() === considerationItem?.recipient.toLowerCase()
-    && parameters.consideration.filter(({ itemType, token, identifierOrCriteria }) => !(itemType === considerationItem?.itemType && token === considerationItem?.token && identifierOrCriteria === considerationItem?.identifierOrCriteria)).length === 0
-    && parameters.consideration.filter(({ startAmount, endAmount }) => !(BigInt(startAmount) === BigInt(endAmount))).length === 0;
+  return order.order_type === 'basic'
+      && parameters.offer.length === 1
+      && offerItem?.itemType === 2
+      && BigInt(offerItem?.startAmount) === 1n
+      && BigInt(offerItem?.endAmount) === 1n
+      && parameters.consideration.length >= 1
+      && (considerationItem?.itemType === 0 && considerationItem?.token === ZERO_ADDRESS || considerationItem?.itemType === 1)
+      && BigInt(considerationItem?.identifierOrCriteria) === 0n
+      && parameters.offerer.toLowerCase() === considerationItem?.recipient.toLowerCase()
+      && parameters.consideration.filter(({ itemType, token, identifierOrCriteria }) => !(itemType === considerationItem?.itemType && token === considerationItem?.token && identifierOrCriteria === considerationItem?.identifierOrCriteria)).length === 0
+      && parameters.consideration.filter(({ startAmount, endAmount }) => !(BigInt(startAmount) === BigInt(endAmount))).length === 0;
 }
 
 function validateOrder(order: OpenseaOrder, network: string): void {
@@ -404,16 +408,85 @@ function validateOrder(order: OpenseaOrder, network: string): void {
   const amounts = payItems.map(({ startAmount }) => BigInt(startAmount));
   const sum = amounts.reduce((sum, amount) => sum + amount, 0n);
   if (sum !== BigInt(order.current_price)) throw new Error('Invalid price: ' + order.current_price);
+  if (order.side !== 'ask') throw new Error('Invalid side: ' + order.side);
+  if (order.cancelled) throw new Error('Invalid cancelled: ' + order.cancelled);
+  if (order.finalized) throw new Error('Invalid finalized: ' + order.finalized);
+  if (parameters.totalOriginalConsiderationItems !== parameters.consideration.length) throw new Error('Invalid totalOriginalConsiderationItems: ' + parameters.totalOriginalConsiderationItems);
 }
 
-function encodeCalldata(order: OpenseaOrder/*, acquirer: string, price: string, metadata: string*/): string {
-  return '';
+function encodeCalldata(order: OpenseaOrder/*, acquirer: string, price: string*/): string {
+  const parameters = order.protocol_data.parameters;
+  const [offerItem] = order.protocol_data.parameters.offer;
+  if (offerItem === undefined) throw new Error('panic');
+  const [considerationItem] = parameters.consideration;
+  if (considerationItem === undefined) throw new Error('panic');
+  const web3 = new Web3();
+  const abi: AbiItem = {
+    type: 'function',
+    inputs: [
+      {
+        type: 'tuple',
+        name: 'parameters',
+        components: [
+          { type: 'address', name: 'considerationToken' },
+          { type: 'uint256', name: 'considerationIdentifier' },
+          { type: 'uint256', name: 'considerationAmount' },
+          { type: 'address', name: 'offerer' },
+          { type: 'address', name: 'zone' },
+          { type: 'address', name: 'offerToken' },
+          { type: 'uint256', name: 'offerIdentifier' },
+          { type: 'uint256', name: 'offerAmount' },
+          { type: 'uint8', name: 'basicOrderType' },
+          { type: 'uint256', name: 'startTime' },
+          { type: 'uint256', name: 'endTime' },
+          { type: 'bytes32', name: 'zoneHash' },
+          { type: 'uint256', name: 'salt' },
+          { type: 'bytes32', name: 'offererConduitKey' },
+          { type: 'bytes32', name: 'fulfillerConduitKey' },
+          { type: 'uint256', name: 'totalOriginalAdditionalRecipients' },
+          { type: 'tuple[]', name: 'additionalRecipients', components: [{ type: 'uint256', name: 'amount' }, { type: 'address', name: 'recipient' }] },
+          { type: 'bytes', name: 'signature' },
+        ],
+      },
+    ],
+    name: 'fulfillBasicOrder',
+    stateMutability: 'payable',
+    outputs: [{ type: 'bool', name: 'fulfilled' }],
+  };
+  type Param = number | string | bigint | Param[];
+  const params: Param[] = [
+    [
+      considerationItem.token,
+      BigInt(considerationItem.identifierOrCriteria),
+      BigInt(considerationItem.startAmount),
+      parameters.offerer,
+      parameters.zone,
+      offerItem.token,
+      BigInt(offerItem.identifierOrCriteria),
+      BigInt(offerItem.startAmount),
+      parameters.orderType,
+      BigInt(parameters.startTime),
+      BigInt(parameters.endTime),
+      parameters.zoneHash,
+      BigInt(parameters.salt),
+      parameters.conduitKey,
+      parameters.conduitKey,
+      parameters.totalOriginalConsiderationItems - 1,
+      parameters.consideration.slice(1).map(({ startAmount, recipient }) => [BigInt(startAmount), recipient]),
+      order.protocol_data.signature,
+    ],
+  ];
+  const spender = order.protocol_address;
+  const target = order.protocol_address;
+  const _calldata = web3.eth.abi.encodeFunctionCall(abi, params as any); // type is incorrect on Web3
+  return web3.eth.abi.encodeParameters(['address', 'address', 'bytes'], [spender, target, _calldata]);
 }
 
 function translateOrder(order: OpenseaOrder, network: string): NftData {
-  const [offerItem] = order.protocol_data.parameters.offer;
+  const parameters = order.protocol_data.parameters;
+  const [offerItem] = parameters.offer;
   if (offerItem === undefined) throw new Error('panic');
-  const [considerationItem] = order.protocol_data.parameters.consideration;
+  const [considerationItem] = parameters.consideration;
   if (considerationItem === undefined) throw new Error('panic');
   const collection = offerItem.token;
   const tokenId = BigInt(offerItem.identifierOrCriteria);

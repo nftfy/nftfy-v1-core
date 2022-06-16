@@ -442,7 +442,7 @@ function filterOrder(order: OpenseaOrder): boolean {
 
 function validateOrder(order: OpenseaOrder, network: string): void {
   if (TOKEN_TRANSFER_PROXY[order.exchange] === undefined) throw new Error('Invalid exchange: ' + order.exchange);
-  if (order.side !== 1) throw new Error('Invalid size: ' + order.side);
+  if (order.side !== 1) throw new Error('Invalid side: ' + order.side);
   if (order.cancelled) throw new Error('Invalid cancelled: ' + order.cancelled);
   if (order.finalized) throw new Error('Invalid finalized: ' + order.finalized);
   if (order.marked_invalid) throw new Error('Invalid marked_invalid: ' + order.marked_invalid);
@@ -454,21 +454,21 @@ function encodeCalldata(order: OpenseaOrder, acquirer: string, price: string, me
   if (order.s === null) throw new Error('panic');
   const web3 = new Web3();
   const abi: AbiItem = {
-      type: 'function',
-      name: 'atomicMatch_',
-      inputs: [
-        { type: 'address[14]', name: '_addrs' },
-        { type: 'uint256[18]', name: '_uints' },
-        { type: 'uint8[8]', name: '_feeMethodsSidesKindsHowToCalls' },
-        { type: 'bytes', name: '_calldataBuy' },
-        { type: 'bytes', name: '_calldataSell' },
-        { type: 'bytes', name: '_replacementPatternBuy' },
-        { type: 'bytes', name: '_replacementPatternSell' },
-        { type: 'bytes', name: '_staticExtradataBuy' },
-        { type: 'bytes', name: '_staticExtradataSell' },
-        { type: 'uint8[2]', name: '_vs' },
-        { type: 'bytes32[5]', name: '_rssMetadata' },
-      ],
+    type: 'function',
+    name: 'atomicMatch_',
+    inputs: [
+      { type: 'address[14]', name: '_addrs' },
+      { type: 'uint256[18]', name: '_uints' },
+      { type: 'uint8[8]', name: '_feeMethodsSidesKindsHowToCalls' },
+      { type: 'bytes', name: '_calldataBuy' },
+      { type: 'bytes', name: '_calldataSell' },
+      { type: 'bytes', name: '_replacementPatternBuy' },
+      { type: 'bytes', name: '_replacementPatternSell' },
+      { type: 'bytes', name: '_staticExtradataBuy' },
+      { type: 'bytes', name: '_staticExtradataSell' },
+      { type: 'uint8[2]', name: '_vs' },
+      { type: 'bytes32[5]', name: '_rssMetadata' },
+    ],
   };
   const feeRecipient = order.fee_recipient.address === ZERO_ADDRESS ? acquirer : ZERO_ADDRESS;
   let calldata = order.calldata;
@@ -480,7 +480,7 @@ function encodeCalldata(order: OpenseaOrder, acquirer: string, price: string, me
     calldata = calldata.substring(0, index) + '0'.repeat(24) + acquirer.substring(2) + calldata.substring(index + 64);
     replacementPattern = replacementPattern.substring(0, index) + '0'.repeat(64) + replacementPattern.substring(index + 64);
   }
-  type Param = number | string | (number | string)[];
+  type Param = number | string | Param[];
   const params: Param[] = [
     [
       order.exchange,               // exchange
