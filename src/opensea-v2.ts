@@ -379,17 +379,66 @@ async function listOpenseaOrders(apiKey: string, params: Partial<ListOpenseaOrde
   return castListOpenseaOrdersResult(result);
 }
 
+const ZERO_ADDRESS = '0x0000000000000000000000000000000000000000';
+
+function filterOrder(order: OpenseaOrder): boolean {
+  const parameters = order.protocol_data.parameters;
+  const [offerItem] = parameters.offer;
+  const [considerationItem] = parameters.consideration;
+  return parameters.offer.length === 1
+    && offerItem?.itemType === 2
+    && BigInt(offerItem?.startAmount) === 1n
+    && BigInt(offerItem?.endAmount) === 1n
+    && parameters.consideration.length >= 1
+    && (considerationItem?.itemType === 0 && considerationItem?.token === ZERO_ADDRESS || considerationItem?.itemType === 1)
+    && BigInt(considerationItem?.identifierOrCriteria) === 0n
+    && parameters.offerer.toLowerCase() === considerationItem?.recipient.toLowerCase()
+    && parameters.consideration.filter(({ itemType, token, identifierOrCriteria }) => !(itemType === considerationItem?.itemType && token === considerationItem?.token && identifierOrCriteria === considerationItem?.identifierOrCriteria)).length === 0
+    && parameters.consideration.filter(({ startAmount, endAmount }) => !(BigInt(startAmount) === BigInt(endAmount))).length === 0;
+}
+
+function validateOrder(order: OpenseaOrder, network: string): void {
+  const parameters = order.protocol_data.parameters;
+  const payItems = parameters.consideration.filter(({ token }) => token === parameters.consideration[0]?.token);
+  const amounts = payItems.map(({ startAmount }) => BigInt(startAmount));
+  const sum = amounts.reduce((sum, amount) => sum + amount, 0n);
+  if (sum !== BigInt(order.current_price)) throw new Error('Invalid price: ' + order.current_price);
+}
+
+function encodeCalldata(order: OpenseaOrder/*, acquirer: string, price: string, metadata: string*/): string {
+  return '';
+}
+
+function translateOrder(order: OpenseaOrder, network: string): NftData {
+  const [offerItem] = order.protocol_data.parameters.offer;
+  if (offerItem === undefined) throw new Error('panic');
+  const [considerationItem] = order.protocol_data.parameters.consideration;
+  if (considerationItem === undefined) throw new Error('panic');
+  const collection = offerItem.token;
+  const tokenId = BigInt(offerItem.identifierOrCriteria);
+  const price = BigInt(order.current_price);
+  const paymentToken = considerationItem.token;
+  return {
+    collection,
+    tokenId,
+    price,
+    decimals: 18, // TODO
+    paymentToken,
+    source: 'opensea',
+    data: encodeCalldata(order/*, EXTERNAL_ACQUIRER, String(price), metadata*/),
+  };
+}
+
 export async function fetchNft(apiKey: string, collection: string, tokenId: bigint, network = 'mainnet', validate = false): Promise<NftData | null> {
   if (!['mainnet', 'rinkeby'].includes(network)) throw new Error('Unsupported network: ' + network);
   const testnet = network === 'rinkeby';
   const result = await listOpenseaOrders(apiKey, { asset_contract_address: collection, token_ids: String(tokenId) }, testnet);
   console.log(JSON.stringify(result, undefined, 2));
   //if (result.orders.length > 1) throw new Error('panic');
-//  const orders = result.orders.filter(filterOrder);
-//  if (validate) {
-//    orders.forEach((order) => validateOrder(order, network));
-//  }
-//  const items = orders.map((order) => translateOrder(order, network));
-//  return items[0] || null;
-  return null;
+  const orders = result.orders.filter(filterOrder);
+  if (validate) {
+    orders.forEach((order) => validateOrder(order, network));
+  }
+  const items = orders.map((order) => translateOrder(order, network));
+  return items[0] || null;
 }
