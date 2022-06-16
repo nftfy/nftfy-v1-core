@@ -399,7 +399,8 @@ function filterOrder(order: OpenseaOrder): boolean {
 
 function validateOrder(order: OpenseaOrder, network: string): void {
   const parameters = order.protocol_data.parameters;
-  const payItems = parameters.consideration.filter(({ token }) => token === parameters.consideration[0]?.token);
+  const [considerationItem] = parameters.consideration;
+  const payItems = parameters.consideration.filter(({ token }) => token === considerationItem?.token);
   const amounts = payItems.map(({ startAmount }) => BigInt(startAmount));
   const sum = amounts.reduce((sum, amount) => sum + amount, 0n);
   if (sum !== BigInt(order.current_price)) throw new Error('Invalid price: ' + order.current_price);
