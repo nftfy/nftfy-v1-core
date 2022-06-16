@@ -54,6 +54,20 @@ type OpenseaProtocolData = {
   signature: string;
 };
 
+type OpenseaAsset = {
+  decimals: number;
+  // ... other fields ...
+};
+
+type OpenseaMakerAssetBundle = {
+  // ... other fields ...
+};
+
+type OpenseaTakerAssetBundle = {
+  assets: OpenseaAsset[],
+  // ... other fields ...
+};
+
 type OpenseaOrder = {
   created_date: string;
   closing_date: string | null;
@@ -74,8 +88,8 @@ type OpenseaOrder = {
   marked_invalid: boolean;
   client_signature: string | null;
   relay_id: string;
-//  maker_asset_bundle: { ... };
-//  taker_asset_bundle: { ... };
+  maker_asset_bundle: OpenseaMakerAssetBundle;
+  taker_asset_bundle: OpenseaTakerAssetBundle;
 };
 
 type ListOpenseaOrdersParams = {
@@ -264,6 +278,45 @@ function castOpenseaProtocolData(value: unknown): OpenseaProtocolData {
   };
 }
 
+function castOpenseaMakerAssetBundle(value: unknown): OpenseaMakerAssetBundle {
+  if (typeof value !== 'object' || value === null) throw new Error('panic');
+  const {
+    // ... other fields ...
+  } = value;
+  return {
+    // ... other fields ...
+  };
+}
+
+function castOpenseaAsset(value: unknown): OpenseaAsset {
+  if (typeof value !== 'object' || value === null) throw new Error('panic');
+  if (!hasProperty(value, 'decimals')) throw new Error('panic');
+  const {
+    decimals,
+    // ... other fields ...
+  } = value;
+  if (typeof decimals !== 'number') throw new Error('panic');
+  return {
+    decimals,
+    // ... other fields ...
+  };
+}
+
+function castOpenseaTakerAssetBundle(value: unknown): OpenseaTakerAssetBundle {
+  if (typeof value !== 'object' || value === null) throw new Error('panic');
+  if (!hasProperty(value, 'assets')) throw new Error('panic');
+  const {
+    assets,
+    // ... other fields ...
+  } = value;
+  if (typeof assets !== 'object' || assets === null || !(assets instanceof Array)) throw new Error('panic');
+  const _assets = assets.map(castOpenseaAsset);
+  return {
+    assets: _assets,
+    // ... other fields ...
+  };
+}
+
 function castOpenseaOrder(value: unknown): OpenseaOrder {
   if (typeof value !== 'object' || value === null) throw new Error('panic');
   if (!hasProperty(value, 'created_date')) throw new Error('panic');
@@ -285,6 +338,8 @@ function castOpenseaOrder(value: unknown): OpenseaOrder {
   if (!hasProperty(value, 'marked_invalid')) throw new Error('panic');
   if (!hasProperty(value, 'client_signature')) throw new Error('panic');
   if (!hasProperty(value, 'relay_id')) throw new Error('panic');
+  if (!hasProperty(value, 'maker_asset_bundle')) throw new Error('panic');
+  if (!hasProperty(value, 'taker_asset_bundle')) throw new Error('panic');
   const {
     created_date,
     closing_date,
@@ -305,6 +360,8 @@ function castOpenseaOrder(value: unknown): OpenseaOrder {
     marked_invalid,
     client_signature,
     relay_id,
+    maker_asset_bundle,
+    taker_asset_bundle,
   } = value;
   if (typeof created_date !== 'string') throw new Error('panic');
   if (typeof closing_date !== 'string' && closing_date !== null) throw new Error('panic');
@@ -327,6 +384,8 @@ function castOpenseaOrder(value: unknown): OpenseaOrder {
   if (typeof marked_invalid !== 'boolean') throw new Error('panic');
   if (typeof client_signature !== 'string' && client_signature !== null) throw new Error('panic');
   if (typeof relay_id !== 'string') throw new Error('panic');
+  const _maker_asset_bundle = castOpenseaMakerAssetBundle(maker_asset_bundle);
+  const _taker_asset_bundle = castOpenseaTakerAssetBundle(taker_asset_bundle);
   return {
     created_date,
     closing_date,
@@ -347,6 +406,8 @@ function castOpenseaOrder(value: unknown): OpenseaOrder {
     marked_invalid,
     client_signature,
     relay_id,
+    maker_asset_bundle: _maker_asset_bundle,
+    taker_asset_bundle: _taker_asset_bundle,
   };
 }
 
@@ -389,6 +450,7 @@ function filterOrder(order: OpenseaOrder): boolean {
   const [offerItem] = parameters.offer;
   const [considerationItem] = parameters.consideration;
   return order.order_type === 'basic'
+      && order.taker_asset_bundle.assets.length === 1
       && parameters.offer.length === 1
       && offerItem?.itemType === 2
       && BigInt(offerItem?.startAmount) === 1n
@@ -414,7 +476,7 @@ function validateOrder(order: OpenseaOrder, network: string): void {
   if (parameters.totalOriginalConsiderationItems !== parameters.consideration.length) throw new Error('Invalid totalOriginalConsiderationItems: ' + parameters.totalOriginalConsiderationItems);
 }
 
-function encodeCalldata(order: OpenseaOrder/*, acquirer: string, price: string*/): string {
+function encodeCalldata(order: OpenseaOrder): string {
   const parameters = order.protocol_data.parameters;
   const [offerItem] = order.protocol_data.parameters.offer;
   if (offerItem === undefined) throw new Error('panic');
@@ -488,18 +550,21 @@ function translateOrder(order: OpenseaOrder, network: string): NftData {
   if (offerItem === undefined) throw new Error('panic');
   const [considerationItem] = parameters.consideration;
   if (considerationItem === undefined) throw new Error('panic');
+  const [asset] = order.taker_asset_bundle.assets;
+  if (asset === undefined) throw new Error('panic');
   const collection = offerItem.token;
   const tokenId = BigInt(offerItem.identifierOrCriteria);
   const price = BigInt(order.current_price);
+  const decimals = asset.decimals;
   const paymentToken = considerationItem.token;
   return {
     collection,
     tokenId,
     price,
-    decimals: 18, // TODO
+    decimals,
     paymentToken,
     source: 'opensea',
-    data: encodeCalldata(order/*, EXTERNAL_ACQUIRER, String(price), metadata*/),
+    data: encodeCalldata(order),
   };
 }
 
