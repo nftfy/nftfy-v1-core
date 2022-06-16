@@ -2,7 +2,7 @@ import { NftData } from './common';
 import { hasProperty } from './utils';
 import { serialize, httpGet } from './urlfetch';
 
-type OpenseaUser = {
+type OpenseaAccount = {
   user: number | null;
   profile_img_url: string;
   address: string;
@@ -10,7 +10,7 @@ type OpenseaUser = {
 };
 
 type OpenseaFee = {
-  account: OpenseaUser;
+  account: OpenseaAccount;
   basis_points: string;
 };
 
@@ -53,14 +53,14 @@ type OpenseaProtocolData = {
 
 type OpenseaOrder = {
   created_date: string;
-  closing_date: string;
+  closing_date: string | null;
   listing_time: number;
   expiration_time: number;
-  order_hash: string;
+  order_hash: string | null;
   protocol_data: OpenseaProtocolData;
-  protocol_address: string;
-  maker: OpenseaUser | null,
-  taker: OpenseaUser | null,
+  protocol_address: string | null;
+  maker: OpenseaAccount,
+  taker: OpenseaAccount | null,
   current_price: string;
   maker_fees: OpenseaFee[];
   taker_fees: OpenseaFee[];
@@ -69,7 +69,7 @@ type OpenseaOrder = {
   cancelled: boolean;
   finalized: boolean;
   marked_invalid: boolean;
-  client_signature: string;
+  client_signature: string | null;
   relay_id: string;
 //  maker_asset_bundle: { ... };
 //  taker_asset_bundle: { ... };
@@ -87,7 +87,7 @@ type ListOpenseaOrdersResult = {
   orders: OpenseaOrder[];
 };
 
-function castOpenseaUser(value: unknown): OpenseaUser {
+function castOpenseaAccount(value: unknown): OpenseaAccount {
   if (typeof value !== 'object' || value === null) throw new Error('panic');
   if (!hasProperty(value, 'user')) throw new Error('panic');
   if (!hasProperty(value, 'profile_img_url')) throw new Error('panic');
@@ -119,7 +119,7 @@ function castOpenseaFee(value: unknown): OpenseaFee {
     account,
     basis_points,
   } = value;
-  const _account = castOpenseaUser(account);
+  const _account = castOpenseaAccount(account);
   if (typeof basis_points !== 'string') throw new Error('panic');
   return {
     account: _account,
@@ -304,14 +304,14 @@ function castOpenseaOrder(value: unknown): OpenseaOrder {
     relay_id,
   } = value;
   if (typeof created_date !== 'string') throw new Error('panic');
-  if (typeof closing_date !== 'string') throw new Error('panic');
+  if (typeof closing_date !== 'string' && closing_date !== null) throw new Error('panic');
   if (typeof listing_time !== 'number') throw new Error('panic');
   if (typeof expiration_time !== 'number') throw new Error('panic');
-  if (typeof order_hash !== 'string') throw new Error('panic');
+  if (typeof order_hash !== 'string' && order_hash !== null) throw new Error('panic');
   const _protocol_data = castOpenseaProtocolData(protocol_data);
-  if (typeof protocol_address !== 'string') throw new Error('panic');
-  const _maker = maker === null ? null : castOpenseaUser(maker);
-  const _taker = taker === null ? null : castOpenseaUser(taker);
+  if (typeof protocol_address !== 'string' && protocol_address !== null) throw new Error('panic');
+  const _maker = castOpenseaAccount(maker);
+  const _taker = taker === null ? null : castOpenseaAccount(taker);
   if (typeof current_price !== 'string') throw new Error('panic');
   if (typeof maker_fees !== 'object' || maker_fees === null || !(maker_fees instanceof Array)) throw new Error('panic');
   const _maker_fees = maker_fees.map(castOpenseaFee);
@@ -322,7 +322,7 @@ function castOpenseaOrder(value: unknown): OpenseaOrder {
   if (typeof cancelled !== 'boolean') throw new Error('panic');
   if (typeof finalized !== 'boolean') throw new Error('panic');
   if (typeof marked_invalid !== 'boolean') throw new Error('panic');
-  if (typeof client_signature !== 'string') throw new Error('panic');
+  if (typeof client_signature !== 'string' && client_signature !== null) throw new Error('panic');
   if (typeof relay_id !== 'string') throw new Error('panic');
   return {
     created_date,
