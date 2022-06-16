@@ -14,7 +14,7 @@ type OpenseaFees = {
   basis_points: string;
 };
 
-type OpenseaOffer = {
+type OpenseaOfferItem = {
   itemType: number;
   token: string;
   identifierOrCriteria: string;
@@ -22,7 +22,7 @@ type OpenseaOffer = {
   endAmount: string;
 };
 
-type OpenseaConsideration = {
+type OpenseaConsiderationItem = {
   itemType: number;
   token: string;
   identifierOrCriteria: string;
@@ -33,8 +33,8 @@ type OpenseaConsideration = {
 
 type OpenseaProtocolDataParameters = {
   offerer: string;
-  offer: OpenseaOffer[];
-  consideration: OpenseaConsideration[],
+  offer: OpenseaOfferItem[];
+  consideration: OpenseaConsiderationItem[],
   startTime: string;
   endTime: string;
   orderType: number;
@@ -127,7 +127,7 @@ function castOpenseaFees(value: unknown): OpenseaFees {
   };
 }
 
-function castOpenseaOffer(value: unknown): OpenseaOffer {
+function castOpenseaOfferItem(value: unknown): OpenseaOfferItem {
   if (typeof value !== 'object' || value === null) throw new Error('panic');
   if (!hasProperty(value, 'itemType')) throw new Error('panic');
   if (!hasProperty(value, 'token')) throw new Error('panic');
@@ -155,7 +155,7 @@ function castOpenseaOffer(value: unknown): OpenseaOffer {
   };
 }
 
-function castOpenseaConsideration(value: unknown): OpenseaConsideration {
+function castOpenseaConsiderationItem(value: unknown): OpenseaConsiderationItem {
   if (typeof value !== 'object' || value === null) throw new Error('panic');
   if (!hasProperty(value, 'itemType')) throw new Error('panic');
   if (!hasProperty(value, 'token')) throw new Error('panic');
@@ -217,9 +217,9 @@ function castOpenseaProtocolDataParameters(value: unknown): OpenseaProtocolDataP
   } = value;
   if (typeof offerer !== 'string') throw new Error('panic');
   if (typeof offer !== 'object' || offer === null || !(offer instanceof Array)) throw new Error('panic');
-  const _offer = offer.map(castOpenseaOffer);
+  const _offer = offer.map(castOpenseaOfferItem);
   if (typeof consideration !== 'object' || consideration === null || !(consideration instanceof Array)) throw new Error('panic');
-  const _consideration = consideration.map(castOpenseaConsideration);
+  const _consideration = consideration.map(castOpenseaConsiderationItem);
   if (typeof startTime !== 'string') throw new Error('panic');
   if (typeof endTime !== 'string') throw new Error('panic');
   if (typeof orderType !== 'number') throw new Error('panic');
