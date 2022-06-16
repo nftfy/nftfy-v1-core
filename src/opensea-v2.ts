@@ -31,7 +31,7 @@ type OpenseaConsiderationItem = {
   recipient: string;
 };
 
-type OpenseaProtocolDataParameters = {
+type OpenseaOrderParameters = {
   offerer: string;
   offer: OpenseaOfferItem[];
   consideration: OpenseaConsiderationItem[],
@@ -47,7 +47,7 @@ type OpenseaProtocolDataParameters = {
 };
 
 type OpenseaProtocolData = {
-  parameters: OpenseaProtocolDataParameters;
+  parameters: OpenseaOrderParameters;
   signature: string;
 };
 
@@ -187,7 +187,7 @@ function castOpenseaConsiderationItem(value: unknown): OpenseaConsiderationItem 
   };
 }
 
-function castOpenseaProtocolDataParameters(value: unknown): OpenseaProtocolDataParameters {
+function castOpenseaOrderParameters(value: unknown): OpenseaOrderParameters {
   if (typeof value !== 'object' || value === null) throw new Error('panic');
   if (!hasProperty(value, 'offerer')) throw new Error('panic');
   if (!hasProperty(value, 'offer')) throw new Error('panic');
@@ -253,7 +253,7 @@ function castOpenseaProtocolData(value: unknown): OpenseaProtocolData {
     parameters,
     signature,
   } = value;
-  const _parameters = castOpenseaProtocolDataParameters(parameters);
+  const _parameters = castOpenseaOrderParameters(parameters);
   if (typeof signature !== 'string') throw new Error('panic');
   return {
     parameters: _parameters,
