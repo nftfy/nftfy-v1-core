@@ -572,7 +572,6 @@ export async function fetchNft(apiKey: string, collection: string, tokenId: bigi
   if (!['mainnet', 'rinkeby'].includes(network)) throw new Error('Unsupported network: ' + network);
   const testnet = network === 'rinkeby';
   const result = await listOpenseaOrders(apiKey, { asset_contract_address: collection, token_ids: String(tokenId) }, testnet);
-  console.log(JSON.stringify(result, undefined, 2));
   //if (result.orders.length > 1) throw new Error('panic');
   const orders = result.orders.filter(filterOrder);
   if (validate) {
