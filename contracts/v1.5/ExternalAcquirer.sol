@@ -6,7 +6,8 @@ import { SafeERC20 } from "@openzeppelin/contracts/token/ERC20/SafeERC20.sol";
 import { IERC721 } from "@openzeppelin/contracts/token/ERC721/IERC721.sol";
 import { Address } from "@openzeppelin/contracts/utils/Address.sol";
 
-import { FlashAcquireCallee, OpenCollectivePurchase } from "./OpenCollectivePurchase.sol";
+import { FlashAcquireCallee } from "./FlashAcquireCallee.sol";
+import { OpenCollectivePurchase } from "./OpenCollectivePurchase.sol";
 
 contract ExternalAcquirer is FlashAcquireCallee
 {
