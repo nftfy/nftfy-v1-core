@@ -6,8 +6,7 @@ import { SafeERC20 } from "@openzeppelin/contracts/token/ERC20/SafeERC20.sol";
 import { IERC721 } from "@openzeppelin/contracts/token/ERC721/IERC721.sol";
 import { Address } from "@openzeppelin/contracts/utils/Address.sol";
 
-import { FlashAcquireCallee } from "./FlashAcquireCallee.sol";
-import { OpenCollectivePurchase } from "./OpenCollectivePurchase.sol";
+import { FlashAcquireCallee, OpenCollectivePurchase } from "./OpenCollectivePurchase.sol";
 
 contract ExternalAcquirer is FlashAcquireCallee
 {
@@ -35,8 +34,8 @@ contract ExternalAcquirer is FlashAcquireCallee
 	{
 		require(msg.sender == collective, "invalid sender");
 		require(_source == address(this), "invalid source");
-		(address _spender, address _target, uint256 _tokenId, bytes memory _calldata) = abi.decode(_data, (address, address, uint256, bytes));
-		(,,address _collection,,, address _paymentToken,,,,,,,,) = OpenCollectivePurchase(collective).listings(_listingId);
+		(address _spender, address _target, bytes memory _calldata) = abi.decode(_data, (address, address, bytes));
+		(,,address _collection, uint256 _tokenId,, address _paymentToken,,,,,,,) = OpenCollectivePurchase(collective).listings(_listingId);
 		if (_paymentToken == address(0)) {
 			uint256 _balance = address(this).balance;
 			(bool _success, bytes memory _returndata) = _target.call{value: _balance}(_calldata);
@@ -57,7 +56,7 @@ contract ExternalAcquirer is FlashAcquireCallee
 			}
 		}
 		IERC721(_collection).approve(collective, _tokenId);
-		OpenCollectivePurchase(collective).acquire(_listingId, _tokenId, 0);
+		OpenCollectivePurchase(collective).acquire(_listingId, 0);
 	}
 
 	receive() external payable
