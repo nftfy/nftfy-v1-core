@@ -37,6 +37,7 @@ contract OpenCollectivePurchase is ERC721Holder, Ownable, ReentrancyGuard
 		uint256 fractionsCount;
 		address fractions;
 		uint256 fee;
+		bool any;
 		mapping (address => BuyerInfo) buyers;
 	}
 
@@ -140,9 +141,12 @@ contract OpenCollectivePurchase is ERC721Holder, Ownable, ReentrancyGuard
 		emit AddFractionalizer(_type, _fractionalizer);
 	}
 
-	function list(address _collection, uint256 _tokenId, bool _listed, uint256 _fee, address _paymentToken, uint256 _priceMultiplier, bytes calldata _extra) external nonReentrant returns (uint256 _listingId)
+	function list(address _collection, bool any, uint256 _tokenId, bool _listed, uint256 _fee, address _paymentToken, uint256 _priceMultiplier, bytes memory _extra) public nonReentrant returns (uint256 _listingId)
 	{
 		address payable _creator = msg.sender;
+		if (any) {
+			require(_tokenId == 0, "invalid tokenId");
+		}
 		require(fee + _fee <= 100e16, "invalid fee");
 		require(0 < _priceMultiplier && _priceMultiplier <= 10000, "invalid multiplier"); // from 1% up to 100x
 		_validate(_extra);
@@ -160,7 +164,8 @@ contract OpenCollectivePurchase is ERC721Holder, Ownable, ReentrancyGuard
 			amount: 0,
 			fractionsCount: 0,
 			fractions: address(0),
-			fee: fee
+			fee: fee,
+			any: any
 		}));
 		creators.push(CreatorInfo({
 			creator: _creator,
@@ -170,7 +175,7 @@ contract OpenCollectivePurchase is ERC721Holder, Ownable, ReentrancyGuard
 		return _listingId;
 	}
 
-	function join(uint256 _listingId, uint256 _amount, uint256 _maxReservePrice) external payable nonReentrant inState(_listingId, State.Created)
+	function join(uint256 _listingId, uint256 _amount, uint256 _maxReservePrice) public payable nonReentrant inState(_listingId, State.Created)
 	{
 		address payable _buyer = msg.sender;
 		uint256 _value = msg.value;
@@ -198,14 +203,16 @@ contract OpenCollectivePurchase is ERC721Holder, Ownable, ReentrancyGuard
 		emit Leave(_listingId, _buyer, _amount);
 	}
 
-	function acquire(uint256 _listingId, uint256 _minReservePrice) public nonReentrant inState(_listingId, State.Created)
+	function acquire(uint256 _listingId, uint256 _tokenId, uint256 _minReservePrice) public nonReentrant inState(_listingId, State.Created)
 	{
 		address payable _seller = msg.sender;
 		ListingInfo storage _listing = listings[_listingId];
+		require(_tokenId == _listing.tokenId || _listing.any, "invalid tokenId");
 		require(_listing.reservePrice >= _minReservePrice, "price slippage");
-		IERC721(_listing.collection).transferFrom(_seller, address(this), _listing.tokenId);
+		IERC721(_listing.collection).transferFrom(_seller, address(this), _tokenId);
 		items[_listing.collection][_listing.tokenId] = true;
 		_listing.state = State.Acquired;
+		_listing.tokenId = _tokenId;
 		_listing.seller = _seller;
 		emit Acquired(_listingId);
 	}
@@ -299,7 +306,7 @@ contract OpenCollectivePurchase is ERC721Holder, Ownable, ReentrancyGuard
 		IERC721(_collection).safeTransfer(_to, _tokenId);
 	}
 
-	function _validate(bytes calldata _extra) internal view
+	function _validate(bytes memory _extra) internal view
 	{
 		(bytes32 _type,,, uint256 _duration, uint256 _fee) = abi.decode(_extra, (bytes32, string, string, uint256, uint256));
 		require(fractionalizers[_type] != address(0), "unsupported type");
