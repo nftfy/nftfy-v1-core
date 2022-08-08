@@ -8,8 +8,8 @@ import { ERC721Holder } from "@openzeppelin/contracts/token/ERC721/ERC721Holder.
 import { IERC721 } from "@openzeppelin/contracts/token/ERC721/IERC721.sol";
 import { ReentrancyGuard } from "@openzeppelin/contracts/utils/ReentrancyGuard.sol";
 
-import { IAuctionFractionalizer } from "./CollectivePurchase.sol";
 import { FlashAcquireCallee } from "./FlashAcquireCallee.sol";
+import { IAuctionFractionalizer } from "./IAuctionFractionalizer.sol";
 import { SafeERC721 } from "./SafeERC721.sol";
 
 contract OpenCollectivePurchaseV2 is ERC721Holder, Ownable, ReentrancyGuard
@@ -141,9 +141,14 @@ contract OpenCollectivePurchaseV2 is ERC721Holder, Ownable, ReentrancyGuard
 		emit AddFractionalizer(_type, _fractionalizer);
 	}
 
+	function _defaultCreator() internal view virtual returns (address payable _creator)
+	{
+		return msg.sender;
+	}
+
 	function list(address _collection, bool any, uint256 _tokenId, bool _listed, uint256 _fee, address _paymentToken, uint256 _priceMultiplier, bytes memory _extra) public nonReentrant returns (uint256 _listingId)
 	{
-		address payable _creator = msg.sender;
+		address payable _creator = _defaultCreator();
 		if (any) {
 			require(_tokenId == 0, "invalid tokenId");
 		}
@@ -189,7 +194,7 @@ contract OpenCollectivePurchaseV2 is ERC721Holder, Ownable, ReentrancyGuard
 		emit Join(_listingId, _buyer, _amount);
 	}
 
-	function leave(uint256 _listingId) external nonReentrant inState(_listingId, State.Created)
+	function leave(uint256 _listingId) public nonReentrant inState(_listingId, State.Created)
 	{
 		address payable _buyer = msg.sender;
 		ListingInfo storage _listing = listings[_listingId];
@@ -289,7 +294,7 @@ contract OpenCollectivePurchaseV2 is ERC721Holder, Ownable, ReentrancyGuard
 			}
 		}
 	}
-
+/*
 	function recoverLostFunds(address _token, address payable _to) external onlyOwner nonReentrant
 	{
 		uint256 _balance = balances[_token];
@@ -305,7 +310,7 @@ contract OpenCollectivePurchaseV2 is ERC721Holder, Ownable, ReentrancyGuard
 		if (items[_collection][_tokenId]) return;
 		IERC721(_collection).safeTransfer(_to, _tokenId);
 	}
-
+*/
 	function _validate(bytes memory _extra) internal view
 	{
 		(bytes32 _type,,, uint256 _duration, uint256 _fee) = abi.decode(_extra, (bytes32, string, string, uint256, uint256));

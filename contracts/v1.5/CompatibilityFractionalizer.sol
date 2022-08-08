@@ -9,43 +9,15 @@ import { IERC721 } from "@openzeppelin/contracts/token/ERC721/IERC721.sol";
 import { Address } from "@openzeppelin/contracts/utils/Address.sol";
 import { ReentrancyGuard } from "@openzeppelin/contracts/utils/ReentrancyGuard.sol";
 
+import { IAuctionFractionalizer } from "./IAuctionFractionalizer.sol";
+import { LibCreate } from "./LibCreate.sol";
+
 interface LegacyFractionalizer
 {
 	function fractionalize(address _target, uint256 _tokenId, string memory _name, string memory _symbol, uint8 _decimals, uint256 _fractionsCount, uint256 _fractionPrice, address _paymentToken) external;
 }
 
-library LibCreate
-{
-	function computeAddress(address _account, uint256 _nonce) internal pure returns (address _address)
-	{
-		bytes memory _data;
-		if (_nonce == 0x00) {
-			_data = abi.encodePacked(byte(0xd6), byte(0x94), _account, byte(0x80));
-		}
-		else
-		if (_nonce <= 0x7f) {
-			_data = abi.encodePacked(byte(0xd6), byte(0x94), _account, uint8(_nonce));
-		}
-		else
-		if (_nonce <= 0xff) {
-			_data = abi.encodePacked(byte(0xd7), byte(0x94), _account, byte(0x81), uint8(_nonce));
-		}
-		else
-		if (_nonce <= 0xffff) {
-			_data = abi.encodePacked(byte(0xd8), byte(0x94), _account, byte(0x82), uint16(_nonce));
-		}
-		else
-		if (_nonce <= 0xffffff) {
-			_data = abi.encodePacked(byte(0xd9), byte(0x94), _account, byte(0x83), uint24(_nonce));
-		}
-		else {
-			_data = abi.encodePacked(byte(0xda), byte(0x94), _account, byte(0x84), uint32(_nonce));
-		}
-		return address(uint256(keccak256(_data)));
-	}
-}
-
-contract CompatibilityFractionalizer is ERC721Holder, Ownable, ReentrancyGuard
+contract CompatibilityFractionalizer is IAuctionFractionalizer, ERC721Holder, Ownable, ReentrancyGuard
 {
 	using Address for address;
 	using SafeERC20 for IERC20;
@@ -64,7 +36,7 @@ contract CompatibilityFractionalizer is ERC721Holder, Ownable, ReentrancyGuard
 		nonce = _nonce;
 	}
 
-	function fractionalize(address _target, uint256 _tokenId, string memory _name, string memory _symbol, uint8 _decimals, uint256 _fractionsCount, uint256 _fractionPrice, address _paymentToken) external nonReentrant returns (address _fractions)
+	function fractionalize(address _target, uint256 _tokenId, string memory _name, string memory _symbol, uint8 _decimals, uint256 _fractionsCount, uint256 _fractionPrice, address _paymentToken, uint256 /*_kickoff*/, uint256 /*_duration*/, uint256 /*_fee*/) external override nonReentrant returns (address _fractions)
 	{
 		address _from = msg.sender;
 		IERC721(_target).transferFrom(_from, address(this), _tokenId);

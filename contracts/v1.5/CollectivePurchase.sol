@@ -9,12 +9,8 @@ import { ERC721Holder } from "@openzeppelin/contracts/token/ERC721/ERC721Holder.
 import { IERC721 } from "@openzeppelin/contracts/token/ERC721/IERC721.sol";
 import { ReentrancyGuard } from "@openzeppelin/contracts/utils/ReentrancyGuard.sol";
 
+import { IAuctionFractionalizer } from "./IAuctionFractionalizer.sol";
 import { SafeERC721 } from "./SafeERC721.sol";
-
-interface IAuctionFractionalizer
-{
-	function fractionalize(address _target, uint256 _tokenId, string memory _name, string memory _symbol, uint8 _decimals, uint256 _fractionsCount, uint256 _fractionPrice, address _paymentToken, uint256 _kickoff, uint256 _duration, uint256 _fee) external returns (address _fractions);
-}
 
 contract CollectivePurchase is ERC721Holder, Ownable, ReentrancyGuard
 {
