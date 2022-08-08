@@ -3,7 +3,7 @@ pragma solidity ^0.6.0;
 
 import { OpenCollectivePurchaseV2 } from "./OpenCollectivePurchaseV2.sol";
 
-contract PerpetualFloorCollectivePurchaseV2 is OpenCollectivePurchaseV2
+contract PerpetualOpenCollectivePurchaseV2 is OpenCollectivePurchaseV2
 {
 	mapping (address => mapping (address => uint256)) perpetuals;
 
