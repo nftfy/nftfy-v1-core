@@ -1,7 +1,7 @@
 import Web3 from 'web3';
 import { AbiItem } from 'web3-utils';
 
-import { EXTERNAL_ACQUIRER, NftData } from './common';
+import { EXTERNAL_ACQUIRER, EXTERNAL_ACQUIRER_V2, NftData } from './common';
 import { hasProperty } from './utils';
 import { serialize, httpGet } from './urlfetch';
 
@@ -199,7 +199,7 @@ function validateOrder(order: LooksrareOrder, network: string): void {
   if (order.endTime < now) throw new Error('Invalid endTime: ' + order.endTime);
 }
 
-function encodeCalldata(order: LooksrareOrder, acquirer: string, network: string): string {
+function encodeCalldata(order: LooksrareOrder, acquirer: string, network: string, tokenId?: bigint): string {
   if (order.v === null) throw new Error('panic');
   if (order.r === null) throw new Error('panic');
   if (order.s === null) throw new Error('panic');
@@ -276,19 +276,24 @@ function encodeCalldata(order: LooksrareOrder, acquirer: string, network: string
   const spender = LOOKSRARE_EXCHANGE[network] || '';
   const target = LOOKSRARE_EXCHANGE[network] || '';
   const _calldata = web3.eth.abi.encodeFunctionCall(abi, params as any); // type is incorrect on Web3
+  if (tokenId !== undefined) {
+    return web3.eth.abi.encodeParameters(['address', 'address', 'uint256', 'bytes'], [spender, target, tokenId, _calldata]);
+  }
   return web3.eth.abi.encodeParameters(['address', 'address', 'bytes'], [spender, target, _calldata]);
 }
 
 function translateOrder(order: LooksrareOrder, network: string): NftData {
   if (!(TOKENS[network] || []).includes(order.currencyAddress)) throw new Error('panic');
+  const tokenId = BigInt(order.tokenId);
   return {
     collection: order.collectionAddress,
-    tokenId: BigInt(order.tokenId),
+    tokenId,
     price: BigInt(order.price),
     decimals: 18,
     paymentToken: order.currencyAddress,
     source: 'looksrare',
     data: encodeCalldata(order, EXTERNAL_ACQUIRER, network),
+    dataV2: encodeCalldata(order, EXTERNAL_ACQUIRER_V2, network, tokenId),
   };
 }
 

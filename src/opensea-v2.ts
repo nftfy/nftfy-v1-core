@@ -476,7 +476,7 @@ function validateOrder(order: OpenseaOrder, network: string): void {
   if (parameters.totalOriginalConsiderationItems !== parameters.consideration.length) throw new Error('Invalid totalOriginalConsiderationItems: ' + parameters.totalOriginalConsiderationItems);
 }
 
-function encodeCalldata(order: OpenseaOrder): string {
+function encodeCalldata(order: OpenseaOrder, tokenId?: bigint): string {
   const parameters = order.protocol_data.parameters;
   const [offerItem] = order.protocol_data.parameters.offer;
   if (offerItem === undefined) throw new Error('panic');
@@ -541,6 +541,9 @@ function encodeCalldata(order: OpenseaOrder): string {
   const spender = order.protocol_address;
   const target = order.protocol_address;
   const _calldata = web3.eth.abi.encodeFunctionCall(abi, params as any); // type is incorrect on Web3
+  if (tokenId !== undefined) {
+    return web3.eth.abi.encodeParameters(['address', 'address', 'uint256', 'bytes'], [spender, target, tokenId, _calldata]);
+  }
   return web3.eth.abi.encodeParameters(['address', 'address', 'bytes'], [spender, target, _calldata]);
 }
 
@@ -565,6 +568,7 @@ function translateOrder(order: OpenseaOrder, network: string): NftData {
     paymentToken,
     source: 'opensea',
     data: encodeCalldata(order),
+    dataV2: encodeCalldata(order, tokenId),
   };
 }
 
