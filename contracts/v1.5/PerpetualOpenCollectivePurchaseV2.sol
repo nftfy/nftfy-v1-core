@@ -57,7 +57,9 @@ contract PerpetualOpenCollectivePurchaseV2 is OpenCollectivePurchaseV2
 			_perpetual.listingId = list(_collection, true, 0, true, fee, _paymentToken, _priceMultiplier, abi.encode(bytes32("SET_PRICE"), string("Perpetual Fractions"), string("PFRAC"), uint256(30 minutes), uint256(0)));
 		}
 		join(_perpetual.listingId, _amount, _maxReservePrice);
-		emit Referral(msg.sender, _paymentToken, _amount, _referralId);
+		if (_referralId != bytes32(0)) {
+			emit Referral(msg.sender, _paymentToken, _amount, _referralId);
+		}
 	}
 
 	function perpetualLeave(address _collection, address _paymentToken) external
