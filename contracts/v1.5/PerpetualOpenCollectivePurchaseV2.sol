@@ -19,7 +19,8 @@ contract PerpetualOpenCollectivePurchaseV2 is OpenCollectivePurchaseV2
 	constructor (uint256 _fee, address payable _vault) public
 		OpenCollectivePurchaseV2(_fee, _vault)
 	{
-		list(address(0), false, 0, false, fee, address(0), 100, abi.encode(bytes32(""), string(""), string(""), uint256(0), uint256(0)));
+		// must be called after fractionalizer config
+		// list(address(0), false, 0, false, fee, address(0), 100, abi.encode(bytes32("SET_PRICE"), "Perpetual Fractions", "PFRAC", 30 minutes, 0e18));
 	}
 
 	function _defaultCreator() internal view override returns (address payable _creator)
