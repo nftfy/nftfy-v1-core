@@ -16,7 +16,7 @@
     "web3": "^1.7.0"
   },
   "devDependencies": {
-    "@openzeppelin/contracts": "3.3.0",
+    "@openzeppelin/contracts": "4.7.2",
     "@truffle/hdwallet-provider": "^1.2.2",
     "@types/node": "^17.0.16",
     "dotenv": "^8.2.0",
