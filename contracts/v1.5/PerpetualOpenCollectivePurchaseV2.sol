@@ -20,12 +20,7 @@ contract PerpetualOpenCollectivePurchaseV2 is OpenCollectivePurchaseV2
 		OpenCollectivePurchaseV2(_fee, _vault)
 	{
 		// must be called after fractionalizer config
-		// list(address(0), false, 0, false, fee, address(0), 100, abi.encode(bytes32("SET_PRICE"), "Perpetual Fractions", "PFRAC", 30 minutes, 0e18));
-	}
-
-	function _defaultCreator() internal view override returns (address payable _creator)
-	{
-		return payable(0);
+		// list(address(0), address(0), false, 0, false, fee, address(0), 100, abi.encode(bytes32("SET_PRICE"), "Perpetual Fractions", "PFRAC", 30 minutes, 0e18));
 	}
 
 	function setDefaultPriceMultiplier(uint256 _priceMultiplier) external onlyOwner
@@ -54,7 +49,7 @@ contract PerpetualOpenCollectivePurchaseV2 is OpenCollectivePurchaseV2
 		if (_perpetual.listingId == 0 || _listing.state != State.Created) {
 			uint256 _priceMultiplier = _perpetual.priceMultiplier;
 			if (_priceMultiplier == 0) _priceMultiplier = priceMultiplier;
-			_perpetual.listingId = list(_collection, true, 0, true, fee, _paymentToken, _priceMultiplier, abi.encode(bytes32("SET_PRICE"), string("Perpetual Fractions"), string("PFRAC"), uint256(30 minutes), uint256(0)));
+			_perpetual.listingId = list(address(0), _collection, true, 0, true, fee, _paymentToken, _priceMultiplier, abi.encode(bytes32("SET_PRICE"), string("Perpetual Fractions"), string("PFRAC"), uint256(30 minutes), uint256(0)));
 		}
 		emit PerpetualOpen(_collection, _paymentToken, _perpetual.listingId);
 		return _perpetual.listingId;

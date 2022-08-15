@@ -141,14 +141,8 @@ contract OpenCollectivePurchaseV2 is ERC721Holder, Ownable, ReentrancyGuard
 		emit AddFractionalizer(_type, _fractionalizer);
 	}
 
-	function _defaultCreator() internal view virtual returns (address payable _creator)
+	function list(address payable _creator, address _collection, bool any, uint256 _tokenId, bool _listed, uint256 _fee, address _paymentToken, uint256 _priceMultiplier, bytes memory _extra) public nonReentrant returns (uint256 _listingId)
 	{
-		return msg.sender;
-	}
-
-	function list(address _collection, bool any, uint256 _tokenId, bool _listed, uint256 _fee, address _paymentToken, uint256 _priceMultiplier, bytes memory _extra) public nonReentrant returns (uint256 _listingId)
-	{
-		address payable _creator = _defaultCreator();
 		if (any) {
 			require(_tokenId == 0, "invalid tokenId");
 		}
