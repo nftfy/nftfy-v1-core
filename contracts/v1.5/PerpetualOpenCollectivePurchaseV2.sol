@@ -19,8 +19,26 @@ contract PerpetualOpenCollectivePurchaseV2 is OpenCollectivePurchaseV2
 	constructor (uint256 _fee, address payable _vault) public
 		OpenCollectivePurchaseV2(_fee, _vault)
 	{
-		// must be called after fractionalizer config
-		// list(address(0), address(0), false, 0, false, fee, address(0), 100, abi.encode(bytes32("SET_PRICE"), "Perpetual Fractions", "PFRAC", 30 minutes, 0e18));
+		listings.push(ListingInfo({
+			state: State.Ended,
+			seller: address(0),
+			collection: address(0),
+			tokenId: 0,
+			listed: false,
+			paymentToken: address(0),
+			reservePrice: 0,
+			priceMultiplier: 0,
+			extra: new bytes(0),
+			amount: 0,
+			fractionsCount: 0,
+			fractions: address(0),
+			fee: 0,
+			any: false
+		}));
+		creators.push(CreatorInfo({
+			creator: address(0),
+			fee: 0
+		}));
 	}
 
 	function setDefaultPriceMultiplier(uint256 _priceMultiplier) external onlyOwner
@@ -36,7 +54,7 @@ contract PerpetualOpenCollectivePurchaseV2 is OpenCollectivePurchaseV2
 		PerpetualInfo storage _perpetual = perpetuals[_collection][_paymentToken];
 		_perpetual.priceMultiplier = _priceMultiplier;
 		ListingInfo storage _listing = listings[_perpetual.listingId];
-		if (_perpetual.listingId != 0 && _listing.state == State.Created) {
+		if (_listing.state == State.Created) {
 			_listing.priceMultiplier = _priceMultiplier;
 		}
 		emit UpdatePriceMultiplier(_collection, _paymentToken, _priceMultiplier);
@@ -46,7 +64,7 @@ contract PerpetualOpenCollectivePurchaseV2 is OpenCollectivePurchaseV2
 	{
 		PerpetualInfo storage _perpetual = perpetuals[_collection][_paymentToken];
 		ListingInfo storage _listing = listings[_perpetual.listingId];
-		if (_perpetual.listingId == 0 || _listing.state != State.Created) {
+		if (_listing.state != State.Created) {
 			uint256 _priceMultiplier = _perpetual.priceMultiplier;
 			if (_priceMultiplier == 0) _priceMultiplier = priceMultiplier;
 			_perpetual.listingId = list(address(0), _collection, true, 0, true, fee, _paymentToken, _priceMultiplier, abi.encode(bytes32("SET_PRICE"), string("Perpetual Fractions"), string("PFRAC"), uint256(30 minutes), uint256(0)));
