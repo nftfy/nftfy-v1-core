@@ -47,7 +47,7 @@ contract PerpetualOpenCollectivePurchaseV2 is OpenCollectivePurchaseV2
 		emit UpdatePriceMultiplier(_collection, _paymentToken, _priceMultiplier);
 	}
 
-	function perpetualJoin(address _collection, address _paymentToken, uint256 _amount, uint256 _maxReservePrice, bytes32 _referralId) external payable
+	function perpetualOpen(address _collection, address _paymentToken) public returns (uint256 _listingId)
 	{
 		PerpetualInfo storage _perpetual = perpetuals[_collection][_paymentToken];
 		ListingInfo storage _listing = listings[_perpetual.listingId];
@@ -56,20 +56,29 @@ contract PerpetualOpenCollectivePurchaseV2 is OpenCollectivePurchaseV2
 			if (_priceMultiplier == 0) _priceMultiplier = priceMultiplier;
 			_perpetual.listingId = list(_collection, true, 0, true, fee, _paymentToken, _priceMultiplier, abi.encode(bytes32("SET_PRICE"), string("Perpetual Fractions"), string("PFRAC"), uint256(30 minutes), uint256(0)));
 		}
-		join(_perpetual.listingId, _amount, _maxReservePrice);
+		emit PerpetualOpen(_collection, _paymentToken, _perpetual.listingId);
+		return _perpetual.listingId;
+	}
+
+	function perpetualJoin(address _collection, address _paymentToken, uint256 _amount, uint256 _maxReservePrice, bytes32 _referralId) external payable returns (uint256 _listingId)
+	{
+		_listingId = perpetualOpen(_collection, _paymentToken);
+		join(_listingId, _amount, _maxReservePrice);
 		if (_referralId != bytes32(0)) {
 			emit Referral(msg.sender, _paymentToken, _amount, _referralId);
 		}
+		return _listingId;
 	}
 
-	function perpetualLeave(address _collection, address _paymentToken) external
+	function perpetualLeave(address _collection, address _paymentToken) external returns (uint256 _listingId)
 	{
-		PerpetualInfo storage _perpetual = perpetuals[_collection][_paymentToken];
-		require(_perpetual.listingId != 0, "invalid listing");
-		leave(_perpetual.listingId);
+		_listingId = perpetualOpen(_collection, _paymentToken);
+		leave(_listingId);
+		return _listingId;
 	}
 
 	event UpdateDefaultPriceMultiplier(uint256 _priceMultiplier);
 	event UpdatePriceMultiplier(address indexed _collection, address indexed _paymentToken, uint256 _priceMultiplier);
+	event PerpetualOpen(address indexed _collection, address indexed _paymentToken, uint256 indexed _listingId);
 	event Referral(address indexed _account, address indexed _paymentToken, uint256 _amount, bytes32 indexed _referralId);
 }
