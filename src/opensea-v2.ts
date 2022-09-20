@@ -437,7 +437,7 @@ async function listOpenseaOrders(apiKey: string, params: Partial<ListOpenseaOrde
     limit: 50,
   };
   const _params: ListOpenseaOrdersParams = Object.assign({ ...DEFAULT_PARAMS }, params);
-  const url = 'https://' + (testnet ? 'testnets-' : '') + 'api.opensea.io/v2/orders/' + (testnet ? 'rinkeby' : 'ethereum') + '/seaport/listings?' + serialize(_params);
+  const url = 'https://' + (testnet ? 'testnets-' : '') + 'api.opensea.io/v2/orders/' + (testnet ? 'goerli' : 'ethereum') + '/seaport/listings?' + serialize(_params);
   const response = await httpGet(url, { 'X-API-KEY': apiKey });
   const result: unknown = JSON.parse(response);
   return castListOpenseaOrdersResult(result);
@@ -569,8 +569,8 @@ function translateOrder(order: OpenseaOrder, network: string): NftData {
 }
 
 export async function fetchNft(apiKey: string, collection: string, tokenId: bigint, network = 'mainnet', validate = false): Promise<NftData | null> {
-  if (!['mainnet', 'rinkeby'].includes(network)) throw new Error('Unsupported network: ' + network);
-  const testnet = network === 'rinkeby';
+  if (!['mainnet', 'goerli'].includes(network)) throw new Error('Unsupported network: ' + network);
+  const testnet = network === 'goerli';
   const result = await listOpenseaOrders(apiKey, { asset_contract_address: collection, token_ids: String(tokenId) }, testnet);
   //if (result.orders.length > 1) throw new Error('panic');
   const orders = result.orders.filter(filterOrder);
