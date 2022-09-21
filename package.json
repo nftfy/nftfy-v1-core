@@ -1,6 +1,6 @@
 {
   "name": "@nftfyorg/v1-core",
-  "version": "1.5.14",
+  "version": "1.5.15",
   "description": "Nftfy V1 Core Smart Contracts",
   "main": "build/index.js",
   "types": "build/index.d.ts",
