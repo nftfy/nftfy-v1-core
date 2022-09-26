@@ -11,6 +11,7 @@ import { ReentrancyGuard } from "@openzeppelin/contracts/utils/ReentrancyGuard.s
 import { Strings } from "@openzeppelin/contracts/utils/Strings.sol";
 
 import { SafeERC721 } from "./SafeERC721.sol";
+import { LibSeaport } from "./LibSeaport.sol";
 
 contract FractionsImplV2 is ERC721Holder, ERC20, ReentrancyGuard
 {
@@ -175,8 +176,9 @@ contract FractionsImplV2 is ERC721Holder, ERC20, ReentrancyGuard
 	function listOnOpensea() external nonReentrant
 	{
 		require(!released, "token already redeemed");
+		require(openseaOrderHash == bytes32(0), "unavailable");
 		IERC721(target).approve(OPENSEA_SEAPORT, tokenId);
-		// openseaOrderHash = ...;
+		openseaOrderHash = LibSeaport._hash(address(this), target, tokenId, reservePrice(), paymentToken, block.timestamp, uint256(-1), 0);
 	}
 
 	function checkExternalReedeem() external nonReentrant

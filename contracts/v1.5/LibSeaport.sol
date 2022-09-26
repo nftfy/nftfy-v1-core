@@ -51,11 +51,12 @@ library LibSeaport
 	address constant SEAPORT_ADDRESS = 0x00000000006c3852cbEf3e08E8dF289169EdE581;
 	address constant FEE_COLLECTOR = 0x0000a26b00c1F0DF003000390027140000fAa719;
 	address constant ZONE = 0x00000000E88FE2628EbC5DA81d2b3CeaD633E89e;
-	bytes32 constant CONDUIT_KEY = 0x0000007b02230091a7ed01230072f7006a004d60a8d4e71d599b8104250f0000;
 	bytes32 constant ZONE_HASH = 0x0000000000000000000000000000000000000000000000000000000000000000;
+	bytes32 constant CONDUIT_KEY = 0x0000007b02230091a7ed01230072f7006a004d60a8d4e71d599b8104250f0000;
 
-	function _hash(address _offerer, address _collection, uint256 _tokenId, uint256 _netPrice, uint256 _fee, address _paymentToken, uint256 _startTime, uint256 _endTime, uint256 _salt) internal pure returns (bytes32)
+	function _hash(address _offerer, address _collection, uint256 _tokenId, uint256 _price, address _paymentToken, uint256 _startTime, uint256 _endTime, uint256 _salt) internal pure returns (bytes32)
 	{
+		uint256 _fee = _price * 1000 / 975 - _price;
 		bytes32 DOMAIN_SEPARATOR = _hash(EIP712Domain({
 			name: SEAPORT_NAME,
 			version: SEAPORT_VERSION,
@@ -75,8 +76,8 @@ library LibSeaport
 			itemType: _paymentToken == address(0) ? 0 : 1,
 			token: _paymentToken,
 			identifierOrCriteria: 0,
-			startAmount: _netPrice,
-			endAmount: _netPrice,
+			startAmount: _price,
+			endAmount: _price,
 			recipient: _offerer
 		});
 		consideration[1] = ConsiderationItem({
