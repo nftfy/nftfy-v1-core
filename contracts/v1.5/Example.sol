@@ -11,31 +11,51 @@ contract Example
 		address verifyingContract;
 	}
 
-	struct Person {
-		string name;
-		address wallet;
+	struct OrderComponents {
+		address offerer;
+		address zone;
+		OfferItem[] offer;
+		ConsiderationItem[] consideration;
+		uint8 orderType;
+		uint256 startTime;
+		uint256 endTime;
+		bytes32 zoneHash;
+		uint256 salt;
+		bytes32 conduitKey;
+		uint256 counter;
 	}
 
-	struct Mail {
-		Person from;
-		Person to;
-		string contents;
+	struct OfferItem {
+		uint8 itemType;
+		address token;
+		uint256 identifierOrCriteria;
+		uint256 startAmount;
+		uint256 endAmount;
+	}
+
+	struct ConsiderationItem {
+		uint8 itemType;
+		address token;
+		uint256 identifierOrCriteria;
+		uint256 startAmount;
+		uint256 endAmount;
+		address recipient;
 	}
 
 	bytes32 public constant EIP712DOMAIN_TYPEHASH = keccak256("EIP712Domain(string name,string version,uint256 chainId,address verifyingContract)");
-	bytes32 public constant PERSON_TYPEHASH = keccak256("Person(string name,address wallet)");
-	bytes32 public constant MAIL_TYPEHASH = keccak256("Mail(Person from,Person to,string contents)Person(string name,address wallet)");
+	bytes32 public constant ORDERCOMPONENTS_TYPEHASH = keccak256("OrderComponents(address offerer,address zone,OfferItem[] offer,ConsiderationItem[] consideration,uint8 orderType,uint256 startTime,uint256 endTime,bytes32 zoneHash,uint256 salt,bytes32 conduitKey,uint256 counter)ConsiderationItem(uint8 itemType,address token,uint256 identifierOrCriteria,uint256 startAmount,uint256 endAmount,address recipient)OfferItem(uint8 itemType,address token,uint256 identifierOrCriteria,uint256 startAmount,uint256 endAmount)");
+	bytes32 public constant OFFERITEM_TYPEHASH = keccak256("OfferItem(uint8 itemType,address token,uint256 identifierOrCriteria,uint256 startAmount,uint256 endAmount)");
+	bytes32 public constant CONSIDERATIONITEM_TYPEHASH = keccak256("ConsiderationItem(uint8 itemType,address token,uint256 identifierOrCriteria,uint256 startAmount,uint256 endAmount,address recipient)");
 
 	bytes32 public immutable DOMAIN_SEPARATOR;
 
 	constructor () public
 	{
 		DOMAIN_SEPARATOR = hash(EIP712Domain({
-			name: "Ether Mail",
-			version: '1',
-			chainId: 1,
-			// verifyingContract: this
-			verifyingContract: 0xCcCCccccCCCCcCCCCCCcCcCccCcCCCcCcccccccC
+			name: "Seaport",
+			version: "1.1",
+			chainId: 4,
+			verifyingContract: 0x00000000006c3852cbEf3e08E8dF289169EdE581
 		}));
 	}
 
@@ -50,59 +70,112 @@ contract Example
 		));
 	}
 
-	function hash(Person memory person) public pure returns (bytes32)
+	function hash(OrderComponents memory orderComponents) public pure returns (bytes32)
 	{
 		return keccak256(abi.encode(
-			PERSON_TYPEHASH,
-			keccak256(bytes(person.name)),
-			person.wallet
+			ORDERCOMPONENTS_TYPEHASH,
+			orderComponents.offerer,
+			orderComponents.zone,
+			hash(orderComponents.offer),
+			hash(orderComponents.consideration),
+			uint256(orderComponents.orderType),
+			orderComponents.startTime,
+			orderComponents.endTime,
+			orderComponents.zoneHash,
+			orderComponents.salt,
+			orderComponents.conduitKey,
+			orderComponents.counter
 		));
 	}
 
-	function hash(Mail memory mail) public pure returns (bytes32)
+	function hash(OfferItem[] memory offer) public pure returns (bytes32)
+	{
+		bytes32[] memory hashes = new bytes32[](offer.length);
+		for (uint256 i = 0; i < hashes.length; i++) {
+			hashes[i] = hash(offer[i]);
+		}
+		return keccak256(abi.encodePacked(hashes));
+	}
+
+	function hash(OfferItem memory offerItem) public pure returns (bytes32)
 	{
 		return keccak256(abi.encode(
-			MAIL_TYPEHASH,
-			hash(mail.from),
-			hash(mail.to),
-			keccak256(bytes(mail.contents))
+			OFFERITEM_TYPEHASH,
+			uint256(offerItem.itemType),
+			offerItem.token,
+			offerItem.identifierOrCriteria,
+			offerItem.startAmount,
+			offerItem.endAmount
 		));
 	}
 
-	function verify(Mail memory mail, uint8 v, bytes32 r, bytes32 s) public view returns (bool)
+	function hash(ConsiderationItem[] memory consideration) public pure returns (bytes32)
 	{
-		bytes32 digest = keccak256(abi.encodePacked(
-			"\x19\x01",
-			DOMAIN_SEPARATOR,
-			hash(mail)
-		));
-		return ecrecover(digest, v, r, s) == mail.from.wallet;
+		bytes32[] memory hashes = new bytes32[](consideration.length);
+		for (uint256 i = 0; i < hashes.length; i++) {
+			hashes[i] = hash(consideration[i]);
+		}
+		return keccak256(abi.encodePacked(hashes));
 	}
 
-	function test() public view returns (bool, bytes32)
+	function hash(ConsiderationItem memory considerationItem) public pure returns (bytes32)
 	{
-		Mail memory mail = Mail({
-			from: Person({
-				name: "Cow",
-				wallet: 0xCD2a3d9F938E13CD947Ec05AbC7FE734Df8DD826
-			}),
-			to: Person({
-				name: "Bob",
-				wallet: 0xbBbBBBBbbBBBbbbBbbBbbbbBBbBbbbbBbBbbBBbB
-			}),
-			contents: "Hello, Bob!"
+		return keccak256(abi.encode(
+			CONSIDERATIONITEM_TYPEHASH,
+			uint256(considerationItem.itemType),
+			considerationItem.token,
+			considerationItem.identifierOrCriteria,
+			considerationItem.startAmount,
+			considerationItem.endAmount,
+			considerationItem.recipient
+		));
+	}
+
+	function test() public view returns (bytes32)
+	{
+		OfferItem[] memory offer = new OfferItem[](1);
+		offer[0] = OfferItem({
+			itemType: 2,
+			token: 0x46bEF163D6C470a4774f9585F3500Ae3b642e751,
+			identifierOrCriteria: 517,
+			startAmount: 1,
+			endAmount: 1
 		});
-		uint8 v = 28;
-		bytes32 r = 0x4355c47d63924e8a72e509b65029052eb6c299d53a04e167c5775fd466751c9d;
-		bytes32 s = 0x07299936d304c153f6443dfa05f40ff007d72911b6f72307f996231605b91562;
-
-		assert(DOMAIN_SEPARATOR == 0xf2cee375fa42b42143804025fc449deafd50cc031ca257e0b194a650a912090f);
-		assert(hash(mail) == 0xc52c0ee5d84264471806290a3f2c4cecfc5490626bf912d01f240d7a274b371e);
-		assert(verify(mail, v, r, s));
-		return (true, keccak256(abi.encodePacked(
+		ConsiderationItem[] memory consideration = new ConsiderationItem[](2);
+		consideration[0] = ConsiderationItem({
+			itemType: 0,
+			token: 0x0000000000000000000000000000000000000000,
+			identifierOrCriteria: 0,
+			startAmount: 97500000000000,
+			endAmount: 97500000000000,
+			recipient: 0xFDf35F1Bfe270e636f535a45Ce8D02457676e050
+		});
+		consideration[1] = ConsiderationItem({
+			itemType: 0,
+			token: 0x0000000000000000000000000000000000000000,
+			identifierOrCriteria: 0,
+			startAmount: 2500000000000,
+			endAmount: 2500000000000,
+			recipient: 0x0000a26b00c1F0DF003000390027140000fAa719
+		});
+		OrderComponents memory orderComponents = OrderComponents({
+			offerer: 0xFDf35F1Bfe270e636f535a45Ce8D02457676e050,
+			zone: 0x00000000E88FE2628EbC5DA81d2b3CeaD633E89e,
+			offer: offer,
+			consideration: consideration,
+			orderType: 2,
+			startTime: 1664206365,
+			endTime: 1666798365,
+			zoneHash: 0x0000000000000000000000000000000000000000000000000000000000000000,
+			salt: 20150809813597178,
+			conduitKey: 0x0000007b02230091a7ed01230072f7006a004d60a8d4e71d599b8104250f0000,
+			counter: 0
+		});
+		// 0x35c568f7344e0348798c1fd5f38555ae8ff50b1895e91daf11efd54624fa8183
+		return keccak256(abi.encodePacked(
 			"\x19\x01",
 			DOMAIN_SEPARATOR,
-			hash(mail)
-		)));
+			hash(orderComponents)
+		));
 	}
 }
