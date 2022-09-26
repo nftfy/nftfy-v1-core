@@ -1,6 +1,5 @@
 // SPDX-License-Identifier: GPL-3.0-only
 pragma solidity ^0.6.0;
-pragma experimental ABIEncoderV2;
 
 contract Example
 {
@@ -51,7 +50,7 @@ contract Example
 
 	constructor () public
 	{
-		DOMAIN_SEPARATOR = hash(EIP712Domain({
+		DOMAIN_SEPARATOR = _hash(EIP712Domain({
 			name: "Seaport",
 			version: "1.1",
 			chainId: 4,
@@ -59,7 +58,7 @@ contract Example
 		}));
 	}
 
-	function hash(EIP712Domain memory eip712Domain) public pure returns (bytes32)
+	function _hash(EIP712Domain memory eip712Domain) internal pure returns (bytes32)
 	{
 		return keccak256(abi.encode(
 			EIP712DOMAIN_TYPEHASH,
@@ -70,14 +69,14 @@ contract Example
 		));
 	}
 
-	function hash(OrderComponents memory orderComponents) public pure returns (bytes32)
+	function _hash(OrderComponents memory orderComponents) internal pure returns (bytes32)
 	{
 		return keccak256(abi.encode(
 			ORDERCOMPONENTS_TYPEHASH,
 			orderComponents.offerer,
 			orderComponents.zone,
-			hash(orderComponents.offer),
-			hash(orderComponents.consideration),
+			_hash(orderComponents.offer),
+			_hash(orderComponents.consideration),
 			uint256(orderComponents.orderType),
 			orderComponents.startTime,
 			orderComponents.endTime,
@@ -88,16 +87,16 @@ contract Example
 		));
 	}
 
-	function hash(OfferItem[] memory offer) public pure returns (bytes32)
+	function _hash(OfferItem[] memory offer) internal pure returns (bytes32)
 	{
 		bytes32[] memory hashes = new bytes32[](offer.length);
 		for (uint256 i = 0; i < hashes.length; i++) {
-			hashes[i] = hash(offer[i]);
+			hashes[i] = _hash(offer[i]);
 		}
 		return keccak256(abi.encodePacked(hashes));
 	}
 
-	function hash(OfferItem memory offerItem) public pure returns (bytes32)
+	function _hash(OfferItem memory offerItem) internal pure returns (bytes32)
 	{
 		return keccak256(abi.encode(
 			OFFERITEM_TYPEHASH,
@@ -109,16 +108,16 @@ contract Example
 		));
 	}
 
-	function hash(ConsiderationItem[] memory consideration) public pure returns (bytes32)
+	function _hash(ConsiderationItem[] memory consideration) internal pure returns (bytes32)
 	{
 		bytes32[] memory hashes = new bytes32[](consideration.length);
 		for (uint256 i = 0; i < hashes.length; i++) {
-			hashes[i] = hash(consideration[i]);
+			hashes[i] = _hash(consideration[i]);
 		}
 		return keccak256(abi.encodePacked(hashes));
 	}
 
-	function hash(ConsiderationItem memory considerationItem) public pure returns (bytes32)
+	function _hash(ConsiderationItem memory considerationItem) internal pure returns (bytes32)
 	{
 		return keccak256(abi.encode(
 			CONSIDERATIONITEM_TYPEHASH,
@@ -175,7 +174,7 @@ contract Example
 		return keccak256(abi.encodePacked(
 			"\x19\x01",
 			DOMAIN_SEPARATOR,
-			hash(orderComponents)
+			_hash(orderComponents)
 		));
 	}
 }
