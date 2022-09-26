@@ -79,7 +79,7 @@ contract Example
 		return ecrecover(digest, v, r, s) == mail.from.wallet;
 	}
 
-	function test() public view returns (bool)
+	function test() public view returns (bool, bytes32)
 	{
 		Mail memory mail = Mail({
 			from: Person({
@@ -99,6 +99,10 @@ contract Example
 		assert(DOMAIN_SEPARATOR == 0xf2cee375fa42b42143804025fc449deafd50cc031ca257e0b194a650a912090f);
 		assert(hash(mail) == 0xc52c0ee5d84264471806290a3f2c4cecfc5490626bf912d01f240d7a274b371e);
 		assert(verify(mail, v, r, s));
-		return true;
+		return (true, keccak256(abi.encodePacked(
+			"\x19\x01",
+			DOMAIN_SEPARATOR,
+			hash(mail)
+		)));
 	}
 }
