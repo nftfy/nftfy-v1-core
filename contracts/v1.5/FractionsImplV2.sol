@@ -11,7 +11,7 @@ import { ReentrancyGuard } from "@openzeppelin/contracts/utils/ReentrancyGuard.s
 import { Strings } from "@openzeppelin/contracts/utils/Strings.sol";
 
 import { SafeERC721 } from "./SafeERC721.sol";
-import { LibSeaport } from "./LibSeaport.sol";
+import { SeaportEncoder } from "./SeaportEncoder.sol";
 
 contract FractionsImplV2 is ERC721Holder, ERC20, ReentrancyGuard
 {
@@ -167,18 +167,29 @@ contract FractionsImplV2 is ERC721Holder, ERC20, ReentrancyGuard
 	event Redeem(address indexed _from, uint256 _fractionsCount, uint256 _redeemAmount);
 	event Claim(address indexed _from, uint256 _fractionsCount, uint256 _claimAmount);
 
-	address constant OPENSEA_SEAPORT = 0x00000000006c3852cbEf3e08E8dF289169EdE581;
-
 	bytes4 constant MAGICVALUE = 0x1626ba7e;
 
+	address constant OPENSEA_SEAPORT = 0x00000000006c3852cbEf3e08E8dF289169EdE581;
+
+	address public seaportEncoder;
 	bytes32 public openseaOrderHash;
+	uint256 public startTime;
+
+	function isValidSignature(bytes32 _hash, bytes calldata /*_signature*/) external view returns (bytes4 _magicValue)
+	{
+		require(!released, "token already redeemed");
+		require(msg.sender == OPENSEA_SEAPORT, "invalid sender");
+		require(_hash == openseaOrderHash, "invalid hash");
+		return MAGICVALUE;
+	}
 
 	function listOnOpensea() external nonReentrant
 	{
 		require(!released, "token already redeemed");
 		require(openseaOrderHash == bytes32(0), "unavailable");
 		IERC721(target).approve(OPENSEA_SEAPORT, tokenId);
-		openseaOrderHash = LibSeaport._hash(address(this), target, tokenId, reservePrice(), paymentToken, block.timestamp, uint256(-1), 0);
+		startTime = block.timestamp;
+		openseaOrderHash = SeaportEncoder(seaportEncoder).hash(address(this), target, tokenId, reservePrice(), paymentToken, startTime, startTime + 30 days, 0, 0);
 	}
 
 	function checkExternalReedeem() external nonReentrant
@@ -191,10 +202,7 @@ contract FractionsImplV2 is ERC721Holder, ERC20, ReentrancyGuard
 		_cleanup();
 	}
 
-	function isValidSignature(bytes32 _hash, bytes calldata /*_signature*/) external view returns (bytes4 _magicValue)
+	receive() external payable
 	{
-		require(!released, "token already redeemed");
-		require(_hash == openseaOrderHash, "invalid hash");
-		return MAGICVALUE;
 	}
 }
