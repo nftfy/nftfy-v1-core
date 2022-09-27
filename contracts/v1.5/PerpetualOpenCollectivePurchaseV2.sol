@@ -67,7 +67,7 @@ contract PerpetualOpenCollectivePurchaseV2 is OpenCollectivePurchaseV2
 		if (_listing.state != State.Created) {
 			uint256 _priceMultiplier = _perpetual.priceMultiplier;
 			if (_priceMultiplier == 0) _priceMultiplier = priceMultiplier;
-			_perpetual.listingId = list(address(0), _collection, true, 0, true, fee, _paymentToken, _priceMultiplier, abi.encode(bytes32("SET_PRICE"), string("Perpetual Fractions"), string("PFRAC"), uint256(30 minutes), uint256(0)));
+			_perpetual.listingId = list(address(0), _collection, true, 0, true, 0, _paymentToken, _priceMultiplier, abi.encode(bytes32("SET_PRICE"), string("Perpetual Fractions"), string("PFRAC"), uint256(30 minutes), uint256(0)));
 		}
 		emit PerpetualOpen(_collection, _paymentToken, _perpetual.listingId);
 		return _perpetual.listingId;
