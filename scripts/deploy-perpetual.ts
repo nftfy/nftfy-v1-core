@@ -2,6 +2,10 @@ import hardhat from 'hardhat';
 
 function _throw(message: string): never { throw new Error(message); }
 
+function encodeBytes32(name: string): string {
+  return hardhat.ethers.utils.formatBytes32String(name);
+}
+
 async function deployContract(name: string, ...args: unknown[]): Promise<string> {
   const Contract = await hardhat.ethers.getContractFactory(name);
   const contract = await Contract.deploy(...args);
@@ -48,7 +52,16 @@ async function main(args: string[]): Promise<void> {
   console.log('FEE=' + FEE);
 
   const PERPETUAL_OPEN_COLLECTIVE_PURCHASE_V2 = await deployContract('PerpetualOpenCollectivePurchaseV2', FEE, VAULT);
-  console.log('PERPETUAL_OPEN_COLLECTIVE_PURCHASE_V2=', PERPETUAL_OPEN_COLLECTIVE_PURCHASE_V2);
+  console.log('PERPETUAL_OPEN_COLLECTIVE_PURCHASE_V2=' + PERPETUAL_OPEN_COLLECTIVE_PURCHASE_V2);
+
+  {
+    console.log('Adding fractionalizer...');
+
+    const FRACIONALIZER = '0x9F3b6B21Ec643E10586623F85f0823DE38ea6926';
+    const perpetual = await hardhat.ethers.getContractAt('PerpetualOpenCollectivePurchaseV2', PERPETUAL_OPEN_COLLECTIVE_PURCHASE_V2);
+    const tx = await perpetual.addFractionalizer(encodeBytes32('SET_PRICE'), FRACIONALIZER);
+    await tx.wait();
+  }
 
   if (FROM !== ADMIN) {
     console.log('Transferring ownership...');
