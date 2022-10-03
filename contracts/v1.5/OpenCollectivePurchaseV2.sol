@@ -288,7 +288,7 @@ contract OpenCollectivePurchaseV2 is ERC721Holder, Ownable, ReentrancyGuard
 			}
 		}
 	}
-/*
+
 	function recoverLostFunds(address _token, address payable _to) external onlyOwner nonReentrant
 	{
 		uint256 _balance = balances[_token];
@@ -304,7 +304,7 @@ contract OpenCollectivePurchaseV2 is ERC721Holder, Ownable, ReentrancyGuard
 		if (items[_collection][_tokenId]) return;
 		IERC721(_collection).safeTransfer(_to, _tokenId);
 	}
-*/
+
 	function _validate(bytes memory _extra) internal view
 	{
 		(bytes32 _type,,, uint256 _duration, uint256 _fee) = abi.decode(_extra, (bytes32, string, string, uint256, uint256));
