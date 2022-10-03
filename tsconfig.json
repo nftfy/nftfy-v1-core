@@ -32,6 +32,10 @@
     "allowUnreachableCode": false
   },
   "include": [
-    "src/**/*"
+    "src/**/*",
+    "scripts/**/*"
+  ],
+  "files": [
+    "hardhat.config.ts"
   ]
 }
