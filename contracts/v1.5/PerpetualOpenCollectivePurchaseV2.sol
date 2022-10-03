@@ -93,8 +93,8 @@ contract PerpetualOpenCollectivePurchaseV2 is OpenCollectivePurchaseV2
 		PerpetualInfo storage _perpetual = perpetuals[msg.sender][_collection][_paymentToken];
 		require(_perpetual.listingId == 0, "invalid perpetual");
 		_perpetual.listingId = list(msg.sender, _collection, true, 0, false, _fee, _paymentToken, _priceMultiplier, _extra);
-		_perpetual.fee = _fee;
 		_perpetual.priceMultiplier = priceMultiplier;
+		_perpetual.fee = _fee;
 		emit PerpetualCreate(msg.sender, _collection, _paymentToken, _perpetual.listingId);
 		return _perpetual.listingId;
 	}
@@ -105,8 +105,8 @@ contract PerpetualOpenCollectivePurchaseV2 is OpenCollectivePurchaseV2
 		if (_perpetual.listingId == 0) {
 			require(_creator == address(0), "invalid creator");
 			_perpetual.listingId = list(address(0), _collection, true, 0, true, 0, _paymentToken, priceMultiplier, extra);
-			_perpetual.fee = 0;
 			_perpetual.priceMultiplier = priceMultiplier;
+			_perpetual.fee = 0;
 		} else {
 			ListingInfo storage _listing = listings[_perpetual.listingId];
 			if (_listing.state == State.Created) return _perpetual.listingId;
