@@ -1,6 +1,6 @@
 # Nftfy V1 Core
 
-[![Truffle CI Actions Status](https://github.com/nftfy/nftfy-v1-core/workflows/Truffle%20CI/badge.svg)](https://github.com/nftfy/nftfy-v1-core/actions)
+[![Hardhat CI Actions Status](https://github.com/nftfy/nftfy-v1-core/workflows/Hardhat%20CI/badge.svg)](https://github.com/nftfy/nftfy-v1-core/actions)
 
 A decentralized protocol for NFT fractionalization.
 

@@ -1,5 +1,5 @@
 # This workflow will do a clean install of dependencies, build the source code and run tests
-name: Truffle CI
+name: Hardhat CI
 on:
   push:
     branches: [ master ]
