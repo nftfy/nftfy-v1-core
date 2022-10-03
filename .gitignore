@@ -1,3 +1,7 @@
+/artifacts/
 /build/
+/cache/
 /node_modules/
-.env
+/.env
+/etherscan.json
+/keystore.json

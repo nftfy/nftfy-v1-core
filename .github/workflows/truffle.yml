@@ -25,16 +25,4 @@ jobs:
       env:
         PRIVATE_KEY: ${{ secrets.PRIVATE_KEY }}
         INFURA_PROJECT_ID: ${{ secrets.INFURA_PROJECT_ID }}
-    - run: ./scripts/start-mainnet-fork.sh & rm -rf ./build/ && npm run test:mainnet && pkill node
-    - run: ./scripts/start-ropsten-fork.sh & rm -rf ./build/ && npm run test:ropsten && pkill node
-    - run: ./scripts/start-rinkeby-fork.sh & rm -rf ./build/ && npm run test:rinkeby && pkill node
-    - run: ./scripts/start-kovan-fork.sh & rm -rf ./build/ && npm run test:kovan && pkill node
-    - run: ./scripts/start-goerli-fork.sh & rm -rf ./build/ && npm run test:goerli && pkill node
-    - run: ./scripts/start-bscmain-fork.sh & rm -rf ./build/ && npm run test:bscmain && pkill node
-    - run: ./scripts/start-bsctest-fork.sh & rm -rf ./build/ && npm run test:bsctest && pkill node
-    - run: ./scripts/start-maticmain-fork.sh & rm -rf ./build/ && npm run test:maticmain && pkill node
-    - run: ./scripts/start-matictest-fork.sh & rm -rf ./build/ && npm run test:matictest && pkill node
-    - run: ./scripts/start-avaxmain-fork.sh & rm -rf ./build/ && npm run test:avaxmain && pkill node
-    - run: ./scripts/start-avaxtest-fork.sh & rm -rf ./build/ && npm run test:avaxtest && pkill node
-    - run: ./scripts/start-ftmmain-fork.sh & rm -rf ./build/ && npm run test:ftmmain && pkill node
-    - run: ./scripts/start-ftmtest-fork.sh & rm -rf ./build/ && npm run test:ftmtest && pkill node
+    - run: npm run build && npm run tsc
