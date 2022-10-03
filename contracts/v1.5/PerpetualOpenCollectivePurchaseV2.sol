@@ -71,7 +71,7 @@ contract PerpetualOpenCollectivePurchaseV2 is OpenCollectivePurchaseV2
 		if (_listing.state == State.Created) {
 			_listing.priceMultiplier = _priceMultiplier;
 		}
-		emit UpdatePriceMultiplier(_creator, _collection, _paymentToken, _priceMultiplier);
+		emit UpdatePriceMultiplierPerpetual(_creator, _collection, _paymentToken, _priceMultiplier);
 	}
 
 	function setCreatorFee(address _collection, address _paymentToken, uint256 _fee) external
@@ -85,7 +85,7 @@ contract PerpetualOpenCollectivePurchaseV2 is OpenCollectivePurchaseV2
 			require(_listing.fee + _fee <= 100e16, "invalid fee");
 			creators[_perpetual.listingId].fee = _fee;
 		}
-		emit UpdateCreatorFee(msg.sender, _collection, _paymentToken, _fee);
+		emit UpdateCreatorFeePerpetual(msg.sender, _collection, _paymentToken, _fee);
 	}
 
 	function perpetualCreate(address _collection, uint256 _fee, address _paymentToken, uint256 _priceMultiplier, bytes memory _extra) external returns (uint256 _listingId)
@@ -135,8 +135,8 @@ contract PerpetualOpenCollectivePurchaseV2 is OpenCollectivePurchaseV2
 
 	event UpdateDefaultPriceMultiplier(uint256 _priceMultiplier);
 	event UpdateDefaultExtra(bytes _extra);
-	event UpdatePriceMultiplier(address indexed _creator, address indexed _collection, address indexed _paymentToken, uint256 _priceMultiplier);
-	event UpdateCreatorFee(address indexed _creator, address indexed _collection, address indexed _paymentToken, uint256 _fee);
+	event UpdatePriceMultiplierPerpetual(address indexed _creator, address indexed _collection, address indexed _paymentToken, uint256 _priceMultiplier);
+	event UpdateCreatorFeePerpetual(address indexed _creator, address indexed _collection, address indexed _paymentToken, uint256 _fee);
 	event PerpetualCreate(address indexed _creator, address indexed _collection, address _paymentToken, uint256 indexed _listingId);
 	event PerpetualOpen(address indexed _creator, address indexed _collection, address _paymentToken, uint256 indexed _listingId);
 	event Referral(address indexed _account, address indexed _paymentToken, uint256 _amount, bytes32 indexed _referralId);
