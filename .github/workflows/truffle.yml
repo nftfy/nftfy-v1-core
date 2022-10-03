@@ -18,11 +18,5 @@ jobs:
       with:
         node-version: ${{ matrix.node-version }}
     - run: npm ci
-    - run: npm run build --if-present
-      env:
-        NODE_OPTIONS: --max-old-space-size=4096
-    - run: env > .env
-      env:
-        PRIVATE_KEY: ${{ secrets.PRIVATE_KEY }}
-        INFURA_PROJECT_ID: ${{ secrets.INFURA_PROJECT_ID }}
-    - run: npm run build && npm run tsc
+    - run: npm run build
+    - run: npm run tsc
