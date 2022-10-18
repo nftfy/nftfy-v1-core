@@ -1,5 +1,7 @@
 import hardhat from 'hardhat';
 
+function _throw(message: string): never { throw new Error(message); }
+
 async function verifyContract(address: string, contract: string, ...constructorArguments: unknown[]): Promise<boolean> {
   try {
     await hardhat.run('verify:verify', { address, contract, constructorArguments });
@@ -49,7 +51,7 @@ async function main(args: string[]): Promise<void> {
   console.log('FEE=' + FEE);
 
   const PERPETUAL_OPEN_COLLECTIVE_PURCHASE_V2 = '0x46753A0100FaEd6B18E18B750971ee756778829F';
-  const EXTERNAL_ACQUIRER_V2 = '';
+  const EXTERNAL_ACQUIRER_V2 = '0x0E59da47900cC881cB39A15A090cB0cD15cCCae1';
 
   await verifyContract(PERPETUAL_OPEN_COLLECTIVE_PURCHASE_V2, 'contracts/v1.5/PerpetualOpenCollectivePurchaseV2.sol:PerpetualOpenCollectivePurchaseV2', FEE, VAULT);
   await verifyContract(EXTERNAL_ACQUIRER_V2, 'contracts/v1.5/ExternalAcquirerV2.sol:ExternalAcquirerV2', PERPETUAL_OPEN_COLLECTIVE_PURCHASE_V2);
