@@ -49,8 +49,10 @@ async function main(args: string[]): Promise<void> {
   console.log('FEE=' + FEE);
 
   const PERPETUAL_OPEN_COLLECTIVE_PURCHASE_V2 = '0x46753A0100FaEd6B18E18B750971ee756778829F';
+  const EXTERNAL_ACQUIRER_V2 = '';
 
   await verifyContract(PERPETUAL_OPEN_COLLECTIVE_PURCHASE_V2, 'contracts/v1.5/PerpetualOpenCollectivePurchaseV2.sol:PerpetualOpenCollectivePurchaseV2', FEE, VAULT);
+  await verifyContract(EXTERNAL_ACQUIRER_V2, 'contracts/v1.5/ExternalAcquirerV2.sol:ExternalAcquirerV2', PERPETUAL_OPEN_COLLECTIVE_PURCHASE_V2);
 
 }
 

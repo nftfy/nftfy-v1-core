@@ -54,6 +54,9 @@ async function main(args: string[]): Promise<void> {
   const PERPETUAL_OPEN_COLLECTIVE_PURCHASE_V2 = await deployContract('PerpetualOpenCollectivePurchaseV2', FEE, VAULT);
   console.log('PERPETUAL_OPEN_COLLECTIVE_PURCHASE_V2=' + PERPETUAL_OPEN_COLLECTIVE_PURCHASE_V2);
 
+  const EXTERNAL_ACQUIRER_V2 = await deployContract('ExternalAcquirerV2', PERPETUAL_OPEN_COLLECTIVE_PURCHASE_V2);
+  console.log('EXTERNAL_ACQUIRER_V2=' + EXTERNAL_ACQUIRER_V2);
+
   {
     console.log('Adding fractionalizer...');
 
