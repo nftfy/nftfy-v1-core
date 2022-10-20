@@ -173,6 +173,7 @@ contract FractionsImplV2 is ERC721Holder, ERC20, ReentrancyGuard
 	uint256 constant OPENSEA_DURATION = 30 days;
 
 	address public seaportEncoder; // initialize
+
 	bytes32 public openseaOrderHash;
 	uint256 public openseaOrderExpiration;
 
@@ -194,7 +195,7 @@ contract FractionsImplV2 is ERC721Holder, ERC20, ReentrancyGuard
 		openseaOrderHash = SeaportEncoder(seaportEncoder).hash(address(this), target, tokenId, reservePrice(), paymentToken, block.timestamp, openseaOrderExpiration, 0, 0);
 	}
 
-	function checkExternalReedeem() external nonReentrant
+	function realizeExternalRedemption() external nonReentrant
 	{
 		require(!released, "token already redeemed");
 		uint256 _reservePrice = reservePrice();
