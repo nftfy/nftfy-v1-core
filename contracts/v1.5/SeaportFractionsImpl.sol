@@ -169,7 +169,7 @@ contract SeaportFractionsImpl is ERC721Holder, ERC20, ReentrancyGuard
 
 	bytes4 constant MAGICVALUE = 0x1626ba7e;
 
-	address constant OPENSEA_SEAPORT = 0x00000000006c3852cbEf3e08E8dF289169EdE581;
+	address constant OPENSEA_SEAPORT = 0x00000000006c3852cbEf3e08E8dF289169EdE581; // 0x1E0049783F008A0085193E00003D00cd54003c71 on goerli
 	uint256 constant OPENSEA_DURATION = 30 days;
 
 	address constant SEAPORT_ENCODER = 0x0000000000000000000000000000000000000000; // replace by SeaportEncoder address on deploy
