@@ -13,7 +13,7 @@ import { Strings } from "@openzeppelin/contracts/utils/Strings.sol";
 import { SafeERC721 } from "./SafeERC721.sol";
 import { SeaportEncoder } from "./SeaportEncoder.sol";
 
-contract FractionsImplV2 is ERC721Holder, ERC20, ReentrancyGuard
+contract SeaportFractionsImpl is ERC721Holder, ERC20, ReentrancyGuard
 {
 	using SafeERC20 for IERC20;
 	using SafeERC721 for IERC721;
@@ -172,7 +172,7 @@ contract FractionsImplV2 is ERC721Holder, ERC20, ReentrancyGuard
 	address constant OPENSEA_SEAPORT = 0x00000000006c3852cbEf3e08E8dF289169EdE581;
 	uint256 constant OPENSEA_DURATION = 30 days;
 
-	address public seaportEncoder; // initialize
+	address constant SEAPORT_ENCODER = 0x0000000000000000000000000000000000000000; // replace by SeaportEncoder address on deploy
 
 	bytes32 public openseaOrderHash;
 	uint256 public openseaOrderExpiration;
@@ -192,7 +192,7 @@ contract FractionsImplV2 is ERC721Holder, ERC20, ReentrancyGuard
 		require(openseaOrderHash == bytes32(0) || block.timestamp > openseaOrderExpiration , "unavailable");
 		IERC721(target).approve(OPENSEA_SEAPORT, tokenId);
 		openseaOrderExpiration = block.timestamp + OPENSEA_DURATION;
-		openseaOrderHash = SeaportEncoder(seaportEncoder).hash(address(this), target, tokenId, reservePrice(), paymentToken, block.timestamp, openseaOrderExpiration, 0, 0);
+		openseaOrderHash = SeaportEncoder(SEAPORT_ENCODER).hash(address(this), target, tokenId, reservePrice(), paymentToken, block.timestamp, openseaOrderExpiration, 0, 0);
 	}
 
 	function realizeExternalRedemption() external nonReentrant
