@@ -170,15 +170,17 @@ contract FractionsImplV2 is ERC721Holder, ERC20, ReentrancyGuard
 	bytes4 constant MAGICVALUE = 0x1626ba7e;
 
 	address constant OPENSEA_SEAPORT = 0x00000000006c3852cbEf3e08E8dF289169EdE581;
+	uint256 constant OPENSEA_DURATION = 30 days;
 
-	address public seaportEncoder;
+	address public seaportEncoder; // initialize
 	bytes32 public openseaOrderHash;
-	uint256 public startTime;
+	uint256 public openseaOrderExpiration;
 
-	function isValidSignature(bytes32 _hash, bytes calldata /*_signature*/) external view returns (bytes4 _magicValue)
+	function isValidSignature(bytes32 _hash, bytes calldata) external view returns (bytes4 _magicValue)
 	{
 		require(!released, "token already redeemed");
 		require(msg.sender == OPENSEA_SEAPORT, "invalid sender");
+		require(openseaOrderHash != bytes32(0) && block.timestamp <= openseaOrderExpiration, "unavailable");
 		require(_hash == openseaOrderHash, "invalid hash");
 		return MAGICVALUE;
 	}
@@ -186,10 +188,10 @@ contract FractionsImplV2 is ERC721Holder, ERC20, ReentrancyGuard
 	function listOnOpensea() external nonReentrant
 	{
 		require(!released, "token already redeemed");
-		require(openseaOrderHash == bytes32(0), "unavailable");
+		require(openseaOrderHash == bytes32(0) || block.timestamp > openseaOrderExpiration , "unavailable");
 		IERC721(target).approve(OPENSEA_SEAPORT, tokenId);
-		startTime = block.timestamp;
-		openseaOrderHash = SeaportEncoder(seaportEncoder).hash(address(this), target, tokenId, reservePrice(), paymentToken, startTime, startTime + 30 days, 0, 0);
+		openseaOrderExpiration = block.timestamp + OPENSEA_DURATION;
+		openseaOrderHash = SeaportEncoder(seaportEncoder).hash(address(this), target, tokenId, reservePrice(), paymentToken, block.timestamp, openseaOrderExpiration, 0, 0);
 	}
 
 	function checkExternalReedeem() external nonReentrant
