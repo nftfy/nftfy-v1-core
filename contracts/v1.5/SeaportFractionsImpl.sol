@@ -178,6 +178,7 @@ contract SeaportFractionsImpl is ERC721Holder, ERC20, ReentrancyGuard
 
 	event Redeem(address indexed _from, uint256 _fractionsCount, uint256 _redeemAmount);
 	event Claim(address indexed _from, uint256 _fractionsCount, uint256 _claimAmount);
+	event ListOnSeaport(bytes32 indexed _hash);
 
 	bytes4 constant MAGICVALUE = 0x1626ba7e;
 
@@ -199,6 +200,7 @@ contract SeaportFractionsImpl is ERC721Holder, ERC20, ReentrancyGuard
 		require(!released, "token already redeemed");
 		bytes32 _hash = SeaportEncoder(SEAPORT_ENCODER).hash(address(this), target, tokenId, reservePrice(), paymentToken, block.timestamp, block.timestamp + ORDER_DURATION, 0, 0);
 		orderHash[_hash] = true;
+		emit ListOnSeaport(_hash);
 	}
 
 	receive() external payable
