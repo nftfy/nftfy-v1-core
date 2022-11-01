@@ -6,8 +6,9 @@ import { ReentrancyGuard } from "@openzeppelin/contracts/utils/ReentrancyGuard.s
 
 import { AuctionFractions } from "./AuctionFractions.sol";
 import { AuctionFractionsImpl } from "./AuctionFractionsImpl.sol";
+import { IAuctionFractionalizer } from "./IAuctionFractionalizer.sol";
 
-contract AuctionFractionalizer is ReentrancyGuard
+contract AuctionFractionalizer is IAuctionFractionalizer, ReentrancyGuard
 {
 	address public immutable vault;
 
@@ -16,7 +17,7 @@ contract AuctionFractionalizer is ReentrancyGuard
 		vault = _vault;
 	}
 
-	function fractionalize(address _target, uint256 _tokenId, string memory _name, string memory _symbol, uint8 _decimals, uint256 _fractionsCount, uint256 _fractionPrice, address _paymentToken, uint256 _kickoff, uint256 _duration, uint256 _fee) external nonReentrant returns (address _fractions)
+	function fractionalize(address _target, uint256 _tokenId, string memory _name, string memory _symbol, uint8 _decimals, uint256 _fractionsCount, uint256 _fractionPrice, address _paymentToken, uint256 _kickoff, uint256 _duration, uint256 _fee) external override nonReentrant returns (address _fractions)
 	{
 		address _from = msg.sender;
 		_fractions = address(new AuctionFractions());

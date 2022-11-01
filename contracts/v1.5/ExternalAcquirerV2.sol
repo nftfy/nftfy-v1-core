@@ -7,9 +7,9 @@ import { IERC721 } from "@openzeppelin/contracts/token/ERC721/IERC721.sol";
 import { Address } from "@openzeppelin/contracts/utils/Address.sol";
 
 import { FlashAcquireCallee } from "./FlashAcquireCallee.sol";
-import { OpenCollectivePurchase } from "./OpenCollectivePurchase.sol";
+import { OpenCollectivePurchaseV2 } from "./OpenCollectivePurchaseV2.sol";
 
-contract ExternalAcquirer is FlashAcquireCallee
+contract ExternalAcquirerV2 is FlashAcquireCallee
 {
 	using SafeERC20 for IERC20;
 	using Address for address payable;
@@ -20,14 +20,14 @@ contract ExternalAcquirer is FlashAcquireCallee
 	constructor (address _collective) public
 	{
 		collective = _collective;
-		vault = OpenCollectivePurchase(_collective).vault();
+		vault = OpenCollectivePurchaseV2(_collective).vault();
 	}
 
 	function acquire(uint256 _listingId, bool _relist, bytes calldata _data) external
 	{
-		OpenCollectivePurchase(collective).flashAcquire(_listingId, 0, address(this), _data);
+		OpenCollectivePurchaseV2(collective).flashAcquire(_listingId, 0, address(this), _data);
 		if (_relist) {
-			OpenCollectivePurchase(collective).relist(_listingId);
+			OpenCollectivePurchaseV2(collective).relist(_listingId);
 		}
 	}
 
@@ -35,8 +35,8 @@ contract ExternalAcquirer is FlashAcquireCallee
 	{
 		require(msg.sender == collective, "invalid sender");
 		require(_source == address(this), "invalid source");
-		(address _spender, address _target, bytes memory _calldata) = abi.decode(_data, (address, address, bytes));
-		(,,address _collection, uint256 _tokenId,, address _paymentToken,,,,,,,) = OpenCollectivePurchase(collective).listings(_listingId);
+		(address _spender, address _target, uint256 _tokenId, bytes memory _calldata) = abi.decode(_data, (address, address, uint256, bytes));
+		(,,address _collection,,, address _paymentToken,,,,,,,,) = OpenCollectivePurchaseV2(collective).listings(_listingId);
 		if (_paymentToken == address(0)) {
 			uint256 _balance = address(this).balance;
 			(bool _success, bytes memory _returndata) = _target.call{value: _balance}(_calldata);
@@ -57,7 +57,7 @@ contract ExternalAcquirer is FlashAcquireCallee
 			}
 		}
 		IERC721(_collection).approve(collective, _tokenId);
-		OpenCollectivePurchase(collective).acquire(_listingId, 0);
+		OpenCollectivePurchaseV2(collective).acquire(_listingId, _tokenId, 0);
 	}
 
 	receive() external payable
