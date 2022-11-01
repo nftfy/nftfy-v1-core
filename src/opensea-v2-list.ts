@@ -30,7 +30,7 @@ function castCreateOpenseaOrderResult(value: unknown): CreateOpenseaOrderResult 
 
 async function createOpenseaOrder(apiKey: string, params: Partial<CreateOpenseaOrderParams> = {}, testnet = false): Promise<CreateOpenseaOrderResult> {
   const url = 'https://' + (testnet ? 'testnets-' : '') + 'api.opensea.io/v2/orders/' + (testnet ? 'goerli' : 'ethereum') + '/seaport/listings';
-  const response = await httpPost(url, JSON.stringify(params), { 'X-API-KEY': apiKey });
+  const response = await httpPost(url, JSON.stringify(params), { 'X-API-KEY': apiKey, 'Content-Type': 'application/json' });
   const result: unknown = JSON.parse(response);
   return castCreateOpenseaOrderResult(result);
 }
