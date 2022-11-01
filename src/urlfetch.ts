@@ -34,3 +34,11 @@ export function httpGet(url: string, headers: { [name: string]: string } = {}): 
       .catch((error) => reject(new Error(error.response.statusText)));
   });
 }
+
+export function httpPost(url: string, data: string, headers: { [name: string]: string } = {}): Promise<string> {
+  return new Promise((resolve, reject) => {
+    axios.post(url, data, { headers, transformResponse: (data) => data })
+      .then((response) => resolve(response.data))
+      .catch((error) => reject(new Error(error.response.statusText)));
+  });
+}

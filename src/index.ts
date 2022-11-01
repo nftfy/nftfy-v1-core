@@ -4,6 +4,7 @@ import { fetchNft as fetchOpenseaV2Nft } from './opensea-v2';
 import { fetchNft as fetchLooksrareNft } from './looksrare';
 
 export { NftData } from './common';
+export { listNft } from './opensea-v2-list';
 
 async function safePromise<T>(provider: string, promise: Promise<T | null>): Promise<T | null> {
   try {

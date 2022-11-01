@@ -34,7 +34,7 @@ type OpenseaConsiderationItem = {
   recipient: string;
 };
 
-type OpenseaOrderParameters = {
+export type OpenseaOrderParameters = {
   offerer: string;
   offer: OpenseaOfferItem[];
   consideration: OpenseaConsiderationItem[],
@@ -68,7 +68,7 @@ type OpenseaTakerAssetBundle = {
   // ... other fields ...
 };
 
-type OpenseaOrder = {
+export type OpenseaOrder = {
   created_date: string;
   closing_date: string | null;
   listing_time: number;
@@ -317,7 +317,7 @@ function castOpenseaTakerAssetBundle(value: unknown): OpenseaTakerAssetBundle {
   };
 }
 
-function castOpenseaOrder(value: unknown): OpenseaOrder {
+export function castOpenseaOrder(value: unknown): OpenseaOrder {
   if (typeof value !== 'object' || value === null) throw new Error('panic');
   if (!hasProperty(value, 'created_date')) throw new Error('panic');
   if (!hasProperty(value, 'closing_date')) throw new Error('panic');
