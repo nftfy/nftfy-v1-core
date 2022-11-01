@@ -1,7 +1,7 @@
 import Web3 from 'web3';
 import { AbiItem } from 'web3-utils';
 
-import { EXTERNAL_ACQUIRER, NftData } from './common';
+import { EXTERNAL_ACQUIRER, EXTERNAL_ACQUIRER_V2, NftData } from './common';
 import { hasProperty, sleep } from './utils';
 import { serialize, httpGet } from './urlfetch';
 
@@ -448,7 +448,7 @@ function validateOrder(order: OpenseaOrder, network: string): void {
   if (order.marked_invalid) throw new Error('Invalid marked_invalid: ' + order.marked_invalid);
 }
 
-function encodeCalldata(order: OpenseaOrder, acquirer: string, price: string, metadata: string): string {
+function encodeCalldata(order: OpenseaOrder, acquirer: string, price: string, metadata: string, tokenId?: bigint): string {
   if (order.v === null) throw new Error('panic');
   if (order.r === null) throw new Error('panic');
   if (order.s === null) throw new Error('panic');
@@ -552,6 +552,9 @@ function encodeCalldata(order: OpenseaOrder, acquirer: string, price: string, me
   const spender = TOKEN_TRANSFER_PROXY[order.exchange] || ZERO_ADDRESS;
   const target = order.exchange;
   const _calldata = web3.eth.abi.encodeFunctionCall(abi, params as any); // type is incorrect on Web3
+  if (tokenId !== undefined) {
+    return web3.eth.abi.encodeParameters(['address', 'address', 'uint256', 'bytes'], [spender, target, tokenId, _calldata]);
+  }
   return web3.eth.abi.encodeParameters(['address', 'address', 'bytes'], [spender, target, _calldata]);
 }
 
@@ -566,14 +569,16 @@ function translateOrder(order: OpenseaOrder, network: string): NftData {
   const price = BigInt(floor || '0') + (BigInt(frac || '0') > 0n ? 1n : 0n);
   const referral = OPENSEA_REFERRAL[network] || ZERO_ADDRESS;
   const metadata = '0x' + '0'.repeat(24) + referral.substring(2);
+  const tokenId = BigInt(order.asset.token_id);
   return {
     collection: order.asset.asset_contract.address,
-    tokenId: BigInt(order.asset.token_id),
+    tokenId,
     price,
     decimals: order.payment_token_contract.decimals,
     paymentToken: order.payment_token,
     source: 'opensea',
     data: encodeCalldata(order, EXTERNAL_ACQUIRER, String(price), metadata),
+    dataV2: encodeCalldata(order, EXTERNAL_ACQUIRER_V2, String(price), metadata, tokenId),
   };
 }
 

@@ -8,8 +8,8 @@ import { ERC721Holder } from "@openzeppelin/contracts/token/ERC721/ERC721Holder.
 import { IERC721 } from "@openzeppelin/contracts/token/ERC721/IERC721.sol";
 import { ReentrancyGuard } from "@openzeppelin/contracts/utils/ReentrancyGuard.sol";
 
-import { IAuctionFractionalizer } from "./CollectivePurchase.sol";
 import { FlashAcquireCallee } from "./FlashAcquireCallee.sol";
+import { IAuctionFractionalizer } from "./IAuctionFractionalizer.sol";
 import { SafeERC721 } from "./SafeERC721.sol";
 
 contract OpenCollectivePurchase is ERC721Holder, Ownable, ReentrancyGuard
