@@ -60,7 +60,7 @@ async function main(args: string[]): Promise<void> {
   {
     console.log('Adding fractionalizer...');
 
-    const FRACIONALIZER = '0x542DeE68B0A29f4C3371Ea28Af0c6AaD84B4545A';
+    const FRACIONALIZER = '0x254Bb60B25EdFd72B73cBcf49285B79534A2EcC7';
     const perpetual = await hardhat.ethers.getContractAt('PerpetualOpenCollectivePurchaseV2', PERPETUAL_OPEN_COLLECTIVE_PURCHASE_V2);
     const tx = await perpetual.addFractionalizer(encodeBytes32('SET_PRICE_SEAPORT'), FRACIONALIZER);
     await tx.wait();

@@ -9,7 +9,7 @@ import { SeaportFractionsImpl } from "./SeaportFractionsImpl.sol";
 
 contract SeaportFractionalizer is ReentrancyGuard
 {
-	function fractionalize(address _target, uint256 _tokenId, string memory _name, string memory _symbol, uint8 _decimals, uint256 _fractionsCount, uint256 _fractionPrice, address _paymentToken) external nonReentrant returns (address payable _fractions)
+	function fractionalize(address _target, uint256 _tokenId, string memory _name, string memory _symbol, uint8 _decimals, uint256 _fractionsCount, uint256 _fractionPrice, address _paymentToken, uint256 /*_kickoff*/, uint256 /*_duration*/, uint256 /*_fee*/) external nonReentrant returns (address payable _fractions)
 	{
 		address _from = msg.sender;
 		_fractions = address(new SeaportFractions());
