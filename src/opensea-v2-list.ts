@@ -35,7 +35,7 @@ async function createOpenseaOrder(apiKey: string, params: Partial<CreateOpenseaO
   return castCreateOpenseaOrderResult(result);
 }
 
-export async function listNft(apiKey: string, fractions: string, collection: string, tokenId: bigint, price: bigint, paymentToken: string, startTime: number, network = 'mainnet'): Promise<string> {
+export async function publishNft(apiKey: string, fractions: string, collection: string, tokenId: bigint, price: bigint, paymentToken: string, startTime: number, network = 'mainnet'): Promise<string> {
   if (!['mainnet', 'goerli'].includes(network)) throw new Error('Unsupported network: ' + network);
   const testnet = network === 'goerli';
   const endTime = startTime + ORDER_DURATION;
