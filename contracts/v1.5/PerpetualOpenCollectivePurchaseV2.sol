@@ -12,7 +12,7 @@ contract PerpetualOpenCollectivePurchaseV2 is OpenCollectivePurchaseV2
 	}
 
 	uint256 constant DEFAULT_PRICE_MULTIPLIER = 140; // 140%
-	bytes constant DEFAULT_EXTRA = abi.encode(bytes32("SET_PRICE"), string("Perpetual Fractions"), string("PFRAC"), uint256(30 minutes), uint256(0));
+	bytes constant DEFAULT_EXTRA = abi.encode(bytes32("SET_PRICE_SEAPORT"), string("Perpetual Fractions"), string("PFRAC"), uint256(30 minutes), uint256(0));
 
 	uint256 public priceMultiplier = DEFAULT_PRICE_MULTIPLIER;
 
