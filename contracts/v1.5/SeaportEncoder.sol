@@ -88,7 +88,6 @@ contract SeaportEncoder is Ownable
 	function hash(address _offerer, address _collection, uint256 _tokenId, uint256 _price, address _paymentToken, uint256 _startTime, uint256 _endTime, uint256 _salt, uint256 _counter) external view returns (bytes32)
 	{
 		uint256 _fee = _price * fee[1] / fee[0] - _price;
-		while ((_price + _fee) * fee[0] / fee[1] < _price) _fee++;
 		OfferItem[] memory offer = new OfferItem[](1);
 		offer[0] = OfferItem({
 			itemType: 2,
