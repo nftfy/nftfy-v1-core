@@ -50,8 +50,8 @@ async function main(args: string[]): Promise<void> {
   const FEE = 50000000000000000n;
   console.log('FEE=' + FEE);
 
-  const PERPETUAL_OPEN_COLLECTIVE_PURCHASE_V2 = '0xC841052b1C22059beF16A216a7488b39393B1126';
-  const EXTERNAL_ACQUIRER_V2 = '0xCa05bB38f014622119eb8d59Ec6115ea64762836';
+  const PERPETUAL_OPEN_COLLECTIVE_PURCHASE_V2 = '0xe6E427C0501701B155934a10462F40f7189DFDDa';
+  const EXTERNAL_ACQUIRER_V2 = '0xcbFB9AFC09E1885409A4A47B4bd4bE99c82d2166';
 
   await verifyContract(PERPETUAL_OPEN_COLLECTIVE_PURCHASE_V2, 'contracts/v1.5/PerpetualOpenCollectivePurchaseV2.sol:PerpetualOpenCollectivePurchaseV2', FEE, VAULT);
   await verifyContract(EXTERNAL_ACQUIRER_V2, 'contracts/v1.5/ExternalAcquirerV2.sol:ExternalAcquirerV2', PERPETUAL_OPEN_COLLECTIVE_PURCHASE_V2);
