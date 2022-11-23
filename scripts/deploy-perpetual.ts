@@ -58,11 +58,20 @@ async function main(args: string[]): Promise<void> {
   console.log('EXTERNAL_ACQUIRER_V2=' + EXTERNAL_ACQUIRER_V2);
 
   {
-    console.log('Adding fractionalizer...');
+    console.log('Adding SET_PRICE_SEAPORT fractionalizer...');
 
     const FRACIONALIZER = '0xF540E3621695947b56B57eb568ed726D7bF769c8';
     const perpetual = await hardhat.ethers.getContractAt('PerpetualOpenCollectivePurchaseV2', PERPETUAL_OPEN_COLLECTIVE_PURCHASE_V2);
     const tx = await perpetual.addFractionalizer(encodeBytes32('SET_PRICE_SEAPORT'), FRACIONALIZER);
+    await tx.wait();
+  }
+
+  {
+    console.log('Adding AUCTION fractionalizer...');
+
+    const FRACIONALIZER = '0x5EF37b60C374634Ff917BaafECB515Bf1482cAc3';
+    const perpetual = await hardhat.ethers.getContractAt('PerpetualOpenCollectivePurchaseV2', PERPETUAL_OPEN_COLLECTIVE_PURCHASE_V2);
+    const tx = await perpetual.addFractionalizer(encodeBytes32('AUCTION'), FRACIONALIZER);
     await tx.wait();
   }
 
