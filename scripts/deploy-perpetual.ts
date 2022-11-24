@@ -75,6 +75,15 @@ async function main(args: string[]): Promise<void> {
     await tx.wait();
   }
 
+  {
+    console.log('Setting default extra...');
+
+    const perpetual = await hardhat.ethers.getContractAt('PerpetualOpenCollectivePurchaseV2', PERPETUAL_OPEN_COLLECTIVE_PURCHASE_V2);
+    const extra = hardhat.ethers.utils.defaultAbiCoder.encode(['bytes32', 'string', 'string', 'uint256', 'uint256'], [encodeBytes32('AUCTION'), 'Perpetual Fractions', 'PFRAC', 30 * 60, 0]);
+    const tx = await perpetual.setDefaultExtra(extra);
+    await tx.wait();
+  }
+
   if (FROM !== ADMIN) {
     console.log('Transferring ownership...');
 

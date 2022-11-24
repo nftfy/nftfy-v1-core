@@ -1,5 +1,5 @@
 export const EXTERNAL_ACQUIRER = '0x8eD69629B8fA69eEf1b019a3a427C08DC24Dd35f';
-export const EXTERNAL_ACQUIRER_V2 = '0xcbFB9AFC09E1885409A4A47B4bd4bE99c82d2166'; // goerli
+export const EXTERNAL_ACQUIRER_V2 = '0x6E01D12295f796E9D1dE6D68Dec5ce862cd55e9C'; // goerli
 
 export type NftData = {
   collection: string;
