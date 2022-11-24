@@ -298,13 +298,13 @@ contract OpenCollectivePurchaseV2 is ERC721Holder, Ownable, ReentrancyGuard
 			_safeTransfer(_token, _to, _excess);
 		}
 	}
-
+/*
 	function recoverLostItem(address _collection, uint256 _tokenId, address _to) external onlyOwner nonReentrant
 	{
 		if (items[_collection][_tokenId]) return;
 		IERC721(_collection).safeTransfer(_to, _tokenId);
 	}
-
+*/
 	function _validate(bytes memory _extra) internal view
 	{
 		(bytes32 _type,,, uint256 _duration, uint256 _fee) = abi.decode(_extra, (bytes32, string, string, uint256, uint256));

@@ -8,6 +8,7 @@ contract PerpetualOpenCollectivePurchaseV2 is OpenCollectivePurchaseV2
 	struct PerpetualInfo {
 		uint256 listingId;
 		uint256 priceMultiplier;
+		bytes extra;
 		uint256 fee;
 	}
 
@@ -74,6 +75,20 @@ contract PerpetualOpenCollectivePurchaseV2 is OpenCollectivePurchaseV2
 		emit UpdatePriceMultiplierPerpetual(_creator, _collection, _paymentToken, _priceMultiplier);
 	}
 
+	function setExtra(address payable _creator, address _collection, address _paymentToken, bytes memory _extra) external
+	{
+		require(msg.sender == _creator || _creator == address(0) && msg.sender == owner(), "access denied");
+		_validate(_extra);
+		PerpetualInfo storage _perpetual = perpetuals[_creator][_collection][_paymentToken];
+		require(_perpetual.listingId != 0, "invalid perpetual");
+		_perpetual.extra = _extra;
+		ListingInfo storage _listing = listings[_perpetual.listingId];
+		if (_listing.state == State.Created) {
+			_listing.extra = _extra;
+		}
+		emit UpdateExtraPerpetual(_creator, _collection, _paymentToken, _extra);
+	}
+
 	function setCreatorFee(address _collection, address _paymentToken, uint256 _fee) external
 	{
 		PerpetualInfo storage _perpetual = perpetuals[msg.sender][_collection][_paymentToken];
@@ -94,6 +109,7 @@ contract PerpetualOpenCollectivePurchaseV2 is OpenCollectivePurchaseV2
 		require(_perpetual.listingId == 0, "invalid perpetual");
 		_perpetual.listingId = list(msg.sender, _collection, true, 0, false, _fee, _paymentToken, _priceMultiplier, _extra);
 		_perpetual.priceMultiplier = priceMultiplier;
+		_perpetual.extra = extra;
 		_perpetual.fee = _fee;
 		emit PerpetualCreate(msg.sender, _collection, _paymentToken, _perpetual.listingId);
 		return _perpetual.listingId;
@@ -106,11 +122,12 @@ contract PerpetualOpenCollectivePurchaseV2 is OpenCollectivePurchaseV2
 			require(_creator == address(0), "invalid creator");
 			_perpetual.listingId = list(address(0), _collection, true, 0, true, 0, _paymentToken, priceMultiplier, extra);
 			_perpetual.priceMultiplier = priceMultiplier;
+			_perpetual.extra = extra;
 			_perpetual.fee = 0;
 		} else {
 			ListingInfo storage _listing = listings[_perpetual.listingId];
 			if (_listing.state == State.Created) return _perpetual.listingId;
-			_perpetual.listingId = list(_creator, _collection, true, 0, _listing.listed, _perpetual.fee, _paymentToken, _perpetual.priceMultiplier, _listing.extra);
+			_perpetual.listingId = list(_creator, _collection, true, 0, _listing.listed, _perpetual.fee, _paymentToken, _perpetual.priceMultiplier, _perpetual.extra);
 		}
 		emit PerpetualOpen(_creator, _collection, _paymentToken, _perpetual.listingId);
 		return _perpetual.listingId;
@@ -136,6 +153,7 @@ contract PerpetualOpenCollectivePurchaseV2 is OpenCollectivePurchaseV2
 	event UpdateDefaultPriceMultiplier(uint256 _priceMultiplier);
 	event UpdateDefaultExtra(bytes _extra);
 	event UpdatePriceMultiplierPerpetual(address indexed _creator, address indexed _collection, address indexed _paymentToken, uint256 _priceMultiplier);
+	event UpdateExtraPerpetual(address indexed _creator, address indexed _collection, address indexed _paymentToken, bytes _extra);
 	event UpdateCreatorFeePerpetual(address indexed _creator, address indexed _collection, address indexed _paymentToken, uint256 _fee);
 	event PerpetualCreate(address indexed _creator, address indexed _collection, address _paymentToken, uint256 indexed _listingId);
 	event PerpetualOpen(address indexed _creator, address indexed _collection, address _paymentToken, uint256 indexed _listingId);
