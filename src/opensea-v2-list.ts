@@ -2,7 +2,7 @@ import { hasProperty } from './utils';
 import { httpPost } from './urlfetch';
 import { OpenseaOrder, OpenseaOrderParameters, castOpenseaOrder } from './opensea-v2';
 
-const ORDER_DURATION = 30 * 24 * 60 * 60; // 30 days
+const ORDER_DURATION = 180 * 24 * 60 * 60; // 180 days
 const FEE: [bigint, bigint] = [975n, 1000n];
 const FEE_COLLECTOR = '0x0000a26b00c1F0DF003000390027140000fAa719';
 
@@ -39,7 +39,8 @@ export async function publishNft(apiKey: string, fractions: string, collection: 
   if (!['mainnet', 'goerli'].includes(network)) throw new Error('Unsupported network: ' + network);
   const testnet = network === 'goerli';
   const endTime = startTime + ORDER_DURATION;
-  const zone = '0x0000000000000000000000000000000000000000';
+  const orderType = testnet ? 0 : 2;
+  const zone = testnet ? '0x0000000000000000000000000000000000000000' : '0x004C00500000aD104D7DBd00e3ae0A5C00560C00';
   const zoneHash = '0x0000000000000000000000000000000000000000000000000000000000000000';
   const conduitKey = '0x0000007b02230091a7ed01230072f7006a004d60a8d4e71d599b8104250f0000';
   let fee = price * FEE[1] / FEE[0] - price;
@@ -74,7 +75,7 @@ export async function publishNft(apiKey: string, fractions: string, collection: 
     ],
     startTime: String(startTime),
     endTime: String(endTime),
-    orderType: 0,
+    orderType,
     zone,
     zoneHash,
     salt: '0',

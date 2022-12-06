@@ -185,7 +185,7 @@ contract SeaportFractionsImpl is ERC721Holder, ERC20, ReentrancyGuard
 	address constant SEAPORT = 0x00000000006c3852cbEf3e08E8dF289169EdE581; // 0x1E0049783F008A0085193E00003D00cd54003c71 on goerli
 	address constant SEAPORT_ENCODER = 0x0000000000000000000000000000000000000000; // replace by SeaportEncoder address on deploy
 
-	uint256 constant ORDER_DURATION = 30 days;
+	uint256 constant ORDER_DURATION = 180 days;
 
 	mapping(bytes32 => bool) public orderHash;
 

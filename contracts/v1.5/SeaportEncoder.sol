@@ -56,8 +56,8 @@ contract SeaportEncoder is Ownable
 
 	uint256[2] public fee = [975, 1000];
 	address public feeCollector = 0x0000a26b00c1F0DF003000390027140000fAa719;
-	uint8 public orderType = 0;
-	address public zone = 0x0000000000000000000000000000000000000000;
+	uint8 public orderType = 2; // 0 on Goerli
+	address public zone = 0x004C00500000aD104D7DBd00e3ae0A5C00560C00; // 0x0000000000000000000000000000000000000000 on Goerli
 	bytes32 public zoneHash = 0x0000000000000000000000000000000000000000000000000000000000000000;
 	bytes32 public conduitKey = 0x0000007b02230091a7ed01230072f7006a004d60a8d4e71d599b8104250f0000;
 
