@@ -3,6 +3,11 @@ pragma solidity ^0.6.0;
 
 import { Ownable } from "@openzeppelin/contracts/access/Ownable.sol";
 
+interface ConduitControllerInterface
+{
+	function getConduit(bytes32 conduitKey) external view returns (address _conduit, bool _exists);
+}
+
 contract SeaportEncoder is Ownable
 {
 	struct EIP712Domain {
@@ -51,6 +56,7 @@ contract SeaportEncoder is Ownable
 	string constant SEAPORT_NAME = "Seaport";
 	string constant SEAPORT_VERSION = "1.1";
 	address constant SEAPORT_ADDRESS = 0x00000000006c3852cbEf3e08E8dF289169EdE581;
+	address constant SEAPORT_CONDUIT_CONTROLLER = 0x00000000F9490004C11Cef243f5400493c00Ad63;
 
 	bytes32 public immutable DOMAIN_SEPARATOR;
 
@@ -73,6 +79,14 @@ contract SeaportEncoder is Ownable
 			chainId: _chainId,
 			verifyingContract: SEAPORT_ADDRESS
 		}));
+	}
+
+	function conduit() external view returns (address _conduit)
+	{
+		bool _exists;
+		(_conduit, _exists) = ConduitControllerInterface(SEAPORT_CONDUIT_CONTROLLER).getConduit(conduitKey);
+		require(_exists, "invalid conduit key");
+		return _conduit;
 	}
 
 	function configure(uint256[2] memory _fee, address _feeCollector, uint8 _orderType, address _zone, bytes32 _zoneHash, bytes32 _conduitKey) external onlyOwner

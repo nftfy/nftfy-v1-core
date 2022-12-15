@@ -65,8 +65,6 @@ contract SeaportFractionsImpl is ERC721Holder, ERC20, ReentrancyGuard
 		symbol_ = _symbol;
 		_setupDecimals(_decimals);
 		_mint(_from, _fractionsCount);
-
-		IERC721(target).setApprovalForAll(SEAPORT, true);
 	}
 
 	function status() external view returns (string memory _status)
@@ -105,9 +103,10 @@ contract SeaportFractionsImpl is ERC721Holder, ERC20, ReentrancyGuard
 	{
 		require(!released, "token already redeemed");
 		uint256 _reservePrice = reservePrice();
-		require(IERC721(target).ownerOf(tokenId) != address(this) && _balanceOf(paymentToken, address(this)) >= _reservePrice, "token not redeemed");
+		address _owner = IERC721(target).ownerOf(tokenId);
+		require(_owner != address(this) && _balanceOf(paymentToken, address(this)) >= _reservePrice, "token not redeemed");
 		released = true;
-		emit Redeem(SEAPORT, 0, _reservePrice);
+		emit Redeem(_owner, 0, _reservePrice);
 		_cleanup();
 	}
 
@@ -182,7 +181,6 @@ contract SeaportFractionsImpl is ERC721Holder, ERC20, ReentrancyGuard
 
 	bytes4 constant MAGICVALUE = 0x1626ba7e;
 
-	address constant SEAPORT = 0x00000000006c3852cbEf3e08E8dF289169EdE581; // 0x1E0049783F008A0085193E00003D00cd54003c71 on goerli
 	address constant SEAPORT_ENCODER = 0x0000000000000000000000000000000000000000; // replace by SeaportEncoder address on deploy
 
 	uint256 constant ORDER_DURATION = 180 days;
@@ -198,6 +196,7 @@ contract SeaportFractionsImpl is ERC721Holder, ERC20, ReentrancyGuard
 	function listOnSeaport() external nonReentrant
 	{
 		require(!released, "token already redeemed");
+		IERC721(target).approve(SeaportEncoder(SEAPORT_ENCODER).conduit(), tokenId);
 		bytes32 _hash = SeaportEncoder(SEAPORT_ENCODER).hash(address(this), target, tokenId, reservePrice(), paymentToken, block.timestamp, block.timestamp + ORDER_DURATION, 0, 0);
 		orderHash[_hash] = true;
 		emit ListOnSeaport(_hash);
