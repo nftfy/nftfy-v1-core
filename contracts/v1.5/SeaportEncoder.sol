@@ -3,11 +3,6 @@ pragma solidity ^0.6.0;
 
 import { Ownable } from "@openzeppelin/contracts/access/Ownable.sol";
 
-interface ConduitControllerInterface
-{
-	function getConduit(bytes32 conduitKey) external view returns (address _conduit, bool _exists);
-}
-
 contract SeaportEncoder is Ownable
 {
 	struct EIP712Domain {
@@ -56,7 +51,6 @@ contract SeaportEncoder is Ownable
 	string constant SEAPORT_NAME = "Seaport";
 	string constant SEAPORT_VERSION = "1.1";
 	address constant SEAPORT_ADDRESS = 0x00000000006c3852cbEf3e08E8dF289169EdE581;
-	address constant SEAPORT_CONDUIT_CONTROLLER = 0x00000000F9490004C11Cef243f5400493c00Ad63;
 
 	bytes32 public immutable DOMAIN_SEPARATOR;
 
@@ -66,6 +60,7 @@ contract SeaportEncoder is Ownable
 	address public zone = 0x004C00500000aD104D7DBd00e3ae0A5C00560C00; // 0x0000000000000000000000000000000000000000 on Goerli
 	bytes32 public zoneHash = 0x0000000000000000000000000000000000000000000000000000000000000000;
 	bytes32 public conduitKey = 0x0000007b02230091a7ed01230072f7006a004d60a8d4e71d599b8104250f0000;
+	address public conduit = 0x1E0049783F008A0085193E00003D00cd54003c71;
 
 	constructor () public
 	{
@@ -81,22 +76,13 @@ contract SeaportEncoder is Ownable
 		}));
 	}
 
-	function conduit() external view returns (address _conduit)
-	{
-		bool _exists;
-		(_conduit, _exists) = ConduitControllerInterface(SEAPORT_CONDUIT_CONTROLLER).getConduit(conduitKey);
-		require(_exists, "invalid conduit key");
-		return _conduit;
-	}
-
-	function configure(uint256[2] memory _fee, address _feeCollector, uint8 _orderType, address _zone, bytes32 _zoneHash, bytes32 _conduitKey) external onlyOwner
+	function configure(uint256[2] memory _fee, address _feeCollector, uint8 _orderType, address _zone, bytes32 _zoneHash) external onlyOwner
 	{
 		fee = _fee;
 		feeCollector = _feeCollector;
 		orderType = _orderType;
 		zone = _zone;
 		zoneHash = _zoneHash;
-		conduitKey = _conduitKey;
 	}
 
 	function hash(address _offerer, address _collection, uint256 _tokenId, uint256 _price, address _paymentToken, uint256 _startTime, uint256 _endTime, uint256 _salt, uint256 _counter) external view returns (bytes32)
